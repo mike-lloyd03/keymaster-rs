@@ -3,7 +3,7 @@
 
 Thing for keeping track of who has what keys.
 
-This is a Rust rewrite of [KeyMaster]() which I wrote in Python a few years ago. The purpose of this project is to gain more experience developing in Rust as well as learning some core Rust crates.
+This is a Rust rewrite of [KeyMaster](https://github.com/mike-lloyd03/keymaster) which I wrote in Python a few years ago. The purpose of this project is to gain more experience developing in Rust as well as learning some core Rust crates.
 
 ## Current Plan
 ### Backend
