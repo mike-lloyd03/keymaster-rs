@@ -8,7 +8,7 @@ pub fn login() -> Html {
                 <div>
                     <h1>{ "Login" }</h1>
                     <form action="" method="post" class="form" role="form">
-                        <input id="csrf_token" name="csrf_token" type="hidden" value="ImEzOThlODZhMzZkYzllZWI0ZTQ0OGU1ZDQ1N2UxYTE0YTA0NWE5N2Ii.Yto3Cg.ZKSkYoghUGGnZkkuO0p4vScIPFs" />
+                        // <input id="csrf_token" name="csrf_token" type="hidden" value="ImEzOThlODZhMzZkYzllZWI0ZTQ0OGU1ZDQ1N2UxYTE0YTA0NWE5N2Ii.Yto3Cg.ZKSkYoghUGGnZkkuO0p4vScIPFs" />
                         <div class="form-group  required"><label class="control-label" for="username">{ "Username" }</label>
                             <input class="form-control" id="username" name="username" required=true type="text" value="" />
                         </div>

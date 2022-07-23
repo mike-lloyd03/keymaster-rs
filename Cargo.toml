@@ -8,3 +8,5 @@ edition = "2021"
 [dependencies]
 yew = "0.19.3"
 yew-router = "0.16.0"
+# sqlx = { version = "0.5", features = [  "runtime-async-std-native-tls", "postgres" ] }
+# async-std = { version = "1", features = [ "attributes" ] }
