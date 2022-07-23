@@ -4,6 +4,7 @@ CREATE TABLE keys (
 	status VARCHAR, 
 	PRIMARY KEY (name)
 );
+
 CREATE TABLE users (
 	id INTEGER NOT NULL, 
 	username VARCHAR(64), 
@@ -12,6 +13,7 @@ CREATE TABLE users (
 	can_login BOOLEAN, display_name VARCHAR(120), 
 	PRIMARY KEY (id)
 );
+
 CREATE UNIQUE INDEX ix_users_email ON users (email);
 CREATE UNIQUE INDEX ix_users_username ON users (username);
 CREATE TABLE assignments (
