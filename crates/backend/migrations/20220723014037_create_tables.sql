@@ -1,27 +1,25 @@
 CREATE TABLE keys (
 	name VARCHAR NOT NULL, 
 	description VARCHAR, 
-	status VARCHAR, 
+	active BOOLEAN NOT NULL, 
 	PRIMARY KEY (name)
 );
 
 CREATE TABLE users (
-	id INTEGER NOT NULL, 
-	username VARCHAR(64), 
-	email VARCHAR(120), 
+	id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	username VARCHAR(64) NOT NULL UNIQUE, 
+    display_name VARCHAR(120) UNIQUE, 
+	email VARCHAR(120) NOT NULL UNIQUE, 
 	password_hash VARCHAR(128), 
-	can_login BOOLEAN, display_name VARCHAR(120), 
-	PRIMARY KEY (id)
+	can_login BOOLEAN NOT NULL
 );
 
-CREATE UNIQUE INDEX ix_users_email ON users (email);
-CREATE UNIQUE INDEX ix_users_username ON users (username);
 CREATE TABLE assignments (
-	id INTEGER NOT NULL, 
-	"user" VARCHAR, 
-	"key" VARCHAR, 
-	date_out DATE, 
-	date_in DATE, 
+	id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+	"user" VARCHAR NOT NULL, 
+	"key" VARCHAR NOT NULL, 
+	date_out DATE NOT NULL, 
+	date_in DATE NOT NULL, 
 	PRIMARY KEY (id), 
 	FOREIGN KEY("key") REFERENCES keys (name), 
 	FOREIGN KEY("user") REFERENCES users (username)

@@ -3,40 +3,58 @@ use anyhow::Result;
 use sqlx::{postgres::PgQueryResult, query, query_as, sqlx_macros, FromRow, PgPool};
 
 #[derive(Debug, Default, FromRow)]
-pub struct Key {
-    pub name: String,
-    pub description: String,
-    pub active: bool,
+pub struct User {
+    pub id: u32,
+    pub username: String,
+    pub display_name: String,
+    pub email: String,
+    password_hash: String,
+    pub can_login: bool,
 }
 
-impl Key {
-    pub fn new(name: &str) -> Self {
-        Key {
-            name: name.to_string(),
-            active: true,
+impl User {
+    pub fn new(username: &str, email: &str) -> Self {
+        User {
+            username: username.to_string(),
+            email: email.to_string(),
             ..Default::default()
         }
     }
 
-    pub async fn get(pool: &PgPool, name: &str) -> Result<Self, sqlx::Error> {
-        query_as("SELECT name, description, active FROM keys WHERE name = $1")
-            .bind(name)
-            .fetch_one(pool)
-            .await
-    }
-
-    pub async fn create(&self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
-        let q = "INSERT INTO keys (name, description, active) VALUES ($1, $2, $3)";
-
-        query(q)
-            .bind(&self.name)
-            .bind(&self.description)
-            .bind(&self.active)
+    pub async fn set_password(
+        &mut self,
+        pool: &PgPool,
+        password_hash: &str,
+    ) -> Result<PgQueryResult, sqlx::Error> {
+        self.password_hash = password_hash.to_string();
+        query("Update users SET password_hash = $1 WHERE id = $1")
+            .bind(&self.id)
             .execute(pool)
             .await
     }
 
-    pub async fn update(&self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
+    pub async fn get(pool: &PgPool, username: &str) -> Result<Self, sqlx::Error> {
+        query_as("SELECT id, username, display_name, email, password_hash, can_login  FROM users WHERE id = $1")
+            .bind(username)
+            .fetch_one(pool)
+            .await
+    }
+
+    pub async fn create(&self, pool: &PgPool) -> anyhow::Result<PgQueryResult, sqlx::Error> {
+        let q = "INSERT INTO users (id, username, display_name, email, password_hash, can_login) VALUES ($1, $2, $3, $4, $5, $6)";
+
+        query(q)
+            .bind(&self.id)
+            .bind(&self.username)
+            .bind(&self.display_name)
+            .bind(&self.email)
+            .bind(&self.password_hash)
+            .bind(&self.can_login)
+            .execute(pool)
+            .await
+    }
+
+    pub async fn update(&self, pool: &PgPool) -> anyhow::Result<PgQueryResult, sqlx::Error> {
         let q = "UPDATE keys SET description = $1 WHERE name = $2";
 
         query(q)
