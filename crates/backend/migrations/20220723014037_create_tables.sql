@@ -20,7 +20,7 @@ CREATE TABLE assignments (
 	"key" VARCHAR NOT NULL, 
 	date_out DATE NOT NULL, 
 	date_in DATE NOT NULL, 
-	PRIMARY KEY (id), 
+    UNIQUE("user","key"),
 	FOREIGN KEY("key") REFERENCES keys (name), 
 	FOREIGN KEY("user") REFERENCES users (username)
 );

@@ -1,12 +1,55 @@
 use anyhow::Result;
 
-use sqlx::{postgres::PgQueryResult, query, query_as, sqlx_macros, FromRow, PgPool};
+use sqlx::{
+    database::{HasArguments, HasValueRef},
+    encode::IsNull,
+    error::BoxDynError,
+    postgres::{
+        types::{PgRecordDecoder, PgRecordEncoder},
+        PgQueryResult, PgTypeInfo,
+    },
+    query, query_as, sqlx_macros, Encode, FromRow, PgPool, Postgres, Type,
+};
 
-#[derive(Debug, Default, FromRow)]
+#[derive(Debug, Default, PartialEq, Clone, FromRow)]
 pub struct Key {
     pub name: String,
     pub description: String,
     pub active: bool,
+}
+
+impl Type<Postgres> for Key {
+    fn type_info() -> PgTypeInfo {
+        PgTypeInfo::with_name("key")
+    }
+}
+
+impl<'r> sqlx::Decode<'r, Postgres> for Key {
+    fn decode(value: <Postgres as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
+        let mut decoder = PgRecordDecoder::new(value)?;
+
+        let name = decoder.try_decode::<String>()?;
+        let description = decoder.try_decode::<String>()?;
+        let active = decoder.try_decode::<bool>()?;
+
+        Ok(Self {
+            name,
+            description,
+            active,
+        })
+    }
+}
+
+impl<'q> Encode<'q, Postgres> for Key {
+    fn encode_by_ref(&self, buf: &mut <Postgres as HasArguments<'q>>::ArgumentBuffer) -> IsNull {
+        let mut encoder = PgRecordEncoder::new(buf);
+        encoder.encode(&self.name);
+        encoder.encode(&self.description);
+        encoder.encode(&self.active);
+        encoder.finish();
+
+        IsNull::No
+    }
 }
 
 impl Key {
