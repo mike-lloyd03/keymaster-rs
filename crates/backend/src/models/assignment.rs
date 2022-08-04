@@ -1,45 +1,15 @@
 use crate::{Key, User};
 use anyhow::Result;
 
-use sqlx::{
-    database::HasValueRef,
-    error::BoxDynError,
-    postgres::{types::PgRecordDecoder, PgQueryResult},
-    query, query_as, sqlx_macros,
-    types::time,
-    FromRow, PgPool, Postgres,
-};
+use sqlx::{postgres::PgQueryResult, query, query_as, sqlx_macros, types::time, FromRow, PgPool};
 
 #[derive(Debug, Default, PartialEq, FromRow)]
 pub struct Assignment {
     id: i64,
-    pub user: User,
-    pub key: Key,
+    pub user: String,
+    pub key: String,
     pub date_out: Option<time::Date>,
     pub date_in: Option<time::Date>,
-}
-
-impl<'r> sqlx::Decode<'r, Postgres> for Assignment {
-    fn decode(value: <Postgres as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
-        let mut decoder = PgRecordDecoder::new(value)?;
-
-        let id = decoder.try_decode::<i64>()?;
-        let username = decoder.try_decode::<String>()?;
-        let keyname = decoder.try_decode::<String>()?;
-        let date_out = decoder.try_decode::<Option<time::Date>>()?;
-        let date_in = decoder.try_decode::<Option<time::Date>>()?;
-
-        let user = User::new(&username);
-        let key = Key::new(&keyname);
-
-        Ok(Self {
-            id,
-            user,
-            key,
-            date_out,
-            date_in,
-        })
-    }
 }
 
 impl Assignment {
@@ -114,40 +84,37 @@ async fn test_assignment() -> Result<()> {
 
     // Test create
     let user1 = User::new("user1");
-    user1.create(&pool).await.unwrap();
+    user1.create(&pool).await?;
     let key1 = Key::new("k1");
-    key1.create(&pool).await.unwrap();
+    key1.create(&pool).await?;
 
-    let date_out = time::Date::try_from_ymd(1988, 10, 3).unwrap();
-    let assgn1 = Assignment::new(&pool, &user1, &key1, date_out)
-        .await
-        .unwrap();
+    let date_out = time::Date::try_from_ymd(1988, 10, 3)?;
+    let assgn1 = Assignment::new(&pool, &user1, &key1, date_out).await?;
 
     // Test get
-    // let assgn2 = Assignment::get_by_user_key(&pool, &user1, &key1)
-    //     .await
-    //     .unwrap();
+    let mut assgn2 = Assignment::get_by_user_key(&pool, &user1, &key1).await?;
 
-    // assert_eq!(assgn1, assgn2);
+    assert_eq!(assgn1, assgn2);
 
-    // // Test check_in
-    // let new_display_name = "Assignment Juan";
-    // let mut user = Assignment::get(&pool, username).await?;
-    // user.display_name = new_display_name.to_string();
-    // user.update(&pool).await?;
+    // Test check_in
+    let date_in = time::Date::try_from_ymd(1988, 11, 3)?;
+    assgn2.check_in(&pool, date_in).await?;
 
-    // let updated_user = Assignment::get(&pool, username).await?;
+    let assgn3 = Assignment::get_by_user_key(&pool, &user1, &key1).await?;
 
-    // assert_eq!(new_display_name, updated_user.display_name);
+    match assgn3.date_in {
+        Some(d) => assert_eq!(d, date_in),
+        None => todo!(),
+    }
 
     // Test delete
-    // assgn2.delete(&pool).await?;
-    // let res = query("SELECT * FROM users WHERE username = $1")
-    //     .bind(user.username)
-    //     .execute(&pool)
-    //     .await?;
+    assgn3.delete(&pool).await?;
+    let res = query("SELECT * FROM assignments WHERE id = $1")
+        .bind(assgn3.id)
+        .execute(&pool)
+        .await?;
 
-    // assert_eq!(res.rows_affected(), 0);
+    assert_eq!(res.rows_affected(), 0);
 
     Ok(())
 }

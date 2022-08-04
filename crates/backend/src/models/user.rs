@@ -1,16 +1,6 @@
 use anyhow::Result;
 
-use sqlx::{
-    database::{HasArguments, HasValueRef},
-    encode::IsNull,
-    error::BoxDynError,
-    postgres::{
-        types::{PgRecordDecoder, PgRecordEncoder},
-        PgQueryResult, PgTypeInfo,
-    },
-    query, query_as, sqlx_macros, Encode, FromRow, PgPool, Postgres, Type,
-};
-
+use sqlx::{postgres::PgQueryResult, query, query_as, sqlx_macros, FromRow, PgPool};
 #[derive(Debug, Default, PartialEq, Clone, FromRow)]
 pub struct User {
     pub id: i64,
@@ -19,49 +9,6 @@ pub struct User {
     pub email: String,
     password_hash: String,
     pub can_login: bool,
-}
-
-impl Type<Postgres> for User {
-    fn type_info() -> PgTypeInfo {
-        PgTypeInfo::with_name("VARCHAR")
-    }
-}
-
-impl<'r> sqlx::Decode<'r, Postgres> for User {
-    fn decode(value: <Postgres as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
-        let mut decoder = PgRecordDecoder::new(value)?;
-
-        let id = decoder.try_decode::<i64>()?;
-        let username = decoder.try_decode::<String>()?;
-        let display_name = decoder.try_decode::<String>()?;
-        let email = decoder.try_decode::<String>()?;
-        let password_hash = decoder.try_decode::<String>()?;
-        let can_login = decoder.try_decode::<bool>()?;
-
-        Ok(Self {
-            id,
-            username,
-            display_name,
-            email,
-            password_hash,
-            can_login,
-        })
-    }
-}
-
-impl<'q> Encode<'q, Postgres> for User {
-    fn encode_by_ref(&self, buf: &mut <Postgres as HasArguments<'q>>::ArgumentBuffer) -> IsNull {
-        let mut encoder = PgRecordEncoder::new(buf);
-        encoder.encode(&self.id);
-        encoder.encode(&self.username);
-        encoder.encode(&self.display_name);
-        encoder.encode(&self.email);
-        encoder.encode(&self.password_hash);
-        encoder.encode(&self.can_login);
-        encoder.finish();
-
-        IsNull::No
-    }
 }
 
 impl User {
@@ -145,13 +92,13 @@ async fn test_user() -> Result<()> {
     migrator.run(&pool).await?;
 
     // Test create
-    let username = "user1";
-    let user_display_name = "User 1";
-    let user_email = "this@that.com";
-    let mut user1 = User::new(username);
-    user1.email = user_email.to_string();
-    user1.display_name = user_display_name.to_string();
-    user1.create(&pool).await?;
+    let username = "user2";
+    let user_display_name = "User 2";
+    let user_email = "this2@that.com";
+    let mut user2 = User::new(username);
+    user2.email = user_email.to_string();
+    user2.display_name = user_display_name.to_string();
+    user2.create(&pool).await?;
 
     // Test get
     let user = User::get(&pool, username).await?;
@@ -160,7 +107,7 @@ async fn test_user() -> Result<()> {
     assert_eq!(user_email, user.email);
 
     // Test update
-    let new_display_name = "User Juan";
+    let new_display_name = "User Too";
     let mut user = User::get(&pool, username).await?;
     user.display_name = new_display_name.to_string();
     user.update(&pool).await?;
