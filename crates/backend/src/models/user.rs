@@ -13,7 +13,7 @@ use sqlx::{
 
 #[derive(Debug, Default, PartialEq, Clone, FromRow)]
 pub struct User {
-    pub id: u32,
+    pub id: i64,
     pub username: String,
     pub display_name: String,
     pub email: String,
@@ -23,7 +23,7 @@ pub struct User {
 
 impl Type<Postgres> for User {
     fn type_info() -> PgTypeInfo {
-        PgTypeInfo::with_name("user")
+        PgTypeInfo::with_name("VARCHAR")
     }
 }
 
@@ -31,7 +31,7 @@ impl<'r> sqlx::Decode<'r, Postgres> for User {
     fn decode(value: <Postgres as HasValueRef<'r>>::ValueRef) -> Result<Self, BoxDynError> {
         let mut decoder = PgRecordDecoder::new(value)?;
 
-        let id = decoder.try_decode::<u32>()?;
+        let id = decoder.try_decode::<i64>()?;
         let username = decoder.try_decode::<String>()?;
         let display_name = decoder.try_decode::<String>()?;
         let email = decoder.try_decode::<String>()?;
@@ -65,16 +65,15 @@ impl<'q> Encode<'q, Postgres> for User {
 }
 
 impl User {
-    pub fn new(username: &str, email: &str) -> Self {
+    pub fn new(username: &str) -> Self {
         User {
             username: username.to_string(),
-            email: email.to_string(),
             ..Default::default()
         }
     }
 
     pub async fn get(pool: &PgPool, username: &str) -> Result<Self, sqlx::Error> {
-        query_as("SELECT id, username, display_name, email, password_hash, can_login FROM users WHERE id = $1")
+        query_as("SELECT id, username, display_name, email, password_hash, can_login FROM users WHERE username = $1")
             .bind(username)
             .fetch_one(pool)
             .await
@@ -106,7 +105,8 @@ impl User {
     }
 
     pub async fn update(&self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
-        let q = "UPDATE keys SET display_name = $1, email = $2, can_login = $3 WHERE username = $4";
+        let q =
+            "UPDATE users SET display_name = $1, email = $2, can_login = $3 WHERE username = $4";
 
         query(q)
             .bind(&self.display_name)
@@ -118,7 +118,7 @@ impl User {
     }
 
     pub async fn delete(&self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
-        let q = "DELETE FROM keys WHERE username = $1";
+        let q = "DELETE FROM users WHERE username = $1";
 
         query(q).bind(&self.username).execute(pool).await
     }
@@ -148,34 +148,35 @@ async fn test_user() -> Result<()> {
     let username = "user1";
     let user_display_name = "User 1";
     let user_email = "this@that.com";
-    let mut user1 = User::new(username, user_email);
+    let mut user1 = User::new(username);
+    user1.email = user_email.to_string();
     user1.display_name = user_display_name.to_string();
     user1.create(&pool).await?;
 
     // Test get
     let user = User::get(&pool, username).await?;
 
-    // assert_eq!(username.to_string(), user.username);
-    // assert_eq!(user_email, user.email);
+    assert_eq!(username.to_string(), user.username);
+    assert_eq!(user_email, user.email);
 
-    // // Test update
-    // let new_display_name = "User Juan";
-    // let mut user = User::get(&pool, username).await?;
-    // user.display_name = new_display_name.to_string();
-    // user.update(&pool).await?;
+    // Test update
+    let new_display_name = "User Juan";
+    let mut user = User::get(&pool, username).await?;
+    user.display_name = new_display_name.to_string();
+    user.update(&pool).await?;
 
-    // let updated_user = User::get(&pool, username).await?;
+    let updated_user = User::get(&pool, username).await?;
 
-    // assert_eq!(new_display_name, updated_user.display_name);
+    assert_eq!(new_display_name, updated_user.display_name);
 
-    // // Test delete
-    // user.delete(&pool).await?;
-    // let res = query("SELECT * FROM users WHERE username = $1")
-    //     .bind(user.username)
-    //     .execute(&pool)
-    //     .await?;
+    // Test delete
+    user.delete(&pool).await?;
+    let res = query("SELECT * FROM users WHERE username = $1")
+        .bind(user.username)
+        .execute(&pool)
+        .await?;
 
-    // assert_eq!(res.rows_affected(), 0);
+    assert_eq!(res.rows_affected(), 0);
 
     Ok(())
 }
