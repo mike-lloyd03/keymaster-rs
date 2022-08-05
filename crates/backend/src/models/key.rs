@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use sqlx::{postgres::PgQueryResult, query, query_as, sqlx_macros, FromRow, PgPool};
+use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
 
 #[derive(Debug, Default, PartialEq, Clone, FromRow)]
 pub struct Key {
@@ -53,50 +53,46 @@ impl Key {
     }
 }
 
-#[sqlx_macros::test]
-async fn test_key() -> Result<()> {
-    use sqlx::migrate::MigrateDatabase;
-
-    // Setup database
-    let database_url = "postgres://postgres:postgres@localhost/keymaster_test";
-
-    if sqlx::Postgres::database_exists(database_url).await? {
-        sqlx::Postgres::drop_database(database_url).await?;
-    }
-    sqlx::Postgres::create_database(database_url).await?;
-
-    let pool = sqlx::postgres::PgPoolOptions::new()
-        .max_connections(5)
-        .connect(database_url)
-        .await?;
-
-    let migrator = sqlx::migrate!();
-    migrator.run(&pool).await?;
-
-    // Test create
+#[sqlx::test()]
+async fn create_key(pool: PgPool) -> Result<()> {
     let key_name = "k1";
     let key_description = "this is a key, the first of many";
     let mut k1 = Key::new(key_name);
     k1.description = key_description.to_string();
     k1.create(&pool).await?;
 
-    // Test get
-    let key = Key::get(&pool, key_name).await?;
+    Ok(())
+}
 
-    assert_eq!(key_name.to_string(), key.name);
-    assert_eq!(key_description, key.description);
+#[sqlx::test(fixtures("keys"))]
+async fn get_key(pool: PgPool) -> Result<()> {
+    let key = Key::get(&pool, "key1").await?;
 
-    // Test update
+    assert_eq!("key1", key.name);
+    assert_eq!("this is a key", key.description);
+    assert!(key.active);
+
+    Ok(())
+}
+
+#[sqlx::test(fixtures("keys"))]
+async fn update_key(pool: PgPool) -> Result<()> {
     let new_desc = "it does stuff";
-    let mut key = Key::get(&pool, key_name).await?;
+    let mut key = Key::get(&pool, "key1").await?;
     key.description = new_desc.to_string();
     key.update(&pool).await?;
 
-    let updated_key = Key::get(&pool, key_name).await?;
+    let updated_key = Key::get(&pool, "key1").await?;
 
     assert_eq!(new_desc, updated_key.description);
 
-    // Test delete
+    Ok(())
+}
+
+#[sqlx::test(fixtures("keys"))]
+async fn delete_key(pool: PgPool) -> Result<()> {
+    let key = Key::get(&pool, "key1").await?;
+
     key.delete(&pool).await?;
     let res = query("SELECT * FROM keys WHERE name = $1")
         .bind(key.name)

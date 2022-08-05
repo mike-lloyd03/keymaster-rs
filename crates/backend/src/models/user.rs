@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use sqlx::{postgres::PgQueryResult, query, query_as, sqlx_macros, FromRow, PgPool};
+use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
 #[derive(Debug, Default, PartialEq, Clone, FromRow)]
 pub struct User {
     pub id: i64,
@@ -71,53 +71,54 @@ impl User {
     }
 }
 
-#[sqlx_macros::test]
-async fn test_user() -> Result<()> {
-    use sqlx::migrate::MigrateDatabase;
+#[sqlx::test()]
+async fn create_user(pool: PgPool) -> Result<()> {
+    let username = "user1";
+    let user_display_name = "User 1";
+    let user_email = "user1@email.com";
+    let mut user = User::new(username);
+    user.email = user_email.to_string();
+    user.display_name = user_display_name.to_string();
+    user.create(&pool).await?;
 
-    // Setup database
-    let database_url = "postgres://postgres:postgres@localhost/keymaster_test";
+    Ok(())
+}
 
-    if sqlx::Postgres::database_exists(database_url).await? {
-        sqlx::Postgres::drop_database(database_url).await?;
-    }
-    sqlx::Postgres::create_database(database_url).await?;
+#[sqlx::test(fixtures("users"))]
+async fn get_user(pool: PgPool) -> Result<()> {
+    let user = User::get(&pool, "user1").await?;
 
-    let pool = sqlx::postgres::PgPoolOptions::new()
-        .max_connections(5)
-        .connect(database_url)
-        .await?;
+    assert_eq!("user1", user.username);
+    assert_eq!("User Juan", user.display_name);
+    assert_eq!("user@email.com", user.email);
+    assert_eq!(
+        "46a9d5bde718bf366178313019f04a753bad00685d38e3ec81c8628f35dfcb1b",
+        user.password_hash
+    );
+    assert!(!user.can_login);
 
-    let migrator = sqlx::migrate!();
-    migrator.run(&pool).await?;
+    Ok(())
+}
 
-    // Test create
-    let username = "user2";
-    let user_display_name = "User 2";
-    let user_email = "this2@that.com";
-    let mut user2 = User::new(username);
-    user2.email = user_email.to_string();
-    user2.display_name = user_display_name.to_string();
-    user2.create(&pool).await?;
-
-    // Test get
-    let user = User::get(&pool, username).await?;
-
-    assert_eq!(username.to_string(), user.username);
-    assert_eq!(user_email, user.email);
-
-    // Test update
+#[sqlx::test(fixtures("users"))]
+async fn update_user(pool: PgPool) -> Result<()> {
     let new_display_name = "User Too";
-    let mut user = User::get(&pool, username).await?;
+    let mut user = User::get(&pool, "user1").await?;
     user.display_name = new_display_name.to_string();
     user.update(&pool).await?;
 
-    let updated_user = User::get(&pool, username).await?;
+    let updated_user = User::get(&pool, "user1").await?;
 
     assert_eq!(new_display_name, updated_user.display_name);
 
-    // Test delete
+    Ok(())
+}
+
+#[sqlx::test(fixtures("users"))]
+async fn delete_user(pool: PgPool) -> Result<()> {
+    let user = User::get(&pool, "user1").await?;
     user.delete(&pool).await?;
+
     let res = query("SELECT * FROM users WHERE username = $1")
         .bind(user.username)
         .execute(&pool)

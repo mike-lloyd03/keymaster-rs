@@ -1,7 +1,7 @@
 use crate::{Key, User};
 use anyhow::Result;
 
-use sqlx::{postgres::PgQueryResult, query, query_as, sqlx_macros, types::time, FromRow, PgPool};
+use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
 
 #[derive(Debug, Default, PartialEq, FromRow)]
 pub struct Assignment {
@@ -62,55 +62,57 @@ impl Assignment {
     }
 }
 
-#[sqlx_macros::test]
-async fn test_assignment() -> Result<()> {
-    use sqlx::migrate::MigrateDatabase;
+#[sqlx::test(fixtures("users", "keys"))]
+async fn create_assignment(pool: PgPool) -> Result<()> {
+    let user1 = User::get(&pool, "user1").await?;
+    let key1 = Key::get(&pool, "key1").await?;
 
-    // Setup database
-    let database_url = "postgres://postgres:postgres@localhost/keymaster_test";
+    let date_out = time::Date::from_calendar_date(1988, time::Month::October, 3)?;
+    Assignment::new(&pool, &user1, &key1, date_out).await?;
 
-    if sqlx::Postgres::database_exists(database_url).await? {
-        sqlx::Postgres::drop_database(database_url).await?;
-    }
-    sqlx::Postgres::create_database(database_url).await?;
+    Ok(())
+}
 
-    let pool = sqlx::postgres::PgPoolOptions::new()
-        .max_connections(5)
-        .connect(database_url)
-        .await?;
+#[sqlx::test(fixtures("users", "keys", "assignments"))]
+async fn get_assignment(pool: PgPool) -> Result<()> {
+    let user1 = User::get(&pool, "user1").await?;
+    let key1 = Key::get(&pool, "key1").await?;
+    let date_out = time::Date::from_calendar_date(1988, time::Month::October, 3)?;
 
-    let migrator = sqlx::migrate!();
-    migrator.run(&pool).await?;
+    let assgn1 = Assignment::get_by_user_key(&pool, &user1, &key1).await?;
 
-    // Test create
-    let user1 = User::new("user1");
-    user1.create(&pool).await?;
-    let key1 = Key::new("k1");
-    key1.create(&pool).await?;
+    assert_eq!("user1", assgn1.user);
+    assert_eq!("key1", assgn1.key);
+    assert_eq!(Some(date_out), assgn1.date_out);
+    assert_eq!(None, assgn1.date_in);
 
-    let date_out = time::Date::try_from_ymd(1988, 10, 3)?;
-    let assgn1 = Assignment::new(&pool, &user1, &key1, date_out).await?;
+    Ok(())
+}
 
-    // Test get
-    let mut assgn2 = Assignment::get_by_user_key(&pool, &user1, &key1).await?;
+#[sqlx::test(fixtures("users", "keys", "assignments"))]
+async fn check_in_assignment(pool: PgPool) -> Result<()> {
+    let user1 = User::get(&pool, "user1").await?;
+    let key1 = Key::get(&pool, "key1").await?;
+    let date_in = time::Date::from_calendar_date(1988, time::Month::November, 3)?;
 
-    assert_eq!(assgn1, assgn2);
+    let mut assgn1 = Assignment::get_by_user_key(&pool, &user1, &key1).await?;
+    assgn1.check_in(&pool, date_in).await?;
+    assgn1 = Assignment::get_by_user_key(&pool, &user1, &key1).await?;
 
-    // Test check_in
-    let date_in = time::Date::try_from_ymd(1988, 11, 3)?;
-    assgn2.check_in(&pool, date_in).await?;
+    assert_eq!(date_in, assgn1.date_in.unwrap());
 
-    let assgn3 = Assignment::get_by_user_key(&pool, &user1, &key1).await?;
+    Ok(())
+}
 
-    match assgn3.date_in {
-        Some(d) => assert_eq!(d, date_in),
-        None => todo!(),
-    }
+#[sqlx::test(fixtures("users", "keys", "assignments"))]
+async fn delete_assignment(pool: PgPool) -> Result<()> {
+    let user1 = User::get(&pool, "user1").await?;
+    let key1 = Key::get(&pool, "key1").await?;
+    let assgn1 = Assignment::get_by_user_key(&pool, &user1, &key1).await?;
+    assgn1.delete(&pool).await?;
 
-    // Test delete
-    assgn3.delete(&pool).await?;
     let res = query("SELECT * FROM assignments WHERE id = $1")
-        .bind(assgn3.id)
+        .bind(assgn1.id)
         .execute(&pool)
         .await?;
 
