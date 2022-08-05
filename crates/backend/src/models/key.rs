@@ -5,8 +5,8 @@ use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
 #[derive(Debug, Default, PartialEq, Clone, FromRow)]
 pub struct Key {
     pub name: String,
-    pub description: String,
-    pub active: bool,
+    pub description: Option<String>,
+    active: bool,
 }
 
 impl Key {
@@ -19,37 +19,41 @@ impl Key {
     }
 
     pub async fn get(pool: &PgPool, name: &str) -> Result<Self, sqlx::Error> {
-        query_as("SELECT name, description, active FROM keys WHERE name = $1")
-            .bind(name)
-            .fetch_one(pool)
-            .await
+        query_as!(
+            Self,
+            "SELECT name, description, active FROM keys WHERE name = $1",
+            name
+        )
+        .fetch_one(pool)
+        .await
     }
 
     pub async fn create(&self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
-        let q = "INSERT INTO keys (name, description, active) VALUES ($1, $2, $3)";
-
-        query(q)
-            .bind(&self.name)
-            .bind(&self.description)
-            .bind(&self.active)
-            .execute(pool)
-            .await
+        query!(
+            "INSERT INTO keys (name, description, active) VALUES ($1, $2, $3)",
+            self.name,
+            self.description,
+            self.active
+        )
+        .execute(pool)
+        .await
     }
 
     pub async fn update(&self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
-        let q = "UPDATE keys SET description = $1 WHERE name = $2";
-
-        query(q)
-            .bind(&self.description)
-            .bind(&self.name)
-            .execute(pool)
-            .await
+        query!(
+            "UPDATE keys SET description = $1, active = $2 WHERE name = $3",
+            self.description,
+            self.active,
+            self.name
+        )
+        .execute(pool)
+        .await
     }
 
     pub async fn delete(&self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
-        let q = "DELETE FROM keys WHERE name = $1";
-
-        query(q).bind(&self.name).execute(pool).await
+        query!("DELETE FROM keys WHERE name = $1", self.name)
+            .execute(pool)
+            .await
     }
 }
 
@@ -58,7 +62,7 @@ async fn create_key(pool: PgPool) -> Result<()> {
     let key_name = "k1";
     let key_description = "this is a key, the first of many";
     let mut k1 = Key::new(key_name);
-    k1.description = key_description.to_string();
+    k1.description = Some(key_description.to_string());
     k1.create(&pool).await?;
 
     Ok(())
@@ -69,7 +73,7 @@ async fn get_key(pool: PgPool) -> Result<()> {
     let key = Key::get(&pool, "key1").await?;
 
     assert_eq!("key1", key.name);
-    assert_eq!("this is a key", key.description);
+    assert_eq!("this is a key", key.description.unwrap());
     assert!(key.active);
 
     Ok(())
@@ -79,12 +83,12 @@ async fn get_key(pool: PgPool) -> Result<()> {
 async fn update_key(pool: PgPool) -> Result<()> {
     let new_desc = "it does stuff";
     let mut key = Key::get(&pool, "key1").await?;
-    key.description = new_desc.to_string();
+    key.description = Some(new_desc.to_string());
     key.update(&pool).await?;
 
     let updated_key = Key::get(&pool, "key1").await?;
 
-    assert_eq!(new_desc, updated_key.description);
+    assert_eq!(new_desc, updated_key.description.unwrap());
 
     Ok(())
 }

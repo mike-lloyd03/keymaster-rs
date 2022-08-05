@@ -17,10 +17,10 @@ CREATE TABLE users (
 CREATE TABLE assignments (
 	id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
 	"user" VARCHAR NOT NULL, 
-	"key" VARCHAR NOT NULL, 
+	key VARCHAR NOT NULL, 
 	date_out DATE NOT NULL, 
 	date_in DATE, 
-    UNIQUE("user","key"),
-	FOREIGN KEY("key") REFERENCES keys (name), 
+    UNIQUE("user",key),
+	FOREIGN KEY(key) REFERENCES keys (name), 
 	FOREIGN KEY("user") REFERENCES users (username)
 );

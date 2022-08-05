@@ -3,12 +3,12 @@ use anyhow::Result;
 
 use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
 
-#[derive(Debug, Default, PartialEq, FromRow)]
+#[derive(Debug, PartialEq, FromRow)]
 pub struct Assignment {
-    id: i64,
+    id: i32,
     pub user: String,
     pub key: String,
-    pub date_out: Option<time::Date>,
+    pub date_out: time::Date,
     pub date_in: Option<time::Date>,
 }
 
@@ -19,13 +19,14 @@ impl Assignment {
         key: &Key,
         date_out: time::Date,
     ) -> Result<Self, sqlx::Error> {
-        let q = "INSERT INTO assignments (\"user\", key, date_out) VALUES ($1, $2, $3)";
-        query(q)
-            .bind(user.clone().username)
-            .bind(key.clone().name)
-            .bind(date_out)
-            .execute(pool)
-            .await?;
+        query!(
+            r#"INSERT INTO assignments ("user", key, date_out) VALUES ($1, $2, $3)"#,
+            user.username,
+            key.name,
+            date_out,
+        )
+        .execute(pool)
+        .await?;
 
         Self::get_by_user_key(pool, user, key).await
     }
@@ -35,11 +36,19 @@ impl Assignment {
         user: &User,
         key: &Key,
     ) -> Result<Self, sqlx::Error> {
-        query_as(
-            "SELECT id, \"user\", key, date_out, date_in FROM assignments WHERE \"user\" = $1 AND key = $2",
+        query_as!(
+            Self,
+            r#"SELECT
+                id,
+                "user",
+                key,
+                date_out,
+                date_in as "date_in?"
+            FROM assignments
+            WHERE "user" = $1 AND key = $2"#,
+            user.username,
+            key.name
         )
-        .bind(user.clone().username)
-        .bind(key.clone().name)
         .fetch_one(pool)
         .await
     }
@@ -50,15 +59,25 @@ impl Assignment {
         date: time::Date,
     ) -> Result<PgQueryResult, sqlx::Error> {
         self.date_in = Some(date);
-        let q = "UPDATE assignments SET date_in = $1 WHERE id = $2";
 
-        query(q).bind(Some(date)).bind(&self.id).execute(pool).await
+        query!(
+            r#"UPDATE assignments SET date_in = $1 WHERE "user" = $2 AND key = $3"#,
+            date,
+            self.user,
+            self.key,
+        )
+        .execute(pool)
+        .await
     }
 
     pub async fn delete(&self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
-        let q = "DELETE FROM assignments WHERE id = $1";
-
-        query(q).bind(&self.id).execute(pool).await
+        query!(
+            r#"DELETE FROM assignments WHERE "user" = $1 AND key = $2"#,
+            self.user,
+            self.key
+        )
+        .execute(pool)
+        .await
     }
 }
 
@@ -83,7 +102,7 @@ async fn get_assignment(pool: PgPool) -> Result<()> {
 
     assert_eq!("user1", assgn1.user);
     assert_eq!("key1", assgn1.key);
-    assert_eq!(Some(date_out), assgn1.date_out);
+    assert_eq!(date_out, assgn1.date_out);
     assert_eq!(None, assgn1.date_in);
 
     Ok(())
@@ -97,9 +116,9 @@ async fn check_in_assignment(pool: PgPool) -> Result<()> {
 
     let mut assgn1 = Assignment::get_by_user_key(&pool, &user1, &key1).await?;
     assgn1.check_in(&pool, date_in).await?;
-    assgn1 = Assignment::get_by_user_key(&pool, &user1, &key1).await?;
+    let assgn2 = Assignment::get_by_user_key(&pool, &user1, &key1).await?;
 
-    assert_eq!(date_in, assgn1.date_in.unwrap());
+    assert_eq!(date_in, assgn2.date_in.unwrap());
 
     Ok(())
 }

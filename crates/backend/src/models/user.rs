@@ -5,9 +5,9 @@ use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
 pub struct User {
     pub id: i64,
     pub username: String,
-    pub display_name: String,
+    pub display_name: Option<String>,
     pub email: String,
-    password_hash: String,
+    password_hash: Option<String>,
     pub can_login: bool,
 }
 
@@ -20,8 +20,7 @@ impl User {
     }
 
     pub async fn get(pool: &PgPool, username: &str) -> Result<Self, sqlx::Error> {
-        query_as("SELECT id, username, display_name, email, password_hash, can_login FROM users WHERE username = $1")
-            .bind(username)
+        query_as!(Self, "SELECT id, username, display_name, email, password_hash, can_login FROM users WHERE username = $1", username)
             .fetch_one(pool)
             .await
     }
@@ -31,43 +30,43 @@ impl User {
         pool: &PgPool,
         password_hash: &str,
     ) -> Result<PgQueryResult, sqlx::Error> {
-        self.password_hash = password_hash.to_string();
-        query("Update users SET password_hash = $1 WHERE id = $1")
-            .bind(&self.id)
+        self.password_hash = Some(password_hash.to_string());
+
+        query!("Update users SET password_hash = $1 WHERE id = $1", self.id)
             .execute(pool)
             .await
     }
 
     pub async fn create(&self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
-        let q = "INSERT INTO users (username, display_name, email, password_hash, can_login) VALUES ($1, $2, $3, $4, $5)";
-
-        query(q)
-            .bind(&self.username)
-            .bind(&self.display_name)
-            .bind(&self.email)
-            .bind(&self.password_hash)
-            .bind(&self.can_login)
-            .execute(pool)
-            .await
+        query!(
+            r#"INSERT INTO users (username, display_name, email, password_hash, can_login)
+            VALUES ($1, $2, $3, $4, $5)"#,
+            self.username,
+            self.display_name,
+            self.email,
+            self.password_hash,
+            self.can_login
+        )
+        .execute(pool)
+        .await
     }
 
     pub async fn update(&self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
-        let q =
-            "UPDATE users SET display_name = $1, email = $2, can_login = $3 WHERE username = $4";
-
-        query(q)
-            .bind(&self.display_name)
-            .bind(&self.email)
-            .bind(&self.can_login)
-            .bind(&self.username)
-            .execute(pool)
-            .await
+        query!(
+            "UPDATE users SET display_name = $1, email = $2, can_login = $3 WHERE username = $4",
+            self.display_name,
+            self.email,
+            self.can_login,
+            self.username
+        )
+        .execute(pool)
+        .await
     }
 
     pub async fn delete(&self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
-        let q = "DELETE FROM users WHERE username = $1";
-
-        query(q).bind(&self.username).execute(pool).await
+        query!("DELETE FROM users WHERE username = $1", self.username)
+            .execute(pool)
+            .await
     }
 }
 
@@ -78,7 +77,7 @@ async fn create_user(pool: PgPool) -> Result<()> {
     let user_email = "user1@email.com";
     let mut user = User::new(username);
     user.email = user_email.to_string();
-    user.display_name = user_display_name.to_string();
+    user.display_name = Some(user_display_name.to_string());
     user.create(&pool).await?;
 
     Ok(())
@@ -89,11 +88,11 @@ async fn get_user(pool: PgPool) -> Result<()> {
     let user = User::get(&pool, "user1").await?;
 
     assert_eq!("user1", user.username);
-    assert_eq!("User Juan", user.display_name);
+    assert_eq!("User Juan", user.display_name.unwrap());
     assert_eq!("user@email.com", user.email);
     assert_eq!(
         "46a9d5bde718bf366178313019f04a753bad00685d38e3ec81c8628f35dfcb1b",
-        user.password_hash
+        user.password_hash.unwrap()
     );
     assert!(!user.can_login);
 
@@ -104,12 +103,12 @@ async fn get_user(pool: PgPool) -> Result<()> {
 async fn update_user(pool: PgPool) -> Result<()> {
     let new_display_name = "User Too";
     let mut user = User::get(&pool, "user1").await?;
-    user.display_name = new_display_name.to_string();
+    user.display_name = Some(new_display_name.to_string());
     user.update(&pool).await?;
 
     let updated_user = User::get(&pool, "user1").await?;
 
-    assert_eq!(new_display_name, updated_user.display_name);
+    assert_eq!(new_display_name, updated_user.display_name.unwrap());
 
     Ok(())
 }
