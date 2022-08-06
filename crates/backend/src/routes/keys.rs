@@ -11,8 +11,8 @@ struct UpdateQuery {
 }
 
 #[get("/keys/{key_name}")]
-async fn get(key_name: web::Path<(String,)>, pool: web::Data<PgPool>) -> impl Responder {
-    match Key::get(&pool, &key_name.into_inner().0).await {
+async fn get(key_name: web::Path<String>, pool: web::Data<PgPool>) -> impl Responder {
+    match Key::get(&pool, &key_name.into_inner()).await {
         Ok(k) => HttpResponse::Ok().json(k),
         Err(e) => match e.to_string() {
             x if x.contains("no rows returned") => HttpResponse::NotFound().json("Key not found"),
@@ -25,9 +25,7 @@ async fn get(key_name: web::Path<(String,)>, pool: web::Data<PgPool>) -> impl Re
 async fn get_all(pool: web::Data<PgPool>) -> impl Responder {
     match Key::get_all(&pool).await {
         Ok(k) => HttpResponse::Ok().json(k),
-        Err(e) => {
-            HttpResponse::InternalServerError().json(format!("Failed to retrieve keys. {}", e))
-        }
+        Err(e) => HttpResponse::InternalServerError().json(format!("Failed to get keys. {}", e)),
     }
 }
 
@@ -52,7 +50,7 @@ async fn update(
 ) -> impl Responder {
     let mut key = match Key::get(&pool, &key_name.into_inner()).await {
         Ok(k) => k,
-        Err(e) => return HttpResponse::NotFound().json(format!("Key not found, {}", e)),
+        Err(_) => return HttpResponse::NotFound().json("Key not found"),
     };
 
     if let Some(d) = &query.description {
@@ -78,6 +76,6 @@ async fn delete(key_name: web::Path<String>, pool: web::Data<PgPool>) -> impl Re
                 HttpResponse::InternalServerError().json(format!("Failed to delete key. {}", e))
             }
         },
-        Err(e) => HttpResponse::NotFound().json(format!("Failed to retrieve key. {}", e)),
+        Err(_) => HttpResponse::NotFound().json("Failed to get key"),
     }
 }

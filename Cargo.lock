@@ -1612,6 +1612,7 @@ dependencies = [
  "js-sys",
  "libc",
  "num_threads",
+ "serde",
  "time-macros",
 ]
 

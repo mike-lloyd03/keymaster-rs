@@ -25,6 +25,12 @@ async fn main() -> std::io::Result<()> {
             .service(routes::users::update)
             .service(routes::users::create)
             .service(routes::users::delete)
+            .service(routes::users::set_password)
+            .service(routes::assignments::get)
+            .service(routes::assignments::get_all)
+            .service(routes::assignments::update)
+            .service(routes::assignments::create)
+            .service(routes::assignments::delete)
             .app_data(Data::new(pool.clone()))
     })
     .bind(("127.0.0.1", 8081))?

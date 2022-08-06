@@ -1,9 +1,10 @@
 use crate::models::{Key, User};
 use anyhow::Result;
 
+use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
 
-#[derive(Debug, PartialEq, FromRow)]
+#[derive(Debug, PartialEq, FromRow, Serialize, Deserialize)]
 pub struct Assignment {
     id: i64,
     pub user: String,
@@ -13,7 +14,11 @@ pub struct Assignment {
 }
 
 impl Assignment {
-    pub async fn new(
+    pub fn id(&self) -> i64 {
+        self.id
+    }
+
+    pub async fn assign_key(
         pool: &PgPool,
         user: &User,
         key: &Key,
@@ -29,6 +34,17 @@ impl Assignment {
         .await?;
 
         Self::get_by_user_key(pool, user, key).await
+    }
+
+    pub async fn create(&self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
+        query!(
+            r#"INSERT INTO assignments ("user", key, date_out) VALUES ($1, $2, $3)"#,
+            &self.user,
+            &self.key,
+            &self.date_out,
+        )
+        .execute(pool)
+        .await
     }
 
     pub async fn get_by_user_key(
@@ -50,6 +66,55 @@ impl Assignment {
             key.name
         )
         .fetch_one(pool)
+        .await
+    }
+
+    pub async fn get_by_id(pool: &PgPool, id: i64) -> Result<Self, sqlx::Error> {
+        query_as!(
+            Self,
+            r#"SELECT
+                id,
+                "user",
+                key,
+                date_out,
+                date_in as "date_in?"
+            FROM assignments
+            WHERE id = $1"#,
+            id,
+        )
+        .fetch_one(pool)
+        .await
+    }
+
+    pub async fn get_all(pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
+        query_as!(
+            Self,
+            r#"SELECT
+                id,
+                "user",
+                key,
+                date_out,
+                date_in as "date_in?"
+            FROM assignments"#,
+        )
+        .fetch_all(pool)
+        .await
+    }
+
+    pub async fn update(&mut self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
+        if self.id == 0 {
+            return Err(sqlx::Error::RowNotFound);
+        };
+
+        query!(
+            r#"UPDATE assignments SET "user" = $1, key = $2, date_out = $3, date_in = $4 WHERE id = $5"#,
+            self.user,
+            self.key,
+            self.date_out,
+            self.date_in,
+            self.id,
+        )
+        .execute(pool)
         .await
     }
 
@@ -87,7 +152,7 @@ async fn create_assignment(pool: PgPool) -> Result<()> {
     let key1 = Key::get(&pool, "key1").await?;
 
     let date_out = time::Date::from_calendar_date(1988, time::Month::October, 3)?;
-    Assignment::new(&pool, &user1, &key1, date_out).await?;
+    Assignment::assign_key(&pool, &user1, &key1, date_out).await?;
 
     Ok(())
 }

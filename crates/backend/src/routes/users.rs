@@ -11,19 +11,22 @@ struct UpdateQuery {
     can_login: Option<bool>,
 }
 
+#[derive(Deserialize)]
+struct ChangePasswdPayload {
+    new_password: String,
+}
+
 #[get("/users")]
 async fn get_all(pool: web::Data<PgPool>) -> impl Responder {
     match User::get_all(&pool).await {
         Ok(u) => HttpResponse::Ok().json(u),
-        Err(e) => {
-            HttpResponse::InternalServerError().json(format!("Failed to retrieve users. {}", e))
-        }
+        Err(e) => HttpResponse::InternalServerError().json(format!("Failed to get users. {}", e)),
     }
 }
 
 #[get("/users/{username}")]
-async fn get(username: web::Path<(String,)>, pool: web::Data<PgPool>) -> impl Responder {
-    match User::get(&pool, &username.into_inner().0).await {
+async fn get(username: web::Path<String>, pool: web::Data<PgPool>) -> impl Responder {
+    match User::get(&pool, &username.into_inner()).await {
         Ok(k) => HttpResponse::Ok().json(k),
         Err(e) => match e.to_string() {
             x if x.contains("no rows returned") => HttpResponse::NotFound().json("User not found"),
@@ -53,7 +56,7 @@ async fn update(
 ) -> impl Responder {
     let mut user = match User::get(&pool, &username.into_inner()).await {
         Ok(k) => k,
-        Err(e) => return HttpResponse::NotFound().json(format!("User not found, {}", e)),
+        Err(_) => return HttpResponse::NotFound().json("User not found"),
     };
 
     if let Some(d) = &query.display_name {
@@ -83,6 +86,22 @@ async fn delete(username: web::Path<String>, pool: web::Data<PgPool>) -> impl Re
                 HttpResponse::InternalServerError().json(format!("Failed to delete user. {}", e))
             }
         },
-        Err(e) => HttpResponse::NotFound().json(format!("Failed to retrieve user. {}", e)),
+        Err(_) => HttpResponse::NotFound().json("User not found"),
+    }
+}
+
+#[put("/users/{username}/set_password")]
+async fn set_password(
+    username: web::Path<String>,
+    payload: web::Json<ChangePasswdPayload>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    match User::get(&pool, &username.into_inner()).await {
+        Ok(mut u) => match u.set_password(&pool, &payload.new_password).await {
+            Ok(_) => HttpResponse::Ok().json(format!("Password updated for user '{}'", u.username)),
+            Err(e) => HttpResponse::InternalServerError()
+                .json(format!("Failed to update password. {}", e)),
+        },
+        Err(_) => HttpResponse::NotFound().json("User not found"),
     }
 }
