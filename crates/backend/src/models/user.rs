@@ -32,9 +32,31 @@ impl User {
     ) -> Result<PgQueryResult, sqlx::Error> {
         self.password_hash = Some(password_hash.to_string());
 
-        query!("Update users SET password_hash = $1 WHERE id = $1", self.id)
-            .execute(pool)
-            .await
+        query!(
+            "Update users SET password_hash = $1 WHERE username = $2",
+            password_hash,
+            self.username
+        )
+        .execute(pool)
+        .await
+    }
+
+    pub async fn validate_password(
+        &self,
+        pool: &PgPool,
+        password_hash: &str,
+    ) -> Result<bool, sqlx::Error> {
+        let db_hash = sqlx::query_scalar!(
+            r#"SELECT password_hash FROM users WHERE username = $1"#,
+            self.username,
+        )
+        .fetch_one(pool)
+        .await?;
+
+        match db_hash {
+            Some(h) => Ok(h == password_hash),
+            None => Ok(false),
+        }
     }
 
     pub async fn create(&self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
@@ -124,6 +146,32 @@ async fn delete_user(pool: PgPool) -> Result<()> {
         .await?;
 
     assert_eq!(res.rows_affected(), 0);
+
+    Ok(())
+}
+
+#[sqlx::test(fixtures("users"))]
+async fn set_password(pool: PgPool) -> Result<()> {
+    let mut user = User::get(&pool, "userNoPass").await?;
+    let pw_hash = "9305f590c0cb3fc7b81ecb2a948b759d036fa34dc60d63a2e0b1edcc7caca133";
+    user.set_password(&pool, pw_hash).await?;
+
+    user = User::get(&pool, "userNoPass").await?;
+
+    assert_eq!(pw_hash, user.password_hash.unwrap());
+
+    Ok(())
+}
+
+#[sqlx::test(fixtures("users"))]
+async fn validate_password(pool: PgPool) -> Result<()> {
+    let user = User::get(&pool, "user1").await?;
+    let good_hash = "46a9d5bde718bf366178313019f04a753bad00685d38e3ec81c8628f35dfcb1b";
+    let bad_hash = "3d665bf9e919bbeba9101557048c61868e90ceabf8a94d30e9e02832acfc831e";
+
+    assert!(user.validate_password(&pool, good_hash).await?);
+    assert!(!user.validate_password(&pool, bad_hash).await?);
+    assert!(!user.validate_password(&pool, "").await?);
 
     Ok(())
 }

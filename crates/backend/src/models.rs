@@ -1,3 +1,9 @@
+use std::{env, process::exit};
+
+use anyhow::Result;
+use dotenvy::dotenv;
+use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
+
 mod assignment;
 mod key;
 mod user;
@@ -5,6 +11,33 @@ mod user;
 pub use assignment::Assignment;
 pub use key::Key;
 pub use user::User;
+
+pub async fn db() -> Result<Pool<Postgres>> {
+    dotenv()?;
+    let db_url = match env::var("DATABASE_URL") {
+        // Ok(u) => format!("{}_test", u),
+        Ok(u) => u,
+        Err(e) => {
+            eprintln!("Failed to get DATABASE_URL variable. {}", e);
+            exit(1);
+        }
+    };
+
+    // if sqlx::Postgres::database_exists(database_url).await? {
+    //     sqlx::Postgres::drop_database(database_url).await?;
+    // }
+    // sqlx::Postgres::create_database(database_url).await?;
+
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(&db_url)
+        .await?;
+
+    let migrator = sqlx::migrate!();
+    migrator.run(&pool).await?;
+
+    Ok(pool)
+}
 
 // #[sqlx_macros::test]
 // async fn test_connection() -> anyhow::Result<()> {

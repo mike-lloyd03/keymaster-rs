@@ -1,8 +1,8 @@
 use anyhow::Result;
-
+use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
 
-#[derive(Debug, Default, PartialEq, Clone, FromRow)]
+#[derive(Debug, Default, PartialEq, Clone, FromRow, Serialize, Deserialize)]
 pub struct Key {
     pub name: String,
     pub description: Option<String>,
@@ -26,6 +26,12 @@ impl Key {
         )
         .fetch_one(pool)
         .await
+    }
+
+    pub async fn get_all(pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
+        query_as!(Self, "SELECT name, description, active FROM keys")
+            .fetch_all(pool)
+            .await
     }
 
     pub async fn create(&self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {

@@ -1,11 +1,11 @@
-use crate::{Key, User};
+use crate::models::{Key, User};
 use anyhow::Result;
 
 use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
 
 #[derive(Debug, PartialEq, FromRow)]
 pub struct Assignment {
-    id: i32,
+    id: i64,
     pub user: String,
     pub key: String,
     pub date_out: time::Date,
