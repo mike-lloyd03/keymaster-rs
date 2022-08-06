@@ -6,7 +6,12 @@ use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
 pub struct Key {
     pub name: String,
     pub description: Option<String>,
-    active: bool,
+    #[serde(default = "_default_true")]
+    pub active: bool,
+}
+
+fn _default_true() -> bool {
+    true
 }
 
 impl Key {

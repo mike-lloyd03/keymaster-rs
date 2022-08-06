@@ -15,7 +15,16 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
-            .service(routes::get_keys)
+            .service(routes::keys::get)
+            .service(routes::keys::get_all)
+            .service(routes::keys::update)
+            .service(routes::keys::create)
+            .service(routes::keys::delete)
+            .service(routes::users::get)
+            .service(routes::users::get_all)
+            .service(routes::users::update)
+            .service(routes::users::create)
+            .service(routes::users::delete)
             .app_data(Data::new(pool.clone()))
     })
     .bind(("127.0.0.1", 8081))?

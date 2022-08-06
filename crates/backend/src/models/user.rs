@@ -1,14 +1,21 @@
 use anyhow::Result;
-
+use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
-#[derive(Debug, Default, PartialEq, Clone, FromRow)]
+
+#[derive(Debug, Default, PartialEq, Clone, FromRow, Serialize, Deserialize)]
 pub struct User {
+    #[serde(skip_deserializing)]
     pub id: i64,
     pub username: String,
     pub display_name: Option<String>,
-    pub email: String,
+    pub email: Option<String>,
     password_hash: Option<String>,
+    #[serde(default = "_default_false")]
     pub can_login: bool,
+}
+
+fn _default_false() -> bool {
+    false
 }
 
 impl User {
@@ -20,9 +27,18 @@ impl User {
     }
 
     pub async fn get(pool: &PgPool, username: &str) -> Result<Self, sqlx::Error> {
-        query_as!(Self, "SELECT id, username, display_name, email, password_hash, can_login FROM users WHERE username = $1", username)
+        query_as!(Self, r#"SELECT id, username, display_name, email, password_hash, can_login FROM users WHERE username = $1"#, username)
             .fetch_one(pool)
             .await
+    }
+
+    pub async fn get_all(pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
+        query_as!(
+            Self,
+            r#"SELECT id, username, display_name, email, password_hash, can_login FROM users"#
+        )
+        .fetch_all(pool)
+        .await
     }
 
     pub async fn set_password(
@@ -46,14 +62,7 @@ impl User {
         pool: &PgPool,
         password_hash: &str,
     ) -> Result<bool, sqlx::Error> {
-        let db_hash = sqlx::query_scalar!(
-            r#"SELECT password_hash FROM users WHERE username = $1"#,
-            self.username,
-        )
-        .fetch_one(pool)
-        .await?;
-
-        match db_hash {
+        match &self.password_hash {
             Some(h) => Ok(h == password_hash),
             None => Ok(false),
         }
@@ -98,7 +107,7 @@ async fn create_user(pool: PgPool) -> Result<()> {
     let user_display_name = "User 1";
     let user_email = "user1@email.com";
     let mut user = User::new(username);
-    user.email = user_email.to_string();
+    user.email = Some(user_email.to_string());
     user.display_name = Some(user_display_name.to_string());
     user.create(&pool).await?;
 
@@ -111,7 +120,7 @@ async fn get_user(pool: PgPool) -> Result<()> {
 
     assert_eq!("user1", user.username);
     assert_eq!("User Juan", user.display_name.unwrap());
-    assert_eq!("user@email.com", user.email);
+    assert_eq!("user@email.com", user.email.unwrap());
     assert_eq!(
         "46a9d5bde718bf366178313019f04a753bad00685d38e3ec81c8628f35dfcb1b",
         user.password_hash.unwrap()
