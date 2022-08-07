@@ -3,7 +3,7 @@ use actix_web::{web::Data, App, HttpServer};
 mod models;
 mod routes;
 
-#[actix_web::main] // or #[tokio::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
     let pool = match models::db().await {
         Ok(p) => p,

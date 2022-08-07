@@ -1,16 +1,41 @@
 use crate::models::{Key, User};
 use anyhow::Result;
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
 
 #[derive(Debug, PartialEq, FromRow, Serialize, Deserialize)]
 pub struct Assignment {
+    #[serde(skip_deserializing)]
     id: i64,
     pub user: String,
     pub key: String,
+    #[serde(deserialize_with = "deserialize_date")]
     pub date_out: time::Date,
+    #[serde(deserialize_with = "deserialize_date_option", default)]
     pub date_in: Option<time::Date>,
+}
+
+pub fn deserialize_date_option<'de, D>(deserializer: D) -> Result<Option<time::Date>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    let format =
+        time::format_description::parse("[year]-[month]-[day]").expect("Improper date format");
+    time::Date::parse(&s, &format)
+        .map(Some)
+        .map_err(serde::de::Error::custom)
+}
+
+pub fn deserialize_date<'de, D>(deserializer: D) -> Result<time::Date, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    let format =
+        time::format_description::parse("[year]-[month]-[day]").expect("Improper date format");
+    time::Date::parse(&s, &format).map_err(serde::de::Error::custom)
 }
 
 impl Assignment {

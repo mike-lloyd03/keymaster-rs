@@ -1,15 +1,28 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use sqlx::PgPool;
 
 use crate::models::Assignment;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct UpdateQuery {
     user: Option<String>,
     key: Option<String>,
+    // #[serde(deserialize_with = "deserialize_date")]
     date_out: Option<time::Date>,
     date_in: Option<time::Date>,
+}
+
+pub fn deserialize_date<'de, D>(deserializer: D) -> Result<Option<time::Date>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    let format =
+        time::format_description::parse("[year]-[month]-[day]").expect("Improper date format");
+    time::Date::parse(&s, &format)
+        .map(Some)
+        .map_err(serde::de::Error::custom)
 }
 
 #[get("/assignments")]
@@ -49,6 +62,14 @@ async fn create(assignment: web::Json<Assignment>, pool: web::Data<PgPool>) -> i
                 "Key '{}' already assigned to {}",
                 assignment.key, assignment.user
             )),
+            x if x.contains("violates foreign key") => match x {
+                y if y.contains("assignments_key_fkey") => HttpResponse::BadRequest()
+                    .json(format!("Key '{}' does not exist.", assignment.key)),
+                y if y.contains("assignments_user_fkey") => HttpResponse::BadRequest()
+                    .json(format!("User '{}' does not exist.", assignment.user)),
+                _ => HttpResponse::InternalServerError()
+                    .json(format!("Failed to create assignment. {}", e)),
+            },
             _ => HttpResponse::InternalServerError()
                 .json(format!("Failed to create assignment. {}", e)),
         },
@@ -65,6 +86,7 @@ async fn update(
         Ok(k) => k,
         Err(_) => return HttpResponse::NotFound().json("Assignment not found"),
     };
+    println!("{:?}", query);
 
     if let Some(u) = &query.user {
         assignment.user = u.to_string()
