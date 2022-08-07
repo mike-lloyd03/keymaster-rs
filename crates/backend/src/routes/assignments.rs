@@ -1,28 +1,17 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
 use sqlx::PgPool;
 
-use crate::models::Assignment;
+use crate::models::{ymd_format_option, Assignment};
 
 #[derive(Deserialize, Debug)]
 struct UpdateQuery {
     user: Option<String>,
     key: Option<String>,
-    // #[serde(deserialize_with = "deserialize_date")]
+    #[serde(with = "ymd_format_option", default)]
     date_out: Option<time::Date>,
+    #[serde(with = "ymd_format_option", default)]
     date_in: Option<time::Date>,
-}
-
-pub fn deserialize_date<'de, D>(deserializer: D) -> Result<Option<time::Date>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-    let format =
-        time::format_description::parse("[year]-[month]-[day]").expect("Improper date format");
-    time::Date::parse(&s, &format)
-        .map(Some)
-        .map_err(serde::de::Error::custom)
 }
 
 #[get("/assignments")]
@@ -79,7 +68,7 @@ async fn create(assignment: web::Json<Assignment>, pool: web::Data<PgPool>) -> i
 #[put("/assignments/{assignment_id}")]
 async fn update(
     assignment_id: web::Path<i64>,
-    query: web::Query<UpdateQuery>,
+    query: web::Json<UpdateQuery>,
     pool: web::Data<PgPool>,
 ) -> impl Responder {
     let mut assignment = match Assignment::get_by_id(&pool, assignment_id.into_inner()).await {

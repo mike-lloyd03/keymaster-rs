@@ -45,7 +45,7 @@ async fn create(key: web::Json<Key>, pool: web::Data<PgPool>) -> impl Responder 
 #[put("/keys/{key_name}")]
 async fn update(
     key_name: web::Path<String>,
-    query: web::Query<UpdateQuery>,
+    query: web::Json<UpdateQuery>,
     pool: web::Data<PgPool>,
 ) -> impl Responder {
     let mut key = match Key::get(&pool, &key_name.into_inner()).await {

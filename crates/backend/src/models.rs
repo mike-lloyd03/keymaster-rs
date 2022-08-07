@@ -39,6 +39,59 @@ pub async fn db() -> Result<Pool<Postgres>> {
     Ok(pool)
 }
 
+mod ymd_format {
+    use serde::{self, Deserialize, Deserializer, Serializer};
+
+    const FORMAT: &str = "[year]-[month]-[day]";
+
+    pub fn serialize<S>(date: &time::Date, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let format = time::format_description::parse(FORMAT).expect("Improper date format");
+        let s = date.format(&format).map_err(serde::ser::Error::custom)?;
+        serializer.serialize_str(&s)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<time::Date, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let format = time::format_description::parse(FORMAT).expect("Improper date format");
+        time::Date::parse(&s, &format).map_err(serde::de::Error::custom)
+    }
+}
+
+pub mod ymd_format_option {
+    use serde::{self, Deserialize, Deserializer, Serializer};
+
+    const FORMAT: &str = "[year]-[month]-[day]";
+
+    pub fn serialize<S>(date: &Option<time::Date>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let format = time::format_description::parse(FORMAT).expect("Improper date format");
+        let s = date
+            .unwrap()
+            .format(&format)
+            .map_err(serde::ser::Error::custom)?;
+        serializer.serialize_str(&s)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<time::Date>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let format = time::format_description::parse(FORMAT).expect("Improper date format");
+        time::Date::parse(&s, &format)
+            .map(Some)
+            .map_err(serde::de::Error::custom)
+    }
+}
+
 // #[sqlx_macros::test]
 // async fn test_connection() -> anyhow::Result<()> {
 //     use sqlx::{Connection, Row};

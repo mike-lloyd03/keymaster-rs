@@ -1,7 +1,7 @@
-use crate::models::{Key, User};
+use crate::models::{ymd_format, ymd_format_option, Key, User};
 use anyhow::Result;
 
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
 
 #[derive(Debug, PartialEq, FromRow, Serialize, Deserialize)]
@@ -10,32 +10,10 @@ pub struct Assignment {
     id: i64,
     pub user: String,
     pub key: String,
-    #[serde(deserialize_with = "deserialize_date")]
+    #[serde(with = "ymd_format")]
     pub date_out: time::Date,
-    #[serde(deserialize_with = "deserialize_date_option", default)]
+    #[serde(with = "ymd_format_option")]
     pub date_in: Option<time::Date>,
-}
-
-pub fn deserialize_date_option<'de, D>(deserializer: D) -> Result<Option<time::Date>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-    let format =
-        time::format_description::parse("[year]-[month]-[day]").expect("Improper date format");
-    time::Date::parse(&s, &format)
-        .map(Some)
-        .map_err(serde::de::Error::custom)
-}
-
-pub fn deserialize_date<'de, D>(deserializer: D) -> Result<time::Date, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-    let format =
-        time::format_description::parse("[year]-[month]-[day]").expect("Improper date format");
-    time::Date::parse(&s, &format).map_err(serde::de::Error::custom)
 }
 
 impl Assignment {
@@ -132,7 +110,13 @@ impl Assignment {
         };
 
         query!(
-            r#"UPDATE assignments SET "user" = $1, key = $2, date_out = $3, date_in = $4 WHERE id = $5"#,
+            r#"UPDATE assignments
+            SET
+                "user" = $1,
+                key = $2,
+                date_out = $3,
+                date_in = $4
+            WHERE id = $5"#,
             self.user,
             self.key,
             self.date_out,

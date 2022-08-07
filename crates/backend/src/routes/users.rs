@@ -51,7 +51,7 @@ async fn create(user: web::Json<User>, pool: web::Data<PgPool>) -> impl Responde
 #[put("/users/{username}")]
 async fn update(
     username: web::Path<String>,
-    query: web::Query<UpdateQuery>,
+    query: web::Json<UpdateQuery>,
     pool: web::Data<PgPool>,
 ) -> impl Responder {
     let mut user = match User::get(&pool, &username.into_inner()).await {
