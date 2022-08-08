@@ -50,7 +50,7 @@ impl User {
         .await
     }
 
-    pub async fn validate_password(&self, password_hash: &str) -> Result<bool, sqlx::Error> {
+    pub fn validate_password(&self, password_hash: &str) -> Result<bool> {
         match &self.password_hash {
             Some(h) => Ok(h == password_hash),
             None => Ok(false),

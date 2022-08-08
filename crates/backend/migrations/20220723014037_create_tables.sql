@@ -24,3 +24,10 @@ CREATE TABLE assignments (
 	FOREIGN KEY(key) REFERENCES keys (name), 
 	FOREIGN KEY("user") REFERENCES users (username)
 );
+
+CREATE TABLE sessions (
+	username VARCHAR(200) PRIMARY KEY,
+	token VARCHAR(200) NOT NULL,
+	created TIMESTAMP DEFAULT NOW(),
+	FOREIGN KEY(username) REFERENCES users (username)
+);
