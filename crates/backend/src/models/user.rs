@@ -178,9 +178,9 @@ mod user_tests {
         let good_hash = "46a9d5bde718bf366178313019f04a753bad00685d38e3ec81c8628f35dfcb1b";
         let bad_hash = "3d665bf9e919bbeba9101557048c61868e90ceabf8a94d30e9e02832acfc831e";
 
-        assert!(user.validate_password(good_hash).await?);
-        assert!(!user.validate_password(bad_hash).await?);
-        assert!(!user.validate_password("").await?);
+        assert!(user.validate_password(good_hash)?);
+        assert!(!user.validate_password(bad_hash)?);
+        assert!(!user.validate_password("")?);
 
         Ok(())
     }

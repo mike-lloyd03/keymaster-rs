@@ -1,18 +1,19 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use chrono::NaiveDate;
 use log::error;
 use serde::Deserialize;
 use sqlx::PgPool;
 
-use crate::models::{ymd_format_option, Assignment};
+use crate::models::Assignment;
 
 #[derive(Deserialize, Debug)]
 struct UpdateQuery {
     user: Option<String>,
     key: Option<String>,
-    #[serde(with = "ymd_format_option", default)]
-    date_out: Option<time::Date>,
-    #[serde(with = "ymd_format_option", default)]
-    date_in: Option<time::Date>,
+    // #[serde(with = "ymd_format_option", default)]
+    date_out: Option<NaiveDate>,
+    // #[serde(with = "ymd_format_option", default)]
+    date_in: Option<NaiveDate>,
 }
 
 #[get("/assignments")]

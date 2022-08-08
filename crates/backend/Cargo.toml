@@ -7,17 +7,17 @@ edition = "2021"
 
 [dependencies]
 sqlx = { version = "0.6.1", features = [
-  "time",
   "migrate",
   "postgres",
   "runtime-actix-rustls",
+  "chrono",
 ] }
 sqlx-rt = { version = "0.6.1", features = ["runtime-actix-rustls"] }
 anyhow = "1.0.58"
 dotenvy = "0.15.1"
-time = { version = "0.3.12", features = ["serde", "parsing"] }
 actix-web = "4.1.0"
 serde = { version = "1.0.142", features = ["derive"] }
 orion = { version = "0.17.1", features = ["serde"] }
 log = "0.4.17"
 env_logger = "0.9.0"
+chrono = { version = "0.4.20", features = ["serde"] }

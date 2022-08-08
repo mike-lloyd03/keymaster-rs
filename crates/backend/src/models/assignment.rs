@@ -1,8 +1,9 @@
-use crate::models::{ymd_format, ymd_format_option};
 use anyhow::Result;
-
+use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
+
+// use crate::models::{ymd_format, ymd_format_option};
 
 #[derive(Debug, PartialEq, FromRow, Serialize, Deserialize)]
 pub struct Assignment {
@@ -10,10 +11,10 @@ pub struct Assignment {
     id: i64,
     pub user: String, // Foreign key to User::username
     pub key: String,  // Foreign key to Key::name
-    #[serde(with = "ymd_format")]
-    pub date_out: time::Date,
-    #[serde(with = "ymd_format_option")]
-    pub date_in: Option<time::Date>,
+    // #[serde(with = "ymd_format")]
+    pub date_out: NaiveDate,
+    // #[serde(with = "ymd_format_option")]
+    pub date_in: Option<NaiveDate>,
 }
 
 impl Assignment {
@@ -90,7 +91,7 @@ impl Assignment {
     pub async fn check_in(
         &mut self,
         pool: &PgPool,
-        date: time::Date,
+        date: NaiveDate,
     ) -> Result<PgQueryResult, sqlx::Error> {
         self.date_in = Some(date);
 
@@ -119,6 +120,7 @@ impl Assignment {
 mod assignment_tests {
     use crate::models::{Assignment, Key, User};
     use anyhow::Result;
+    use chrono::NaiveDate;
     use sqlx::{query, PgPool};
 
     #[sqlx::test(fixtures("users", "keys"))]
@@ -126,7 +128,7 @@ mod assignment_tests {
         let user1 = User::get(&pool, "user1").await?;
         let key1 = Key::get(&pool, "key1").await?;
 
-        let date_out = time::Date::from_calendar_date(1988, time::Month::October, 3)?;
+        let date_out = NaiveDate::from_ymd(1988, 10, 3);
         let a = Assignment {
             id: 0,
             user: user1.username,
@@ -141,7 +143,7 @@ mod assignment_tests {
 
     #[sqlx::test(fixtures("users", "keys", "assignments"))]
     async fn get_assignment(pool: PgPool) -> Result<()> {
-        let date_out = time::Date::from_calendar_date(1988, time::Month::October, 3)?;
+        let date_out = NaiveDate::from_ymd(1988, 10, 3);
         let assgn1 = Assignment::get(&pool, 1).await?;
 
         assert_eq!("user1", assgn1.user);
@@ -154,7 +156,7 @@ mod assignment_tests {
 
     #[sqlx::test(fixtures("users", "keys", "assignments"))]
     async fn check_in_assignment(pool: PgPool) -> Result<()> {
-        let date_in = time::Date::from_calendar_date(1988, time::Month::November, 3)?;
+        let date_in = NaiveDate::from_ymd(1988, 11, 3);
         let mut assgn1 = Assignment::get(&pool, 1).await?;
         assgn1.check_in(&pool, date_in).await?;
         let assgn2 = Assignment::get(&pool, 1).await?;
