@@ -1,5 +1,11 @@
-use actix_session::CookieSession;
-use actix_web::{middleware::Logger, middleware::NormalizePath, web::Data, App, HttpServer};
+use actix_session::{storage::CookieSessionStore, SessionMiddleware};
+use actix_web::{
+    cookie::{Key, SameSite},
+    middleware::Logger,
+    middleware::NormalizePath,
+    web::Data,
+    App, HttpServer,
+};
 
 mod models;
 mod routes;
@@ -7,6 +13,9 @@ mod routes;
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
+
+    // TODO: Fix this
+    let secret_key = Key::generate();
 
     let pool = match models::db().await {
         Ok(p) => p,
@@ -20,7 +29,13 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(NormalizePath::trim())
             .wrap(Logger::default())
-            .wrap(CookieSession::signed(&[0; 32]).secure(false))
+            .wrap(
+                SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
+                    .cookie_secure(false) // TODO: set env specific
+                    .cookie_http_only(false)
+                    .cookie_same_site(SameSite::Strict)
+                    .build(),
+            )
             .service(routes::keys::get)
             .service(routes::keys::get_all)
             .service(routes::keys::update)

@@ -179,7 +179,7 @@ mod user_tests {
     }
 
     #[sqlx::test(fixtures("users"))]
-    async fn validate_password(pool: PgPool) -> Result<()> {
+    async fn test_validate_password(pool: PgPool) -> Result<()> {
         let user = User::get(&pool, "user1").await?;
         let good_hash = "46a9d5bde718bf366178313019f04a753bad00685d38e3ec81c8628f35dfcb1b";
         let bad_hash = "3d665bf9e919bbeba9101557048c61868e90ceabf8a94d30e9e02832acfc831e";
