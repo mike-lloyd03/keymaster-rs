@@ -1,4 +1,5 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use log::error;
 use serde::Deserialize;
 use sqlx::PgPool;
 
@@ -19,21 +20,25 @@ async fn get_all(pool: web::Data<PgPool>) -> impl Responder {
     match Assignment::get_all(&pool).await {
         Ok(a) => HttpResponse::Ok().json(a),
         Err(e) => {
-            HttpResponse::InternalServerError().json(format!("Failed to get assignments. {}", e))
+            error!("Failed to get assignments. {}", e);
+            HttpResponse::InternalServerError().json("Failed to get assignments.")
         }
     }
 }
 
 #[get("/assignments/{assignment_id}")]
 async fn get(assignment_id: web::Path<i64>, pool: web::Data<PgPool>) -> impl Responder {
-    match Assignment::get_by_id(&pool, assignment_id.into_inner()).await {
+    let assignment_id = assignment_id.into_inner();
+
+    match Assignment::get(&pool, assignment_id).await {
         Ok(a) => HttpResponse::Ok().json(a),
         Err(e) => match e.to_string() {
             x if x.contains("no rows returned") => {
                 HttpResponse::NotFound().json("Assignment not found")
             }
             _ => {
-                HttpResponse::InternalServerError().json(format!("Failed to get assignment. {}", e))
+                error!("Failed to get assignment '{}'. {}", assignment_id, e);
+                HttpResponse::InternalServerError().json("Failed to get assignment.")
             }
         },
     }
@@ -56,11 +61,15 @@ async fn create(assignment: web::Json<Assignment>, pool: web::Data<PgPool>) -> i
                     .json(format!("Key '{}' does not exist.", assignment.key)),
                 y if y.contains("assignments_user_fkey") => HttpResponse::BadRequest()
                     .json(format!("User '{}' does not exist.", assignment.user)),
-                _ => HttpResponse::InternalServerError()
-                    .json(format!("Failed to create assignment. {}", e)),
+                _ => {
+                    error!("Foreign key error. {}", e);
+                    HttpResponse::InternalServerError().json("Failed to create assignment")
+                }
             },
-            _ => HttpResponse::InternalServerError()
-                .json(format!("Failed to create assignment. {}", e)),
+            _ => {
+                error!("Failed to create assignment. {}", e);
+                HttpResponse::InternalServerError().json("Failed to create assignment")
+            }
         },
     }
 }
@@ -71,11 +80,15 @@ async fn update(
     query: web::Json<UpdateQuery>,
     pool: web::Data<PgPool>,
 ) -> impl Responder {
-    let mut assignment = match Assignment::get_by_id(&pool, assignment_id.into_inner()).await {
+    let assignment_id = assignment_id.into_inner();
+
+    let mut assignment = match Assignment::get(&pool, assignment_id).await {
         Ok(k) => k,
-        Err(_) => return HttpResponse::NotFound().json("Assignment not found"),
+        Err(e) => {
+            error!("Assignment '{}' not found. {}", assignment_id, e);
+            return HttpResponse::NotFound().json("Assignment not found");
+        }
     };
-    println!("{:?}", query);
 
     if let Some(u) = &query.user {
         assignment.user = u.to_string()
@@ -96,18 +109,21 @@ async fn update(
     match assignment.update(&pool).await {
         Ok(_) => HttpResponse::Ok().json(assignment),
         Err(e) => {
-            HttpResponse::InternalServerError().json(format!("Failed to update assignment. {}", e))
+            error!("Failed to update assignment. {}", e);
+            HttpResponse::InternalServerError().json("Failed to update assignment.")
         }
     }
 }
 
 #[delete("/assignments/{assignment_id}")]
 async fn delete(assignment_id: web::Path<i64>, pool: web::Data<PgPool>) -> impl Responder {
-    match Assignment::get_by_id(&pool, assignment_id.into_inner()).await {
+    match Assignment::get(&pool, assignment_id.into_inner()).await {
         Ok(a) => match a.delete(&pool).await {
             Ok(_) => HttpResponse::Ok().json(format!("Deleted assignment '{}'", a.id())),
-            Err(e) => HttpResponse::InternalServerError()
-                .json(format!("Failed to delete assignment. {}", e)),
+            Err(e) => {
+                error!("Failed to delete assignment. {}", e);
+                HttpResponse::InternalServerError().json("Failed to delete assignment.")
+            }
         },
         Err(_) => HttpResponse::NotFound().json("Assignment not found"),
     }

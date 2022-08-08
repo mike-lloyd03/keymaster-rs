@@ -1,4 +1,5 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use log::error;
 use serde::Deserialize;
 use sqlx::PgPool;
 
@@ -12,11 +13,15 @@ struct UpdateQuery {
 
 #[get("/keys/{key_name}")]
 async fn get(key_name: web::Path<String>, pool: web::Data<PgPool>) -> impl Responder {
-    match Key::get(&pool, &key_name.into_inner()).await {
+    let key_name = key_name.into_inner();
+    match Key::get(&pool, &key_name).await {
         Ok(k) => HttpResponse::Ok().json(k),
         Err(e) => match e.to_string() {
             x if x.contains("no rows returned") => HttpResponse::NotFound().json("Key not found"),
-            _ => HttpResponse::InternalServerError().json(format!("Failed to get key. {}", e)),
+            _ => {
+                error!("Failed to get key '{}'. {}", key_name, e);
+                HttpResponse::InternalServerError().json(format!("Failed to get key. {}", e))
+            }
         },
     }
 }
@@ -25,7 +30,10 @@ async fn get(key_name: web::Path<String>, pool: web::Data<PgPool>) -> impl Respo
 async fn get_all(pool: web::Data<PgPool>) -> impl Responder {
     match Key::get_all(&pool).await {
         Ok(k) => HttpResponse::Ok().json(k),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Failed to get keys. {}", e)),
+        Err(e) => {
+            error!("Failed to get keys. {}", e);
+            HttpResponse::InternalServerError().json("Failed to get keys. {}")
+        }
     }
 }
 
@@ -37,7 +45,10 @@ async fn create(key: web::Json<Key>, pool: web::Data<PgPool>) -> impl Responder 
             x if x.contains("duplicate key") => {
                 HttpResponse::BadRequest().json(format!("Key '{}' already exists.", key.name))
             }
-            _ => HttpResponse::InternalServerError().json(format!("Failed to create key. {}", e)),
+            _ => {
+                error!("Failed to create key. {}", e);
+                HttpResponse::InternalServerError().json("Failed to create key. {}")
+            }
         },
     }
 }
@@ -48,9 +59,14 @@ async fn update(
     query: web::Json<UpdateQuery>,
     pool: web::Data<PgPool>,
 ) -> impl Responder {
-    let mut key = match Key::get(&pool, &key_name.into_inner()).await {
+    let key_name = &key_name.into_inner();
+
+    let mut key = match Key::get(&pool, key_name).await {
         Ok(k) => k,
-        Err(_) => return HttpResponse::NotFound().json("Key not found"),
+        Err(e) => {
+            error!("Key '{}' not found. {}", key_name, e);
+            return HttpResponse::NotFound().json("Key not found");
+        }
     };
 
     if let Some(d) = &query.description {
@@ -63,7 +79,10 @@ async fn update(
 
     match key.update(&pool).await {
         Ok(_) => HttpResponse::Ok().json(key),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Failed to update key. {}", e)),
+        Err(e) => {
+            error!("Failed to update key. {}", e);
+            HttpResponse::InternalServerError().json("Failed to update key.")
+        }
     }
 }
 
@@ -73,9 +92,10 @@ async fn delete(key_name: web::Path<String>, pool: web::Data<PgPool>) -> impl Re
         Ok(k) => match k.delete(&pool).await {
             Ok(_) => HttpResponse::Ok().json(format!("Deleted key '{}'", k.name)),
             Err(e) => {
-                HttpResponse::InternalServerError().json(format!("Failed to delete key. {}", e))
+                error!("Failed to delete key. {}", e);
+                HttpResponse::InternalServerError().json("Failed to delete key.")
             }
         },
-        Err(_) => HttpResponse::NotFound().json("Failed to get key"),
+        Err(_) => HttpResponse::NotFound().json("Key not found."),
     }
 }

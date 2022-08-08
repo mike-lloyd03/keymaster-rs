@@ -1,4 +1,5 @@
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use log::error;
 use serde::Deserialize;
 use sqlx::PgPool;
 
@@ -20,17 +21,27 @@ struct ChangePasswdPayload {
 async fn get_all(pool: web::Data<PgPool>) -> impl Responder {
     match User::get_all(&pool).await {
         Ok(u) => HttpResponse::Ok().json(u),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Failed to get users. {}", e)),
+        Err(e) => {
+            error!("Failed to get users. {}", e);
+            HttpResponse::InternalServerError().json("Failed to get users.")
+        }
     }
 }
 
 #[get("/users/{username}")]
 async fn get(username: web::Path<String>, pool: web::Data<PgPool>) -> impl Responder {
-    match User::get(&pool, &username.into_inner()).await {
+    let username = &username.into_inner();
+    match User::get(&pool, username).await {
         Ok(k) => HttpResponse::Ok().json(k),
         Err(e) => match e.to_string() {
-            x if x.contains("no rows returned") => HttpResponse::NotFound().json("User not found"),
-            _ => HttpResponse::InternalServerError().json(format!("Failed to get user. {}", e)),
+            x if x.contains("no rows returned") => {
+                error!("User '{}' not found.", username);
+                HttpResponse::NotFound().json("User not found.")
+            }
+            _ => {
+                error!("Failed to get user '{}'. {}", username, e);
+                HttpResponse::InternalServerError().json("Failed to get user.")
+            }
         },
     }
 }
@@ -43,7 +54,10 @@ async fn create(user: web::Json<User>, pool: web::Data<PgPool>) -> impl Responde
             x if x.contains("duplicate key") => {
                 HttpResponse::BadRequest().json(format!("User '{}' already exists.", user.username))
             }
-            _ => HttpResponse::InternalServerError().json(format!("Failed to create user. {}", e)),
+            _ => {
+                error!("Failed to create user '{}'. {}", user.username, e);
+                HttpResponse::InternalServerError().json("Failed to create user.")
+            }
         },
     }
 }
@@ -54,9 +68,14 @@ async fn update(
     query: web::Json<UpdateQuery>,
     pool: web::Data<PgPool>,
 ) -> impl Responder {
-    let mut user = match User::get(&pool, &username.into_inner()).await {
+    let username = &username.into_inner();
+
+    let mut user = match User::get(&pool, username).await {
         Ok(k) => k,
-        Err(_) => return HttpResponse::NotFound().json("User not found"),
+        Err(e) => {
+            error!("User '{}' not found. {}", username, e);
+            return HttpResponse::NotFound().json("User not found");
+        }
     };
 
     if let Some(d) = &query.display_name {
@@ -73,7 +92,10 @@ async fn update(
 
     match user.update(&pool).await {
         Ok(_) => HttpResponse::Ok().json(user),
-        Err(e) => HttpResponse::InternalServerError().json(format!("Failed to update user. {}", e)),
+        Err(e) => {
+            error!("Failed to update user. {}", e);
+            HttpResponse::InternalServerError().json("Failed to update user.")
+        }
     }
 }
 
@@ -83,7 +105,8 @@ async fn delete(username: web::Path<String>, pool: web::Data<PgPool>) -> impl Re
         Ok(u) => match u.delete(&pool).await {
             Ok(_) => HttpResponse::Ok().json(format!("Deleted user '{}'", u.username)),
             Err(e) => {
-                HttpResponse::InternalServerError().json(format!("Failed to delete user. {}", e))
+                error!("Failed to delete user. {}", e);
+                HttpResponse::InternalServerError().json("Failed to delete user.")
             }
         },
         Err(_) => HttpResponse::NotFound().json("User not found"),
@@ -99,8 +122,10 @@ async fn set_password(
     match User::get(&pool, &username.into_inner()).await {
         Ok(mut u) => match u.set_password(&pool, &payload.new_password).await {
             Ok(_) => HttpResponse::Ok().json(format!("Password updated for user '{}'", u.username)),
-            Err(e) => HttpResponse::InternalServerError()
-                .json(format!("Failed to update password. {}", e)),
+            Err(e) => {
+                error!("Failed to update password. {}", e);
+                HttpResponse::InternalServerError().json("Failed to update password.")
+            }
         },
         Err(_) => HttpResponse::NotFound().json("User not found"),
     }

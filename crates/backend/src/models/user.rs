@@ -19,13 +19,6 @@ fn _default_false() -> bool {
 }
 
 impl User {
-    pub fn new(username: &str) -> Self {
-        User {
-            username: username.to_string(),
-            ..Default::default()
-        }
-    }
-
     pub async fn get(pool: &PgPool, username: &str) -> Result<Self, sqlx::Error> {
         query_as!(Self, r#"SELECT id, username, display_name, email, password_hash, can_login FROM users WHERE username = $1"#, username)
             .fetch_one(pool)
@@ -57,11 +50,7 @@ impl User {
         .await
     }
 
-    pub async fn validate_password(
-        &self,
-        pool: &PgPool,
-        password_hash: &str,
-    ) -> Result<bool, sqlx::Error> {
+    pub async fn validate_password(&self, password_hash: &str) -> Result<bool, sqlx::Error> {
         match &self.password_hash {
             Some(h) => Ok(h == password_hash),
             None => Ok(false),
@@ -101,86 +90,98 @@ impl User {
     }
 }
 
-#[sqlx::test()]
-async fn create_user(pool: PgPool) -> Result<()> {
-    let username = "user1";
-    let user_display_name = "User 1";
-    let user_email = "user1@email.com";
-    let mut user = User::new(username);
-    user.email = Some(user_email.to_string());
-    user.display_name = Some(user_display_name.to_string());
-    user.create(&pool).await?;
+#[cfg(test)]
+mod user_tests {
+    use crate::models::User;
+    use anyhow::Result;
+    use sqlx::{query, PgPool};
 
-    Ok(())
-}
+    #[sqlx::test()]
+    async fn create_user(pool: PgPool) -> Result<()> {
+        let username = "user1";
+        let display_name = "User 1";
+        let email = "user1@email.com";
+        let mut user = User {
+            username: username.to_string(),
+            display_name: Some(display_name.to_string()),
+            email: Some(email.to_string()),
+            ..Default::default()
+        };
+        user.email = Some(email.to_string());
+        user.display_name = Some(display_name.to_string());
+        user.create(&pool).await?;
 
-#[sqlx::test(fixtures("users"))]
-async fn get_user(pool: PgPool) -> Result<()> {
-    let user = User::get(&pool, "user1").await?;
+        Ok(())
+    }
 
-    assert_eq!("user1", user.username);
-    assert_eq!("User Juan", user.display_name.unwrap());
-    assert_eq!("user@email.com", user.email.unwrap());
-    assert_eq!(
-        "46a9d5bde718bf366178313019f04a753bad00685d38e3ec81c8628f35dfcb1b",
-        user.password_hash.unwrap()
-    );
-    assert!(!user.can_login);
+    #[sqlx::test(fixtures("users"))]
+    async fn get_user(pool: PgPool) -> Result<()> {
+        let user = User::get(&pool, "user1").await?;
 
-    Ok(())
-}
+        assert_eq!("user1", user.username);
+        assert_eq!("User Juan", user.display_name.unwrap());
+        assert_eq!("user@email.com", user.email.unwrap());
+        assert_eq!(
+            "46a9d5bde718bf366178313019f04a753bad00685d38e3ec81c8628f35dfcb1b",
+            user.password_hash.unwrap()
+        );
+        assert!(!user.can_login);
 
-#[sqlx::test(fixtures("users"))]
-async fn update_user(pool: PgPool) -> Result<()> {
-    let new_display_name = "User Too";
-    let mut user = User::get(&pool, "user1").await?;
-    user.display_name = Some(new_display_name.to_string());
-    user.update(&pool).await?;
+        Ok(())
+    }
 
-    let updated_user = User::get(&pool, "user1").await?;
+    #[sqlx::test(fixtures("users"))]
+    async fn update_user(pool: PgPool) -> Result<()> {
+        let new_display_name = "User Too";
+        let mut user = User::get(&pool, "user1").await?;
+        user.display_name = Some(new_display_name.to_string());
+        user.update(&pool).await?;
 
-    assert_eq!(new_display_name, updated_user.display_name.unwrap());
+        let updated_user = User::get(&pool, "user1").await?;
 
-    Ok(())
-}
+        assert_eq!(new_display_name, updated_user.display_name.unwrap());
 
-#[sqlx::test(fixtures("users"))]
-async fn delete_user(pool: PgPool) -> Result<()> {
-    let user = User::get(&pool, "user1").await?;
-    user.delete(&pool).await?;
+        Ok(())
+    }
 
-    let res = query("SELECT * FROM users WHERE username = $1")
-        .bind(user.username)
-        .execute(&pool)
-        .await?;
+    #[sqlx::test(fixtures("users"))]
+    async fn delete_user(pool: PgPool) -> Result<()> {
+        let user = User::get(&pool, "user1").await?;
+        user.delete(&pool).await?;
 
-    assert_eq!(res.rows_affected(), 0);
+        let res = query("SELECT * FROM users WHERE username = $1")
+            .bind(user.username)
+            .execute(&pool)
+            .await?;
 
-    Ok(())
-}
+        assert_eq!(res.rows_affected(), 0);
 
-#[sqlx::test(fixtures("users"))]
-async fn set_password(pool: PgPool) -> Result<()> {
-    let mut user = User::get(&pool, "userNoPass").await?;
-    let pw_hash = "9305f590c0cb3fc7b81ecb2a948b759d036fa34dc60d63a2e0b1edcc7caca133";
-    user.set_password(&pool, pw_hash).await?;
+        Ok(())
+    }
 
-    user = User::get(&pool, "userNoPass").await?;
+    #[sqlx::test(fixtures("users"))]
+    async fn set_password(pool: PgPool) -> Result<()> {
+        let mut user = User::get(&pool, "userNoPass").await?;
+        let pw_hash = "9305f590c0cb3fc7b81ecb2a948b759d036fa34dc60d63a2e0b1edcc7caca133";
+        user.set_password(&pool, pw_hash).await?;
 
-    assert_eq!(pw_hash, user.password_hash.unwrap());
+        user = User::get(&pool, "userNoPass").await?;
 
-    Ok(())
-}
+        assert_eq!(pw_hash, user.password_hash.unwrap());
 
-#[sqlx::test(fixtures("users"))]
-async fn validate_password(pool: PgPool) -> Result<()> {
-    let user = User::get(&pool, "user1").await?;
-    let good_hash = "46a9d5bde718bf366178313019f04a753bad00685d38e3ec81c8628f35dfcb1b";
-    let bad_hash = "3d665bf9e919bbeba9101557048c61868e90ceabf8a94d30e9e02832acfc831e";
+        Ok(())
+    }
 
-    assert!(user.validate_password(&pool, good_hash).await?);
-    assert!(!user.validate_password(&pool, bad_hash).await?);
-    assert!(!user.validate_password(&pool, "").await?);
+    #[sqlx::test(fixtures("users"))]
+    async fn validate_password(pool: PgPool) -> Result<()> {
+        let user = User::get(&pool, "user1").await?;
+        let good_hash = "46a9d5bde718bf366178313019f04a753bad00685d38e3ec81c8628f35dfcb1b";
+        let bad_hash = "3d665bf9e919bbeba9101557048c61868e90ceabf8a94d30e9e02832acfc831e";
 
-    Ok(())
+        assert!(user.validate_password(good_hash).await?);
+        assert!(!user.validate_password(bad_hash).await?);
+        assert!(!user.validate_password("").await?);
+
+        Ok(())
+    }
 }

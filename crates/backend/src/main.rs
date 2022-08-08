@@ -1,10 +1,12 @@
-use actix_web::{web::Data, App, HttpServer};
+use actix_web::{middleware::Logger, middleware::NormalizePath, web::Data, App, HttpServer};
 
 mod models;
 mod routes;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    env_logger::init();
+
     let pool = match models::db().await {
         Ok(p) => p,
         Err(e) => {
@@ -15,6 +17,8 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap(NormalizePath::trim())
+            .wrap(Logger::default())
             .service(routes::keys::get)
             .service(routes::keys::get_all)
             .service(routes::keys::update)
