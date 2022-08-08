@@ -2,6 +2,12 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
 
+#[derive(Debug, Default, Serialize, Deserialize)]
+pub struct UserInfo {
+    pub username: String,
+    pub password: String,
+}
+
 #[derive(Debug, Default, PartialEq, Clone, FromRow, Serialize, Deserialize)]
 pub struct User {
     #[serde(skip_deserializing)]

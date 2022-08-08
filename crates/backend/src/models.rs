@@ -6,7 +6,7 @@ use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
 mod assignment;
 mod key;
-// mod session;
+mod session;
 mod user;
 
 pub use assignment::Assignment;

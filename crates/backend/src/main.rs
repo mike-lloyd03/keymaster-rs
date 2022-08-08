@@ -1,3 +1,4 @@
+use actix_session::CookieSession;
 use actix_web::{middleware::Logger, middleware::NormalizePath, web::Data, App, HttpServer};
 
 mod models;
@@ -19,6 +20,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(NormalizePath::trim())
             .wrap(Logger::default())
+            .wrap(CookieSession::signed(&[0; 32]).secure(false))
             .service(routes::keys::get)
             .service(routes::keys::get_all)
             .service(routes::keys::update)
