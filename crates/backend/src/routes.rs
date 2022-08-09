@@ -57,24 +57,14 @@ pub async fn validate_admin(
 mod routes_tests {
     use actix_session::{storage::CookieSessionStore, SessionMiddleware};
     use actix_web::test as actix_test;
-    use actix_web::web::Data;
     use actix_web::{
         cookie::{Key, SameSite},
+        web::Data,
         App,
     };
     use sqlx::PgPool;
 
     use crate::routes;
-
-    // use crate::routes;
-
-    // use actix_session::{storage::CookieSessionStore, SessionMiddleware};
-    // use actix_web::{
-    //     cookie::{Key, SameSite},
-    //     test,
-    //     // web::Data,
-    //     App,
-    // };
 
     #[sqlx::test(fixtures("users"))]
     async fn test_login(pool: PgPool) {
