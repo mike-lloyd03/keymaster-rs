@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
-pub struct UserInfo {
+pub struct Credentials {
     pub username: String,
     pub password: String,
 }
@@ -15,9 +15,12 @@ pub struct User {
     pub username: String,
     pub display_name: Option<String>,
     pub email: Option<String>,
+    #[serde(skip)]
     password_hash: Option<String>,
-    #[serde(default = "_default_false")]
+    #[serde(skip_serializing, default = "_default_false")]
     pub can_login: bool,
+    #[serde(skip_serializing, default = "_default_false")]
+    pub admin: bool,
 }
 
 fn _default_false() -> bool {
@@ -26,7 +29,7 @@ fn _default_false() -> bool {
 
 impl User {
     pub async fn get(pool: &PgPool, username: &str) -> Result<Self, sqlx::Error> {
-        query_as!(Self, r#"SELECT id, username, display_name, email, password_hash, can_login FROM users WHERE username = $1"#, username)
+        query_as!(Self, r#"SELECT id, username, display_name, email, password_hash, can_login, admin FROM users WHERE username = $1"#, username)
             .fetch_one(pool)
             .await
     }
@@ -34,32 +37,43 @@ impl User {
     pub async fn get_all(pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
         query_as!(
             Self,
-            r#"SELECT id, username, display_name, email, password_hash, can_login FROM users"#
+            r#"SELECT id, username, display_name, email, password_hash, can_login, admin FROM users"#
         )
         .fetch_all(pool)
         .await
     }
 
+    pub async fn authenticate(pool: &PgPool, creds: Credentials) -> Result<Self, actix_web::Error> {
+        let user = Self::get(pool, &creds.username)
+            .await
+            .map_err(|_| actix_web::error::ErrorUnauthorized("Authentication failed"))?;
+        if user.can_login && user.validate_password(&creds.password) {
+            Ok(user)
+        } else {
+            Err(actix_web::error::ErrorUnauthorized("Authentication failed"))
+        }
+    }
+
     pub async fn set_password(
         &mut self,
         pool: &PgPool,
-        password_hash: &str,
+        password: &str,
     ) -> Result<PgQueryResult, sqlx::Error> {
-        self.password_hash = Some(password_hash.to_string());
+        self.password_hash = Some(password.to_string());
 
         query!(
             "Update users SET password_hash = $1 WHERE username = $2",
-            password_hash,
+            self.password_hash,
             self.username
         )
         .execute(pool)
         .await
     }
 
-    pub fn validate_password(&self, password_hash: &str) -> Result<bool> {
+    pub fn validate_password(&self, password_hash: &str) -> bool {
         match &self.password_hash {
-            Some(h) => Ok(h == password_hash),
-            None => Ok(false),
+            Some(h) => h == password_hash,
+            None => false,
         }
     }
 
@@ -79,10 +93,11 @@ impl User {
 
     pub async fn update(&self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
         query!(
-            "UPDATE users SET display_name = $1, email = $2, can_login = $3 WHERE username = $4",
+            "UPDATE users SET display_name = $1, email = $2, can_login = $3, admin = $4 WHERE username = $5",
             self.display_name,
             self.email,
             self.can_login,
+            self.admin,
             self.username
         )
         .execute(pool)
@@ -98,7 +113,7 @@ impl User {
 
 #[cfg(test)]
 mod user_tests {
-    use crate::models::User;
+    use crate::models::{Credentials, User};
     use anyhow::Result;
     use sqlx::{query, PgPool};
 
@@ -184,9 +199,24 @@ mod user_tests {
         let good_hash = "46a9d5bde718bf366178313019f04a753bad00685d38e3ec81c8628f35dfcb1b";
         let bad_hash = "3d665bf9e919bbeba9101557048c61868e90ceabf8a94d30e9e02832acfc831e";
 
-        assert!(user.validate_password(good_hash)?);
-        assert!(!user.validate_password(bad_hash)?);
-        assert!(!user.validate_password("")?);
+        assert!(user.validate_password(good_hash));
+        assert!(!user.validate_password(bad_hash));
+        assert!(!user.validate_password(""));
+
+        Ok(())
+    }
+
+    #[sqlx::test(fixtures("users"))]
+    async fn test_authenticate(pool: PgPool) -> Result<()> {
+        let username = "userCanLogin".to_string();
+        let password = "abc123".to_string();
+        let creds = Credentials {
+            username: username.clone(),
+            password,
+        };
+        let auth_user = User::authenticate(&pool, creds).await.unwrap();
+
+        assert_eq!(User::get(&pool, &username).await?, auth_user);
 
         Ok(())
     }

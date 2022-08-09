@@ -36,6 +36,7 @@ async fn main() -> std::io::Result<()> {
                     .cookie_same_site(SameSite::Strict)
                     .build(),
             )
+            .app_data(Data::new(pool.clone()))
             .service(routes::keys::get)
             .service(routes::keys::get_all)
             .service(routes::keys::update)
@@ -52,7 +53,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::assignments::update)
             .service(routes::assignments::create)
             .service(routes::assignments::delete)
-            .app_data(Data::new(pool.clone()))
+            .service(routes::login)
     })
     .bind(("127.0.0.1", 8081))?
     .run()

@@ -1,15 +1,20 @@
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_session::Session;
+use actix_web::{delete, error, get, post, put, web, HttpResponse, Responder};
 use log::error;
 use serde::Deserialize;
 use sqlx::PgPool;
 
-use crate::models::User;
+use crate::{
+    models::User,
+    routes::{validate_admin, validate_session},
+};
 
 #[derive(Deserialize)]
 struct UpdateQuery {
     display_name: Option<String>,
     email: Option<String>,
     can_login: Option<bool>,
+    admin: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -18,45 +23,69 @@ struct ChangePasswdPayload {
 }
 
 #[get("/users")]
-async fn get_all(pool: web::Data<PgPool>) -> impl Responder {
+async fn get_all(
+    session: Session,
+    pool: web::Data<PgPool>,
+) -> Result<impl Responder, actix_web::Error> {
+    if validate_session(&session).is_err() {
+        return Err(error::ErrorUnauthorized("Unauthorized"));
+    };
+
     match User::get_all(&pool).await {
-        Ok(u) => HttpResponse::Ok().json(u),
+        Ok(u) => Ok(HttpResponse::Ok().json(u)),
         Err(e) => {
             error!("Failed to get users. {}", e);
-            HttpResponse::InternalServerError().json("Failed to get users.")
+            Err(error::ErrorInternalServerError("Failed to get users."))
         }
     }
 }
 
 #[get("/users/{username}")]
-async fn get(username: web::Path<String>, pool: web::Data<PgPool>) -> impl Responder {
+async fn get(
+    session: Session,
+    username: web::Path<String>,
+    pool: web::Data<PgPool>,
+) -> Result<impl Responder, actix_web::Error> {
+    if validate_session(&session).is_err() {
+        return Err(error::ErrorUnauthorized("Unauthorized"));
+    };
+
     let username = &username.into_inner();
     match User::get(&pool, username).await {
-        Ok(k) => HttpResponse::Ok().json(k),
+        Ok(k) => Ok(HttpResponse::Ok().json(k)),
         Err(e) => match e.to_string() {
             x if x.contains("no rows returned") => {
                 error!("User '{}' not found.", username);
-                HttpResponse::NotFound().json("User not found.")
+                Err(error::ErrorNotFound("User not found"))
             }
             _ => {
                 error!("Failed to get user '{}'. {}", username, e);
-                HttpResponse::InternalServerError().json("Failed to get user.")
+                Err(error::ErrorInternalServerError("Failed to get user."))
             }
         },
     }
 }
 
 #[post("/users")]
-async fn create(user: web::Json<User>, pool: web::Data<PgPool>) -> impl Responder {
+async fn create(
+    session: Session,
+    user: web::Json<User>,
+    pool: web::Data<PgPool>,
+) -> Result<impl Responder, actix_web::Error> {
+    if validate_admin(&session, &pool).await.is_err() {
+        return Err(error::ErrorUnauthorized("Unauthorized"));
+    };
+
     match user.create(&pool).await {
-        Ok(_) => HttpResponse::Ok().json(format!("Created user '{}'", user.username)),
+        Ok(_) => Ok(HttpResponse::Ok().json(format!("Created user '{}'", user.username))),
         Err(e) => match e.to_string() {
-            x if x.contains("duplicate key") => {
-                HttpResponse::BadRequest().json(format!("User '{}' already exists.", user.username))
-            }
+            x if x.contains("duplicate key") => Err(error::ErrorBadRequest(format!(
+                "User '{}' already exists.",
+                user.username
+            ))),
             _ => {
                 error!("Failed to create user '{}'. {}", user.username, e);
-                HttpResponse::InternalServerError().json("Failed to create user.")
+                Err(error::ErrorInternalServerError("Failed to create user."))
             }
         },
     }
@@ -64,17 +93,22 @@ async fn create(user: web::Json<User>, pool: web::Data<PgPool>) -> impl Responde
 
 #[put("/users/{username}")]
 async fn update(
+    session: Session,
     username: web::Path<String>,
     query: web::Json<UpdateQuery>,
     pool: web::Data<PgPool>,
-) -> impl Responder {
+) -> Result<impl Responder, actix_web::Error> {
+    if validate_admin(&session, &pool).await.is_err() {
+        return Err(error::ErrorUnauthorized("Unauthorized"));
+    };
+
     let username = &username.into_inner();
 
     let mut user = match User::get(&pool, username).await {
         Ok(k) => k,
         Err(e) => {
             error!("User '{}' not found. {}", username, e);
-            return HttpResponse::NotFound().json("User not found");
+            return Err(error::ErrorNotFound("User not found"));
         }
     };
 
@@ -90,43 +124,108 @@ async fn update(
         user.can_login = c
     };
 
+    if let Some(c) = query.admin {
+        user.admin = c
+    };
+
     match user.update(&pool).await {
-        Ok(_) => HttpResponse::Ok().json(user),
+        Ok(_) => Ok(HttpResponse::Ok().json(user)),
         Err(e) => {
             error!("Failed to update user. {}", e);
-            HttpResponse::InternalServerError().json("Failed to update user.")
+            Err(error::ErrorInternalServerError("Failed to update user."))
         }
     }
 }
 
 #[delete("/users/{username}")]
-async fn delete(username: web::Path<String>, pool: web::Data<PgPool>) -> impl Responder {
+async fn delete(
+    session: Session,
+    username: web::Path<String>,
+    pool: web::Data<PgPool>,
+) -> Result<impl Responder, actix_web::Error> {
+    if validate_admin(&session, &pool).await.is_err() {
+        return Err(error::ErrorUnauthorized("Unauthorized"));
+    };
+
     match User::get(&pool, &username.into_inner()).await {
         Ok(u) => match u.delete(&pool).await {
-            Ok(_) => HttpResponse::Ok().json(format!("Deleted user '{}'", u.username)),
+            Ok(_) => Ok(HttpResponse::Ok().json(format!("Deleted user '{}'", u.username))),
             Err(e) => {
                 error!("Failed to delete user. {}", e);
-                HttpResponse::InternalServerError().json("Failed to delete user.")
+                Err(error::ErrorInternalServerError("Failed to delete user."))
             }
         },
-        Err(_) => HttpResponse::NotFound().json("User not found"),
+        Err(_) => Err(error::ErrorNotFound("User not found")),
     }
 }
 
 #[put("/users/{username}/set_password")]
 async fn set_password(
+    session: Session,
     username: web::Path<String>,
     payload: web::Json<ChangePasswdPayload>,
     pool: web::Data<PgPool>,
-) -> impl Responder {
+) -> Result<impl Responder, actix_web::Error> {
+    if validate_admin(&session, &pool).await.is_err() {
+        return Err(error::ErrorUnauthorized("Unauthorized"));
+    };
+
     match User::get(&pool, &username.into_inner()).await {
         Ok(mut u) => match u.set_password(&pool, &payload.new_password).await {
-            Ok(_) => HttpResponse::Ok().json(format!("Password updated for user '{}'", u.username)),
+            Ok(_) => {
+                Ok(HttpResponse::Ok().json(format!("Password updated for user '{}'", u.username)))
+            }
             Err(e) => {
                 error!("Failed to update password. {}", e);
-                HttpResponse::InternalServerError().json("Failed to update password.")
+                Err(error::ErrorInternalServerError(
+                    "Failed to update password.",
+                ))
             }
         },
-        Err(_) => HttpResponse::NotFound().json("User not found"),
+        Err(_) => Err(error::ErrorNotFound("User not found")),
+    }
+}
+
+#[cfg(test)]
+mod user_routes_tests {
+    use crate::{models, routes};
+
+    use actix_session::{storage::CookieSessionStore, SessionMiddleware};
+    use actix_web::{
+        cookie::{Key, SameSite},
+        test,
+        web::Data,
+        App,
+    };
+
+    #[actix_web::test]
+    async fn test_get_users() {
+        let secret_key = Key::generate();
+
+        let pool = match models::db().await {
+            Ok(p) => p,
+            Err(e) => {
+                eprintln!("{}", e);
+                std::process::exit(1);
+            }
+        };
+
+        let app = test::init_service(
+            App::new()
+                .wrap(
+                    SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
+                        .cookie_secure(false)
+                        .cookie_http_only(false)
+                        .cookie_same_site(SameSite::Strict)
+                        .build(),
+                )
+                .app_data(Data::new(pool.clone()))
+                .service(routes::users::get_all),
+        )
+        .await;
+        let req = test::TestRequest::get().uri("/users").to_request();
+        let resp = test::call_service(&app, req).await;
+
+        assert!(resp.status().is_client_error());
     }
 }

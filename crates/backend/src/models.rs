@@ -6,12 +6,11 @@ use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
 mod assignment;
 mod key;
-mod session;
 mod user;
 
 pub use assignment::Assignment;
 pub use key::Key;
-pub use user::User;
+pub use user::{Credentials, User};
 
 pub async fn db() -> Result<Pool<Postgres>> {
     dotenv()?;

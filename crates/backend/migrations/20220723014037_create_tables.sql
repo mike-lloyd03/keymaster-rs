@@ -11,7 +11,8 @@ CREATE TABLE users (
     display_name VARCHAR(120) UNIQUE, 
 	email VARCHAR(120) UNIQUE, 
 	password_hash VARCHAR(128), 
-	can_login BOOLEAN NOT NULL DEFAULT false
+	can_login BOOLEAN NOT NULL DEFAULT false,
+	admin BOOLEAN NOT NULL DEFAULT false
 );
 
 CREATE TABLE assignments (
