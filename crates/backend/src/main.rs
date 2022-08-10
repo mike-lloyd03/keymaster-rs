@@ -25,6 +25,8 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
+    models::initialize_admin(&pool).await.unwrap();
+
     HttpServer::new(move || {
         App::new()
             .wrap(NormalizePath::trim())

@@ -10,7 +10,7 @@ mod user;
 
 pub use assignment::Assignment;
 pub use key::Key;
-pub use user::{Credentials, User};
+pub use user::{initialize_admin, Credentials, User};
 
 pub async fn db() -> Result<Pool<Postgres>> {
     dotenv()?;
