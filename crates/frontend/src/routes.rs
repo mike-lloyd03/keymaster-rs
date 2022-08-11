@@ -1,8 +1,9 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
+mod forms;
 mod keys;
 mod login;
-mod new;
+mod new_item;
 mod users;
 
 #[derive(Clone, Routable, PartialEq)]
@@ -51,7 +52,7 @@ pub fn switch(routes: &Route) -> Html {
         Route::Login => html! { <login::Login /> },
         Route::Logout => todo!(),
         Route::GetAllKeys => html! { <keys::Keys /> },
-        Route::AddKey => html! { <new::New />},
+        Route::AddKey => html! { <new_item::NewKey />},
         Route::EditKey => todo!(),
         Route::Assignments => todo!(),
         Route::AssignKey => todo!(),
