@@ -1,5 +1,5 @@
 use actix_session::Session;
-use actix_web::{post, web, HttpResponse, Responder};
+use actix_web::{error, post, web, HttpResponse, Responder};
 use sqlx::PgPool;
 
 pub mod assignments;
@@ -23,6 +23,17 @@ async fn login(
         }
         Err(_) => HttpResponse::Unauthorized().json("Authentication failed"),
     }
+}
+
+#[post("/logout")]
+async fn logout(session: Session) -> Result<impl Responder, actix_web::Error> {
+    if validate_session(&session).is_err() {
+        return Err(error::ErrorUnauthorized("Unauthorized"));
+    };
+
+    session.purge();
+
+    Ok(HttpResponse::Ok())
 }
 
 pub fn validate_session(session: &Session) -> Result<String, HttpResponse> {

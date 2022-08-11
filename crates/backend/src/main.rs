@@ -56,6 +56,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::assignments::create)
             .service(routes::assignments::delete)
             .service(routes::login)
+            .service(routes::logout)
     })
     .bind(("127.0.0.1", 8081))?
     .run()
