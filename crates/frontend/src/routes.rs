@@ -1,6 +1,9 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
+mod keys;
 mod login;
+mod new;
+mod users;
 
 #[derive(Clone, Routable, PartialEq)]
 pub enum Route {
@@ -10,6 +13,8 @@ pub enum Route {
     Login,
     #[at("/logout")]
     Logout,
+    #[at("/keys")]
+    GetAllKeys,
     #[at("/add-key")]
     AddKey,
     #[at("/edit-key")]
@@ -45,12 +50,13 @@ pub fn switch(routes: &Route) -> Html {
         Route::Home => html! { <Home /> },
         Route::Login => html! { <login::Login /> },
         Route::Logout => todo!(),
-        Route::AddKey => todo!(),
+        Route::GetAllKeys => html! { <keys::Keys /> },
+        Route::AddKey => html! { <new::New />},
         Route::EditKey => todo!(),
         Route::Assignments => todo!(),
         Route::AssignKey => todo!(),
         Route::EditAssignment => todo!(),
-        Route::Users => todo!(),
+        Route::Users => html! { <users::Users /> },
         Route::AddUser => todo!(),
         Route::EditUser => todo!(),
         Route::NotFound => html! { <h1>{ "404" }</h1> },

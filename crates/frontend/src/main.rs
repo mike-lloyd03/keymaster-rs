@@ -12,8 +12,8 @@ use routes::{switch, Route};
 fn app() -> Html {
     html! {
         <>
-            <Nav />
             <BrowserRouter>
+                <Nav />
                 <Switch<Route> render={Switch::render(switch)} />
             </BrowserRouter>
         </>
