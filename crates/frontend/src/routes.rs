@@ -58,7 +58,7 @@ pub fn switch(routes: &Route) -> Html {
         Route::AssignKey => todo!(),
         Route::EditAssignment => todo!(),
         Route::Users => html! { <users::Users /> },
-        Route::AddUser => todo!(),
+        Route::AddUser => html! { <new_item::NewUser />},
         Route::EditUser => todo!(),
         Route::NotFound => html! { <h1>{ "404" }</h1> },
     }
