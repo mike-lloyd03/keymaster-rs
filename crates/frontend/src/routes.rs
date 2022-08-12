@@ -4,6 +4,7 @@ mod forms;
 mod keys;
 mod login;
 mod new_item;
+mod table;
 mod users;
 
 #[derive(Clone, Routable, PartialEq)]

@@ -1,3 +1,4 @@
+use crate::routes::table::{Cell, Row, Table};
 use yew::prelude::*;
 
 #[derive(PartialEq)]
@@ -60,29 +61,17 @@ pub fn keys() -> Html {
         },
     ];
     html! {
-            <div class="container text-light my-3">
-        <div class="row justify-content-center">
-            <div style="text-align: center">
-                <h2>{"Keys"}</h2>
-                <div class="container py-2">
-                    <a class="btn btn-primary" href="/add-key" role="button">{ "Add Key" }</a>
-                </div>
-                <table class="table table-striped table-hover table-bordered table-dark">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>{ "Key" }</th>
-                            <th>{ "Description" }</th>
-                            <th>{ "Status" }</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <KeyList keys={ keys } />
-                    </tbody>
-                </table>
+        <div class="container text-light my-3">
+            <div class="row justify-content-center">
+                <Table title="Keys">
+                    <Row>
+                        <Cell heading="Key" value="key1" />
+                        <Cell heading="Description" value="This is key 1" />
+                        <Cell heading="Status" value="Active" />
+                        <Cell heading="" value="Edit" />
+                    </Row>
+                </Table>
             </div>
         </div>
-    </div>
-
     }
 }
