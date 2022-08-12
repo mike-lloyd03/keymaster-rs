@@ -1,10 +1,8 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 mod assignments;
-mod forms;
 mod keys;
 mod login;
-mod table;
 mod users;
 
 #[derive(Clone, Routable, PartialEq)]

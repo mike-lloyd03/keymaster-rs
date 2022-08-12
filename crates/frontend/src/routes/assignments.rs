@@ -1,5 +1,5 @@
-use crate::routes::forms::{DateField, Form, MultiSelectField, MultiSelectOption, TextField};
-use crate::routes::table::{Cell, Row, Table};
+use crate::components::form::{DateField, Form, MultiSelectField, MultiSelectOption, TextField};
+use crate::components::table::{Cell, Row, Table};
 use chrono::NaiveDate;
 use yew::prelude::*;
 

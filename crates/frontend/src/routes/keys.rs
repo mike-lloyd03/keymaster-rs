@@ -1,5 +1,5 @@
-use crate::routes::forms::{CheckboxField, Form, TextField};
-use crate::routes::table::{Cell, Row, Table};
+use crate::components::form::{CheckboxField, Form, TextField};
+use crate::components::table::{Cell, Row, Table};
 use yew::prelude::*;
 
 #[derive(PartialEq, Default)]
