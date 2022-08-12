@@ -1,88 +1,77 @@
+use crate::routes::forms::{CheckboxField, Form, TextField};
 use crate::routes::table::{Cell, Row, Table};
 use yew::prelude::*;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Default)]
 pub struct Key {
     pub name: String,
-    pub description: String,
+    pub description: Option<String>,
     pub active: bool,
 }
 
-#[derive(Properties, PartialEq)]
-pub struct KeyListProps {
-    keys: Vec<Key>,
+#[function_component(NewKey)]
+pub fn new_key() -> Html {
+    html! {
+        <Form title="New Key" action_label="Key">
+            <TextField label="Key Name" />
+            <TextField label="Description" />
+        </Form>
+    }
 }
 
-#[function_component(KeyList)]
-pub fn key_list(props: &KeyListProps) -> Html {
-    props
-        .keys
-        .iter()
-        .map(|key| {
-            html! {
-                <tr>
-                    <td>{ key.name.to_string() }</td>
-                    <td>{ key.description.to_string() }</td>
-                    <td>
-                        {
-                            if key.active {
-                                "Active".to_string()
-                            } else {
-                                "Inactive".to_string()
-                            }
-                        }
-                    </td>
-                    <td>
-                        <a class="btn btn-outline-primary" href="#" role="button">{ "Edit" }</a>
-                    </td>
-                </tr>
-            }
-        })
-        .collect()
+#[function_component(EditKey)]
+pub fn edit_key() -> Html {
+    html! {
+        <Form title="Edit Key" action_label="Save Changes">
+            <TextField label="Description" />
+            <CheckboxField label="Active" />
+        </Form>
+    }
 }
 
-#[function_component(Keys)]
-pub fn keys() -> Html {
+#[function_component(KeyTable)]
+pub fn key_table() -> Html {
     let keys = vec![
         Key {
             name: "key1".to_string(),
-            description: "this is key 1".to_string(),
+            description: Some("this is key 1".to_string()),
             active: true,
         },
         Key {
             name: "key2".to_string(),
-            description: "this is key 2".to_string(),
+            description: Some("this is key 2".to_string()),
             active: true,
         },
         Key {
             name: "key4".to_string(),
-            description: "this is key for".to_string(),
             active: false,
+            ..Default::default()
         },
     ];
+
+    let rows = keys.iter().map(|key| {
+        html_nested! {
+            <Row>
+                <Cell heading="Key" value={ key.name.clone() } />
+                <Cell heading="Description" value={
+                    key.description.clone().unwrap_or_else(|| "".to_string())
+                } />
+                <Cell heading="Status" value={
+                    match key.active {
+                        true => "Active",
+                        false => "Inactive",
+                    }
+                } />
+                <Cell heading="" value="Edit" />
+            </Row>
+        }
+    });
 
     html! {
         <div class="container text-light my-3">
             <div class="row justify-content-center">
                 <Table title="Keys">
-                    { for keys
-                        .iter()
-                        .map(|key| {
-                            html_nested! {
-                                <Row>
-                                    <Cell heading="Key" value={ key.name.clone() } />
-                                    <Cell heading="Description" value={ key.description.clone() } />
-                                    <Cell heading="Status" value={
-                                        match key.active {
-                                            true => "Active",
-                                            false => "Inactive",
-                                        }
-                                    } />
-                                    <Cell heading="" value="Edit" />
-                                </Row>
-                            }
-                        })
-                    }
+                { for rows }
                 </Table>
             </div>
         </div>

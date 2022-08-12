@@ -1,9 +1,9 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
+mod assignments;
 mod forms;
 mod keys;
 mod login;
-mod new_item;
 mod table;
 mod users;
 
@@ -52,15 +52,15 @@ pub fn switch(routes: &Route) -> Html {
         Route::Home => html! { <Home /> },
         Route::Login => html! { <login::Login /> },
         Route::Logout => todo!(),
-        Route::GetAllKeys => html! { <keys::Keys /> },
-        Route::AddKey => html! { <new_item::NewKey />},
-        Route::EditKey => html! { <new_item::EditKey />},
-        Route::Assignments => todo!(),
-        Route::AssignKey => html! { <new_item::NewAssignment />},
-        Route::EditAssignment => html! { <new_item::EditAssignment />},
-        Route::Users => html! { <users::Users /> },
-        Route::AddUser => html! { <new_item::NewUser />},
-        Route::EditUser => html! { <new_item::EditUser />},
+        Route::GetAllKeys => html! { <keys::KeyTable /> },
+        Route::AddKey => html! { <keys::NewKey />},
+        Route::EditKey => html! { <keys::EditKey />},
+        Route::Assignments => html! { <assignments::Assignments />},
+        Route::AssignKey => html! { <assignments::NewAssignment />},
+        Route::EditAssignment => html! { <assignments::EditAssignment />},
+        Route::Users => html! { <users::UserTable /> },
+        Route::AddUser => html! { <users::NewUser />},
+        Route::EditUser => html! { <users::EditUser />},
         Route::NotFound => html! { <h1>{ "404" }</h1> },
     }
 }

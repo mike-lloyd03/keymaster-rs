@@ -1,3 +1,5 @@
+use crate::routes::forms::{CheckboxField, Form, TextField};
+use crate::routes::table::{Cell, Row, Table};
 use yew::prelude::*;
 
 #[derive(PartialEq, Default, Clone)]
@@ -10,34 +12,31 @@ pub struct User {
     pub admin: bool,
 }
 
-#[derive(Properties, PartialEq)]
-pub struct UserListProps {
-    users: Vec<User>,
+#[function_component(NewUser)]
+pub fn new_user() -> Html {
+    html! {
+        <Form title="New User" action_label="User">
+            <TextField label="Username" />
+            <TextField label="Email" />
+            <TextField label="Display Name" />
+            <CheckboxField label="Can Login?" />
+        </Form>
+    }
 }
 
-#[function_component(UserList)]
-pub fn user_list(props: &UserListProps) -> Html {
-    props
-        .users
-        .iter()
-        .map(|user| {
-            let user = user.clone();
-
-            html! {
-                <tr>
-                    <td>{ user.display_name.unwrap_or_else(|| user.username.to_string()) }</td>
-                    <td>{ user.email.unwrap_or_else(|| "".to_string()) }</td>
-                    <td>
-                        <a class="btn btn-outline-primary" href="#" role="button">{ "Edit" }</a>
-                    </td>
-                </tr>
-            }
-        })
-        .collect()
+#[function_component(EditUser)]
+pub fn edit_user() -> Html {
+    html! {
+        <Form title="Edit User" action_label="Save Changes">
+            <TextField label="Email" />
+            <TextField label="Display Name" />
+            <CheckboxField label="Can Login?" />
+        </Form>
+    }
 }
 
-#[function_component(Users)]
-pub fn users() -> Html {
+#[function_component(UserTable)]
+pub fn user_table() -> Html {
     let users = vec![
         User {
             username: "mike".to_string(),
@@ -56,27 +55,27 @@ pub fn users() -> Html {
             ..Default::default()
         },
     ];
+
+    let rows = users.iter().map(|user| {
+        html_nested! {
+            <Row>
+                <Cell heading="User" value={
+                    user.display_name.clone().unwrap_or_else(|| user.username.clone())
+                } />
+                <Cell heading="Email" value={
+                    user.email.clone().unwrap_or_else(|| "".to_string())
+                } />
+                <Cell heading="" value="Edit" />
+            </Row>
+        }
+    });
+
     html! {
         <div class="container text-light my-3">
             <div class="row justify-content-center">
-                <div style="text-align: center">
-                    <h2>{"Users"}</h2>
-                    <div class="container py-2">
-                        <a class="btn btn-primary" href="/add-user" role="button">{ "Add User" }</a>
-                    </div>
-                    <table class="table table-striped table-hover table-bordered table-dark">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>{ "User" }</th>
-                                <th>{ "Email" }</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <UserList users={ users } />
-                        </tbody>
-                    </table>
-                </div>
+                <Table title="Users">
+                { for rows }
+                </Table>
             </div>
         </div>
     }
