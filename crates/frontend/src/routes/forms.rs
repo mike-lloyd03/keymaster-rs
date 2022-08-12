@@ -1,25 +1,10 @@
 use yew::prelude::*;
 
-// Lets try to implement a trait
-// FormField should be able to handle different types of Field objects:
-// - Text
-// - Checkbox
-// - Multi-select
-// - Date
-//
-// They should all implement a to_field function to generate the html.
-// The form object should be able to accept an arbitrary length array of form fields and render
-// them in a list.
-
-fn capitalize(mut s: String) -> String {
-    s.remove(0).to_uppercase().to_string() + &s
-}
-
 #[derive(Properties, PartialEq)]
 pub struct FormProps {
     pub title: String,
     pub subtitle: Option<String>,
-    pub item: String,
+    pub action_label: String,
     pub children: Children,
 }
 
@@ -27,7 +12,6 @@ pub struct Form;
 
 impl Component for Form {
     type Message = ();
-
     type Properties = FormProps;
 
     fn create(_ctx: &Context<Self>) -> Self {
@@ -36,71 +20,141 @@ impl Component for Form {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
-            <div class="">
-                <h1>{ ctx.props().title.clone() }</h1>
-                {
-                    match ctx.props().subtitle.clone() {
-                        Some(s) => html!{<h4>{ s.to_string() }</h4>},
-                        None => html!{{ "" }},
+            <div class="container text-light my-3" style="max-width: 600px;">
+                <div class="row justify-content-center">
+                    <h1>{ ctx.props().title.clone() }</h1>
+                    {
+                        match ctx.props().subtitle.clone() {
+                            Some(s) => html!{<h4>{ s.to_string() }</h4>},
+                            None => html!{{ "" }},
+                        }
                     }
-                }
-                {
-                    for ctx.props().children.iter()
-                }
-                <form action="" method="post" class="form" role="form">
-                    <input
-                        class="btn btn-primary"
-                        id="submit"
-                        name="submit"
-                        type="submit"
-                        value={ format!("Add {}", ctx.props().item) } />
-                    {" "}
-                    <input
-                        class="btn btn-secondary"
-                        formnovalidate=true
-                        id="cancel"
-                        name="cancel"
-                        type="submit"
-                        value="Cancel" />
-                </form>
+                    {
+                        for ctx.props().children.iter()
+                    }
+                    <form action="" method="post" class="form" role="form">
+                        <input
+                            class="btn btn-primary"
+                            id="submit"
+                            name="submit"
+                            type="submit"
+                            value={ ctx.props().action_label.clone() } />
+                        {" "}
+                        <input
+                            class="btn btn-secondary"
+                            formnovalidate=true
+                            id="cancel"
+                            name="cancel"
+                            type="submit"
+                            value="Cancel" />
+                    </form>
+                </div>
             </div>
         }
     }
 }
 
 #[function_component(TextField)]
-pub fn form_text_field(props: &FormTextFieldProps) -> Html {
+pub fn text_field(props: &LabelProps) -> Html {
+    let label = &props.label;
+
     html! {
-        <div class="form-group "><label class="control-label" for={ props.label.clone() }>
-            { capitalize(props.label.clone()) }
-        </label>
-            <input class="form-control" id={ props.label.clone() } name={ props.label.clone() } type="text" value="" />
+        <div class="form-group ">
+        <label class="control-label" for={ snake_case(label.clone()) }>{ label }</label>
+            <input
+                class="form-control"
+                id={ snake_case(label.clone()) }
+                name={ snake_case(label.clone()) }
+                type="text"
+                value=""
+            />
         </div>
     }
 }
 
 #[derive(Properties, PartialEq)]
-pub struct FormTextFieldProps {
+pub struct LabelProps {
     pub label: String,
 }
 
 #[function_component(CheckboxField)]
-pub fn form_checkbox_field(props: &FormCheckboxFieldProps) -> Html {
+pub fn checkbox_field(props: &LabelProps) -> Html {
+    let label = &props.label;
+
     html! {
         <div class="checkbox">
             <label>
                 <input
-                    id={ props.label.clone() }
-                    name={ props.label.clone() }
+                    id={ snake_case(label.clone()) }
+                    name={ snake_case(label.clone()) }
                     type="checkbox"
                     value="n"
-                /> { capitalize(props.label.clone() )}
+                />{ format!(" {}", label) }
             </label>
         </div>
     }
 }
 
+#[function_component(MultiSelectField)]
+pub fn multi_select_field(props: &MultiSelectFieldProps) -> Html {
+    let label = &props.label;
+
+    html! {
+        <div class="form-group  required">
+            <label class="control-label" for={ snake_case(label.clone()) }>{ label.clone() }</label>
+            <select class="form-control" id="user" multiple=true name={ snake_case(label.clone()) } required=true>
+                {
+                    for props.children.iter()
+                }
+            </select>
+        </div>
+    }
+}
+
 #[derive(Properties, PartialEq)]
-pub struct FormCheckboxFieldProps {
+pub struct MultiSelectFieldProps {
     pub label: String,
+    // pub children: ChildrenWithProps<MultiSelectOption>,
+    pub children: Children,
+}
+
+#[function_component(MultiSelectOption)]
+pub fn multi_select_option(props: &MultiSelectOptionProps) -> Html {
+    html! {
+        <option value={ props.value.clone() }>{
+            match props.label.clone() {
+                Some(l) => l,
+                None => props.value.clone()
+            }
+        }</option>
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct MultiSelectOptionProps {
+    pub value: String,
+    pub label: Option<String>,
+}
+
+#[function_component(DateField)]
+pub fn date_field(props: &LabelProps) -> Html {
+    let label = &props.label;
+
+    html! {
+        <div class="form-group required">
+            <label class="control-label" for={ snake_case(label.clone()) }>{ label }</label>
+            <input
+                class="form-control"
+                id={ snake_case(label.clone()) }
+                name={ snake_case(label.clone()) }
+                required=true
+                type="date"
+                value=""
+            />
+        </div>
+    }
+}
+
+fn snake_case(s: String) -> String {
+    str::replace(&s.to_lowercase(), " ", "_")
 }

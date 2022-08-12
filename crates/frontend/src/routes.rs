@@ -53,13 +53,13 @@ pub fn switch(routes: &Route) -> Html {
         Route::Logout => todo!(),
         Route::GetAllKeys => html! { <keys::Keys /> },
         Route::AddKey => html! { <new_item::NewKey />},
-        Route::EditKey => todo!(),
+        Route::EditKey => html! { <new_item::EditKey />},
         Route::Assignments => todo!(),
-        Route::AssignKey => todo!(),
-        Route::EditAssignment => todo!(),
+        Route::AssignKey => html! { <new_item::NewAssignment />},
+        Route::EditAssignment => html! { <new_item::EditAssignment />},
         Route::Users => html! { <users::Users /> },
         Route::AddUser => html! { <new_item::NewUser />},
-        Route::EditUser => todo!(),
+        Route::EditUser => html! { <new_item::EditUser />},
         Route::NotFound => html! { <h1>{ "404" }</h1> },
     }
 }
