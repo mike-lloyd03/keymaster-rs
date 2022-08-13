@@ -1,0 +1,29 @@
+body {
+    /* background-color: var(--bs-gray-dark); */
+    background-color: rgb(24,26,27);
+}
+.form-control {
+    /* background-color: #1c1e21; */
+    background-color: var(--bs-dark);
+    color: var(--bs-secondary);
+    border-color: var(--bs-secondary);
+}
+
+.form-control:focus {
+    background-color: var(--bs-gray-dark);
+    box-shadow: none;
+    color: var(--bs-light);
+    border-color: var(--bs-primary);
+}
+
+.alert-info {
+    color: #055160;
+    background-color: #95b7bf;
+    border-color: #05516050;
+}
+
+.alert-danger {
+    color: #842029;
+    background-color: #b9989b;
+    border-color: #84202950;
+}
