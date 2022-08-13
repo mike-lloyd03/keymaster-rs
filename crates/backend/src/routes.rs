@@ -1,5 +1,5 @@
 use actix_session::Session;
-use actix_web::{error, post, web, HttpResponse, Responder};
+use actix_web::{error, post, web, Either, HttpResponse, Responder};
 use sqlx::PgPool;
 
 pub mod assignments;
@@ -12,9 +12,9 @@ use crate::models::{Credentials, User};
 async fn login(
     pool: web::Data<PgPool>,
     session: Session,
-    creds: web::Json<Credentials>,
+    creds: web::Either<web::Json<Credentials>, web::Form<Credentials>>,
 ) -> impl Responder {
-    let creds = creds.into_inner();
+    let creds = unpack(creds);
 
     match User::authenticate(&pool, creds).await {
         Ok(user) => {
@@ -61,6 +61,14 @@ pub async fn validate_admin(
         Ok(())
     } else {
         Err(HttpResponse::Unauthorized().json("Unauthorized"))
+    }
+}
+
+/// Unpacks a request with either json or form data into the specified type
+pub fn unpack<T: Clone>(e: web::Either<web::Json<T>, web::Form<T>>) -> T {
+    match e {
+        Either::Left(json) => json.to_owned(),
+        Either::Right(form) => form.to_owned(),
     }
 }
 

@@ -3,8 +3,6 @@ use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
 
-// use crate::models::{ymd_format, ymd_format_option};
-
 #[derive(Debug, PartialEq, FromRow, Serialize, Deserialize)]
 pub struct Assignment {
     #[serde(skip_deserializing)]

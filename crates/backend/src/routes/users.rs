@@ -1,5 +1,5 @@
 use actix_session::Session;
-use actix_web::{delete, error, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, error, get, post, web, HttpResponse, Responder};
 use log::error;
 use serde::Deserialize;
 use sqlx::PgPool;
@@ -91,7 +91,7 @@ async fn create(
     }
 }
 
-#[put("/users/{username}")]
+#[post("/users/{username}")]
 async fn update(
     session: Session,
     username: web::Path<String>,
@@ -159,7 +159,7 @@ async fn delete(
     }
 }
 
-#[put("/users/{username}/set_password")]
+#[post("/users/{username}/set_password")]
 async fn set_password(
     session: Session,
     username: web::Path<String>,

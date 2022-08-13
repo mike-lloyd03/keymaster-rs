@@ -1,4 +1,4 @@
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use chrono::NaiveDate;
 use log::error;
 use serde::Deserialize;
@@ -75,7 +75,7 @@ async fn create(assignment: web::Json<Assignment>, pool: web::Data<PgPool>) -> i
     }
 }
 
-#[put("/assignments/{assignment_id}")]
+#[post("/assignments/{assignment_id}")]
 async fn update(
     assignment_id: web::Path<i64>,
     query: web::Json<UpdateQuery>,

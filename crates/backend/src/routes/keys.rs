@@ -1,11 +1,12 @@
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use log::error;
 use serde::Deserialize;
 use sqlx::PgPool;
 
 use crate::models::Key;
+use crate::routes::unpack;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 struct UpdateQuery {
     description: Option<String>,
     active: Option<bool>,
@@ -38,7 +39,12 @@ async fn get_all(pool: web::Data<PgPool>) -> impl Responder {
 }
 
 #[post("/keys")]
-async fn create(key: web::Json<Key>, pool: web::Data<PgPool>) -> impl Responder {
+async fn create(
+    key: web::Either<web::Json<Key>, web::Form<Key>>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    let key = unpack(key);
+
     match key.create(&pool).await {
         Ok(_) => HttpResponse::Ok().json(key),
         Err(e) => match e.to_string() {
@@ -53,12 +59,13 @@ async fn create(key: web::Json<Key>, pool: web::Data<PgPool>) -> impl Responder 
     }
 }
 
-#[put("/keys/{key_name}")]
+#[post("/keys/{key_name}")]
 async fn update(
     key_name: web::Path<String>,
-    query: web::Json<UpdateQuery>,
+    query: web::Either<web::Json<UpdateQuery>, web::Form<UpdateQuery>>,
     pool: web::Data<PgPool>,
 ) -> impl Responder {
+    let query = unpack(query);
     let key_name = &key_name.into_inner();
 
     let mut key = match Key::get(&pool, key_name).await {

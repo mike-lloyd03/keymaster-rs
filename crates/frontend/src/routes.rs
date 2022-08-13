@@ -17,8 +17,8 @@ pub enum Route {
     GetAllKeys,
     #[at("/add-key")]
     AddKey,
-    #[at("/edit-key")]
-    EditKey,
+    #[at("/edit-key/:key_name")]
+    EditKey { key_name: String },
     #[at("/assignments")]
     Assignments,
     #[at("/assign-key")]
@@ -52,7 +52,7 @@ pub fn switch(routes: &Route) -> Html {
         Route::Logout => todo!(),
         Route::GetAllKeys => html! { <keys::KeyTable /> },
         Route::AddKey => html! { <keys::NewKey />},
-        Route::EditKey => html! { <keys::EditKey />},
+        Route::EditKey { key_name } => html! { <keys::EditKey key_name={ key_name.clone() }/>},
         Route::Assignments => html! { <assignments::Assignments />},
         Route::AssignKey => html! { <assignments::NewAssignment />},
         Route::EditAssignment => html! { <assignments::EditAssignment />},

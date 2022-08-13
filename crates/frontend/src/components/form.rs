@@ -4,7 +4,9 @@ use yew::prelude::*;
 pub struct FormProps {
     pub title: String,
     pub subtitle: Option<String>,
-    pub action_label: String,
+    pub action: Option<String>,
+    pub method: Option<String>,
+    pub submit_label: String,
     pub children: Children,
 }
 
@@ -29,16 +31,23 @@ impl Component for Form {
                             None => html!{{ "" }},
                         }
                     }
-                    {
-                        for ctx.props().children.iter()
-                    }
-                    <form action="" method="post" class="form" role="form">
+                    <form action={
+                            format!("http://localhost:8081/{}",
+                            ctx.props().action.clone().unwrap_or_else(|| "".to_string())
+                            )
+                        }
+                        method="post"
+                        class="form"
+                        role="form">
+                        {
+                            for ctx.props().children.iter()
+                        }
                         <input
                             class="btn btn-primary"
                             id="submit"
                             name="submit"
                             type="submit"
-                            value={ ctx.props().action_label.clone() } />
+                            value={ ctx.props().submit_label.clone() } />
                         {" "}
                         <input
                             class="btn btn-secondary"
@@ -64,7 +73,7 @@ pub fn text_field(props: &LabelProps) -> Html {
             <input
                 class="form-control"
                 id={ snake_case(label.clone()) }
-                name={ snake_case(label.clone()) }
+                name={ props.name.clone().unwrap_or_else(|| snake_case(label.clone())) }
                 type="text"
                 value=""
             />
@@ -75,6 +84,7 @@ pub fn text_field(props: &LabelProps) -> Html {
 #[derive(Properties, PartialEq)]
 pub struct LabelProps {
     pub label: String,
+    pub name: Option<String>,
 }
 
 #[function_component(CheckboxField)]
@@ -114,8 +124,7 @@ pub fn multi_select_field(props: &MultiSelectFieldProps) -> Html {
 #[derive(Properties, PartialEq)]
 pub struct MultiSelectFieldProps {
     pub label: String,
-    // pub children: ChildrenWithProps<MultiSelectOption>,
-    pub children: Children,
+    pub children: ChildrenWithProps<MultiSelectOption>,
 }
 
 #[function_component(MultiSelectOption)]
@@ -149,6 +158,25 @@ pub fn date_field(props: &LabelProps) -> Html {
                 name={ snake_case(label.clone()) }
                 required=true
                 type="date"
+                value=""
+            />
+        </div>
+    }
+}
+
+#[function_component(PasswordField)]
+pub fn password_field(props: &LabelProps) -> Html {
+    let label = &props.label;
+
+    html! {
+        <div class="form-group required">
+        <label class="control-label" for={ snake_case(label.clone()) }>{ label }</label>
+            <input
+                class="form-control"
+                id={ snake_case(label.clone()) }
+                name={ snake_case(label.clone()) }
+                required=true
+                type="password"
                 value=""
             />
         </div>

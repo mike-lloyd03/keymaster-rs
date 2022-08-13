@@ -14,31 +14,27 @@ pub struct Assignment {
 
 #[function_component(NewAssignment)]
 pub fn new_assignment() -> Html {
-    let users: Html = vec![("gunther", "Gunther Morrison"), ("matt", "Matt Chandler")]
-        .iter()
-        .map(|user| {
-            html! {
-                <MultiSelectOption value={ user.0 } label={ user.1 } />
-            }
-        })
-        .collect();
+    let users = vec![("gunther", "Gunther Morrison"), ("matt", "Matt Chandler")];
+    let user_options = users.iter().map(|user| {
+        html_nested! {
+            <MultiSelectOption value={ user.0 } label={ user.1 } />
+        }
+    });
 
-    let keys: Html = vec!["key1", "keyToo", "keyTree"]
-        .iter()
-        .map(|key| {
-            html! {
-                <MultiSelectOption value={ key.to_string() } />
-            }
-        })
-        .collect();
+    let keys = vec!["key1", "keyToo", "keyTree"];
+    let key_options = keys.iter().map(|key| {
+        html_nested! {
+            <MultiSelectOption value={ key.to_string() } />
+        }
+    });
 
     html! {
-        <Form title="Assign Key" action_label="Assign Key">
+        <Form title="Assign Key" submit_label="Assign Key">
             <MultiSelectField label="User">
-                { users }
+                { for user_options }
             </MultiSelectField>
             <MultiSelectField label="Key">
-                { keys }
+                { for key_options }
             </MultiSelectField>
             <DateField label="Date Out" />
         </Form>
@@ -48,7 +44,7 @@ pub fn new_assignment() -> Html {
 #[function_component(EditAssignment)]
 pub fn edit_assignment() -> Html {
     html! {
-        <Form title="Edit Assignment" action_label="Save Changes">
+        <Form title="Edit Assignment" submit_label="Save Changes">
             <TextField label="User" />
             <TextField label="Key" />
             <DateField label="Date Out" />
