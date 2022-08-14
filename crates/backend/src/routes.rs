@@ -1,5 +1,8 @@
 use actix_session::Session;
-use actix_web::{error, post, web, Either, HttpResponse, Responder};
+use actix_web::{
+    error::{self, ErrorUnauthorized},
+    post, web, Either, HttpResponse, Responder,
+};
 use sqlx::PgPool;
 
 pub mod assignments;
@@ -36,7 +39,7 @@ async fn logout(session: Session) -> Result<impl Responder, actix_web::Error> {
     Ok(HttpResponse::Ok())
 }
 
-pub fn validate_session(session: &Session) -> Result<String, HttpResponse> {
+pub fn validate_session(session: &Session) -> Result<String, actix_web::Error> {
     let username: Option<String> = session.get("username").unwrap_or(None);
 
     match username {
@@ -44,14 +47,14 @@ pub fn validate_session(session: &Session) -> Result<String, HttpResponse> {
             session.renew();
             Ok(u)
         }
-        None => Err(HttpResponse::Unauthorized().json("Unauthorized")),
+        None => Err(ErrorUnauthorized("Unauthorized")),
     }
 }
 
 pub async fn validate_admin(
     session: &Session,
     pool: &web::Data<PgPool>,
-) -> Result<(), HttpResponse> {
+) -> Result<(), actix_web::Error> {
     let username = validate_session(session)?;
     let user = User::get(pool, &username)
         .await
@@ -60,7 +63,7 @@ pub async fn validate_admin(
     if user.admin {
         Ok(())
     } else {
-        Err(HttpResponse::Unauthorized().json("Unauthorized"))
+        Err(ErrorUnauthorized("Unauthorized"))
     }
 }
 

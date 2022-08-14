@@ -27,9 +27,7 @@ async fn get_all(
     session: Session,
     pool: web::Data<PgPool>,
 ) -> Result<impl Responder, actix_web::Error> {
-    if validate_session(&session).is_err() {
-        return Err(error::ErrorUnauthorized("Unauthorized"));
-    };
+    validate_session(&session)?;
 
     match User::get_all(&pool).await {
         Ok(u) => Ok(HttpResponse::Ok().json(u)),
@@ -46,9 +44,7 @@ async fn get(
     username: web::Path<String>,
     pool: web::Data<PgPool>,
 ) -> Result<impl Responder, actix_web::Error> {
-    if validate_session(&session).is_err() {
-        return Err(error::ErrorUnauthorized("Unauthorized"));
-    };
+    validate_session(&session)?;
 
     let username = &username.into_inner();
     match User::get(&pool, username).await {
@@ -72,9 +68,7 @@ async fn create(
     user: web::Json<User>,
     pool: web::Data<PgPool>,
 ) -> Result<impl Responder, actix_web::Error> {
-    if validate_admin(&session, &pool).await.is_err() {
-        return Err(error::ErrorUnauthorized("Unauthorized"));
-    };
+    validate_admin(&session, &pool).await?;
 
     match user.create(&pool).await {
         Ok(_) => Ok(HttpResponse::Ok().json(format!("Created user '{}'", user.username))),
@@ -98,9 +92,7 @@ async fn update(
     query: web::Json<UpdateQuery>,
     pool: web::Data<PgPool>,
 ) -> Result<impl Responder, actix_web::Error> {
-    if validate_admin(&session, &pool).await.is_err() {
-        return Err(error::ErrorUnauthorized("Unauthorized"));
-    };
+    validate_admin(&session, &pool).await?;
 
     let username = &username.into_inner();
 
@@ -143,9 +135,7 @@ async fn delete(
     username: web::Path<String>,
     pool: web::Data<PgPool>,
 ) -> Result<impl Responder, actix_web::Error> {
-    if validate_admin(&session, &pool).await.is_err() {
-        return Err(error::ErrorUnauthorized("Unauthorized"));
-    };
+    validate_admin(&session, &pool).await?;
 
     match User::get(&pool, &username.into_inner()).await {
         Ok(u) => match u.delete(&pool).await {
@@ -166,9 +156,7 @@ async fn set_password(
     payload: web::Json<ChangePasswdPayload>,
     pool: web::Data<PgPool>,
 ) -> Result<impl Responder, actix_web::Error> {
-    if validate_admin(&session, &pool).await.is_err() {
-        return Err(error::ErrorUnauthorized("Unauthorized"));
-    };
+    validate_admin(&session, &pool).await?;
 
     match User::get(&pool, &username.into_inner()).await {
         Ok(mut u) => match u.set_password(&pool, &payload.new_password).await {
