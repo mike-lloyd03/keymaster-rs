@@ -1,8 +1,8 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 mod assignments;
+mod auth;
 mod keys;
-mod login;
 mod users;
 
 #[derive(Clone, Routable, PartialEq)]
@@ -48,8 +48,8 @@ fn home() -> Html {
 pub fn switch(routes: &Route) -> Html {
     match routes {
         Route::Home => html! { <Home /> },
-        Route::Login => html! { <login::Login /> },
-        Route::Logout => todo!(),
+        Route::Login => html! { <auth::Login /> },
+        Route::Logout => html! { <auth::Logout /> },
         Route::GetAllKeys => html! { <keys::KeyTable /> },
         Route::AddKey => html! { <keys::NewKey />},
         Route::EditKey { key_name } => html! { <keys::EditKey key_name={ key_name.clone() }/>},
