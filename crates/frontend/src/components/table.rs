@@ -36,17 +36,15 @@ impl Component for Table {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let headings: Vec<String> = ctx
-            .props()
-            .children
-            .iter()
-            .next()
-            .unwrap()
-            .props
-            .children
-            .iter()
-            .map(|cell| cell.props.heading.clone())
-            .collect();
+        let headings: Vec<String> = match ctx.props().children.iter().next() {
+            Some(c) => c
+                .props
+                .children
+                .iter()
+                .map(|cell| cell.props.heading.clone())
+                .collect(),
+            None => vec!["".to_string()],
+        };
 
         html! {
             <div style="text-align: center">
@@ -65,36 +63,6 @@ impl Component for Table {
         }
     }
 }
-
-// #[function_component(Table)]
-// pub fn table(props: &TableProps) -> Html {
-//     let headings: Vec<String> = props
-//         .children
-//         .iter()
-//         .next()
-//         .unwrap()
-//         .props
-//         .children
-//         .iter()
-//         .map(|cell| cell.props.heading.clone())
-//         .collect();
-
-//     html! {
-//         <div style="text-align: center">
-//             <h2>{ props.title.clone() }</h2>
-//                 <table class="table table-striped table-hover table-bordered table-dark">
-//                     <thead class="table-dark">
-//                         <tr>
-//                             { for headings.iter().map(|heading| html!{<th>{ heading.clone() }</th>}) }
-//                         </tr>
-//                     </thead>
-//                     <tbody>
-//                         { for props.children.iter()}
-//                     </tbody>
-//                 </table>
-//         </div>
-//     }
-// }
 
 #[derive(Properties, PartialEq)]
 pub struct TableProps {

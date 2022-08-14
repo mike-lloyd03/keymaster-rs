@@ -1,8 +1,11 @@
 use crate::components::form::{CheckboxField, Form, TextField};
 use crate::components::table::{Cell, Row, Table};
+use crate::routes::Route;
+
 use reqwasm::http::Request;
 use serde::Deserialize;
 use yew::prelude::*;
+use yew_router::prelude::Redirect;
 
 #[derive(PartialEq, Default, Deserialize)]
 pub struct Key {
@@ -39,43 +42,33 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
 #[function_component(KeyTable)]
 pub fn key_table() -> Html {
     let keys = use_state(|| vec![]);
+    let response_code = use_state(|| 0);
+
     {
         let keys = keys.clone();
+        let response_code = response_code.clone();
         use_effect_with_deps(
             move |_| {
                 let keys = keys.clone();
                 wasm_bindgen_futures::spawn_local(async move {
-                    let fetched_keys: Vec<Key> = Request::get("http://localhost:8081/keys")
+                    let resp = Request::get("http://localhost:8080/api/keys")
                         .send()
                         .await
-                        .unwrap()
-                        .json()
-                        .await
                         .unwrap();
-                    keys.set(fetched_keys);
+                    response_code.set(resp.status());
+
+                    match resp.json::<Vec<Key>>().await {
+                        Ok(resp) => {
+                            keys.set(resp);
+                        }
+                        Err(e) => log::error!("{}", e),
+                    }
                 });
                 || ()
             },
             (),
         );
     }
-    // let keys = vec![
-    //     Key {
-    //         name: "key1".to_string(),
-    //         description: Some("this is key 1".to_string()),
-    //         active: true,
-    //     },
-    //     Key {
-    //         name: "key2".to_string(),
-    //         description: Some("this is key 2".to_string()),
-    //         active: true,
-    //     },
-    //     Key {
-    //         name: "key4".to_string(),
-    //         active: false,
-    //         ..Default::default()
-    //     },
-    // ];
 
     let rows = keys.iter().map(|key| {
         html_nested! {
@@ -95,10 +88,15 @@ pub fn key_table() -> Html {
         }
     });
 
+    if *response_code == 401 {
+        return html! {
+            <Redirect<Route> to={Route::Login}/>
+        };
+    }
+
     html! {
         <div class="container text-light my-3">
             <div class="row justify-content-center">
-                { format!("keys retrieved: {}", keys.len())}
                 <Table title="Keys">
                 { for rows }
                 </Table>

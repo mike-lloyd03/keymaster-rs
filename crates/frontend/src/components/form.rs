@@ -32,7 +32,7 @@ impl Component for Form {
                         }
                     }
                     <form action={
-                            format!("http://localhost:8081/{}",
+                            format!("http://localhost:8080/api/{}",
                             ctx.props().action.clone().unwrap_or_else(|| "".to_string())
                             )
                         }
