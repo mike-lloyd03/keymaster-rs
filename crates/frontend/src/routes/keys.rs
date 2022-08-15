@@ -1,10 +1,13 @@
 use crate::components::form::{CheckboxField, Form, TextField};
 use crate::components::table::{Cell, Row, Table};
 use crate::routes::Route;
+use web_sys::HtmlInputElement;
 
 use reqwasm::http::Request;
 use serde::Deserialize;
 use yew::prelude::*;
+use yew_router::history::History;
+use yew_router::hooks::use_history;
 use yew_router::prelude::Redirect;
 
 #[derive(PartialEq, Default, Deserialize)]
@@ -16,8 +19,36 @@ pub struct Key {
 
 #[function_component(NewKey)]
 pub fn new_key() -> Html {
+    // let name = use_state(|| "".to_string());
+    // let description = use_state(|| "".to_string());
+
+    // fn handle_change(state: UseStateHandle<String>) -> Callback<Event> {
+    //     Callback::from(move |e: Event| {
+    //         let input: HtmlInputElement = e.target_unchecked_into();
+    //         state.set(input.value());
+    //     })
+    // }
+
+    // let handle_change_name = handle_change(name);
+    // let handle_change_desc = handle_change(description);
+
+    let onsubmit = {
+        Callback::once(move |e: FocusEvent| {
+            e.prevent_default();
+            let history = use_history().unwrap();
+            wasm_bindgen_futures::spawn_local(async move {
+                Request::post("http://localhost:8080/api/keys")
+                    // .body(r#"{"name": "thisisghetto"}"#)
+                    .send()
+                    .await
+                    .unwrap();
+            });
+            history.push(Route::Keys)
+        })
+    };
+
     html! {
-        <Form title="New Key" action="keys" submit_label="Add Key">
+        <Form title="New Key" action="keys" submit_label="Add Key" {onsubmit}>
             <TextField label="Key Name" name="name" />
             <TextField label="Description" />
         </Form>

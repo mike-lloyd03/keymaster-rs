@@ -7,6 +7,8 @@ pub struct FormProps {
     pub action: Option<String>,
     pub method: Option<String>,
     pub submit_label: String,
+    pub redirect: Option<String>,
+    pub onsubmit: Option<Callback<FocusEvent>>,
     pub children: Children,
 }
 
@@ -38,7 +40,9 @@ impl Component for Form {
                         }
                         method="post"
                         class="form"
-                        role="form">
+                        role="form"
+                        onsubmit={ ctx.props().onsubmit.clone() }
+                    >
                         {
                             for ctx.props().children.iter()
                         }
@@ -47,7 +51,8 @@ impl Component for Form {
                             id="submit"
                             name="submit"
                             type="submit"
-                            value={ ctx.props().submit_label.clone() } />
+                            value={ ctx.props().submit_label.clone() }
+                        />
                         {" "}
                         <input
                             class="btn btn-secondary"
@@ -76,6 +81,7 @@ pub fn text_field(props: &LabelProps) -> Html {
                 name={ props.name.clone().unwrap_or_else(|| snake_case(label.clone())) }
                 type="text"
                 value=""
+                onchange={props.onchange.clone()}
             />
         </div>
     }
@@ -85,6 +91,7 @@ pub fn text_field(props: &LabelProps) -> Html {
 pub struct LabelProps {
     pub label: String,
     pub name: Option<String>,
+    pub onchange: Option<Callback<Event>>,
 }
 
 #[function_component(CheckboxField)]
