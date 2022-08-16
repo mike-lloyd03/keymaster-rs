@@ -5,6 +5,7 @@ use web_sys::HtmlInputElement;
 
 use reqwasm::http::Request;
 use serde::Deserialize;
+use serde_json::json;
 use yew::prelude::*;
 use yew_router::history::History;
 use yew_router::hooks::use_history;
@@ -19,18 +20,19 @@ pub struct Key {
 
 #[function_component(NewKey)]
 pub fn new_key() -> Html {
-    // let name = use_state(|| "".to_string());
-    // let description = use_state(|| "".to_string());
+    let name = use_state(|| "".to_string());
+    let description = use_state(|| "".to_string());
 
-    // fn handle_change(state: UseStateHandle<String>) -> Callback<Event> {
-    //     Callback::from(move |e: Event| {
-    //         let input: HtmlInputElement = e.target_unchecked_into();
-    //         state.set(input.value());
-    //     })
-    // }
+    fn onchange(state: UseStateHandle<String>) -> Callback<Event> {
+        let state = state.clone();
+        Callback::from(move |e: Event| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            state.set(input.value());
+        })
+    }
 
-    // let handle_change_name = handle_change(name);
-    // let handle_change_desc = handle_change(description);
+    let onchange_name = onchange(name.clone());
+    let onchange_desc = onchange(description.clone());
 
     let onsubmit = {
         Callback::once(move |e: FocusEvent| {
@@ -38,7 +40,12 @@ pub fn new_key() -> Html {
             let history = use_history().unwrap();
             wasm_bindgen_futures::spawn_local(async move {
                 Request::post("http://localhost:8080/api/keys")
-                    // .body(r#"{"name": "thisisghetto"}"#)
+                    .body(
+                        r#"{
+                        "name": "name",
+                        "description": "desc"
+                    }"#,
+                    )
                     .send()
                     .await
                     .unwrap();
@@ -49,8 +56,8 @@ pub fn new_key() -> Html {
 
     html! {
         <Form title="New Key" action="keys" submit_label="Add Key" {onsubmit}>
-            <TextField label="Key Name" name="name" />
-            <TextField label="Description" />
+            <TextField label="Key Name" name="name" value={(*name).clone()} onchange={onchange_name} />
+            <TextField label="Description" value={(*description).clone()} onchange={onchange_desc} />
         </Form>
     }
 }

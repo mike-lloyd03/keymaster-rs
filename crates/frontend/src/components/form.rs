@@ -12,59 +12,49 @@ pub struct FormProps {
     pub children: Children,
 }
 
-pub struct Form;
-
-impl Component for Form {
-    type Message = ();
-    type Properties = FormProps;
-
-    fn create(_ctx: &Context<Self>) -> Self {
-        Self
-    }
-
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        html! {
-            <div class="container text-light my-3" style="max-width: 600px;">
-                <div class="row justify-content-center">
-                    <h1>{ ctx.props().title.clone() }</h1>
-                    {
-                        match ctx.props().subtitle.clone() {
-                            Some(s) => html!{<h4>{ s.to_string() }</h4>},
-                            None => html!{{ "" }},
-                        }
+#[function_component(Form)]
+pub fn form(props: &FormProps) -> Html {
+    html! {
+        <div class="container text-light my-3" style="max-width: 600px;">
+            <div class="row justify-content-center">
+                <h1>{ props.title.clone() }</h1>
+                {
+                    match props.subtitle.clone() {
+                        Some(s) => html!{<h4>{ s.to_string() }</h4>},
+                        None => html!{{ "" }},
                     }
-                    <form action={
-                            format!("http://localhost:8080/api/{}",
-                            ctx.props().action.clone().unwrap_or_else(|| "".to_string())
-                            )
-                        }
-                        method="post"
-                        class="form"
-                        role="form"
-                        onsubmit={ ctx.props().onsubmit.clone() }
-                    >
-                        {
-                            for ctx.props().children.iter()
-                        }
-                        <input
-                            class="btn btn-primary"
-                            id="submit"
-                            name="submit"
-                            type="submit"
-                            value={ ctx.props().submit_label.clone() }
-                        />
-                        {" "}
-                        <input
-                            class="btn btn-secondary"
-                            formnovalidate=true
-                            id="cancel"
-                            name="cancel"
-                            type="submit"
-                            value="Cancel" />
-                    </form>
-                </div>
+                }
+                <form action={
+                        format!("http://localhost:8080/api/{}",
+                        props.action.clone().unwrap_or_else(|| "".to_string())
+                        )
+                    }
+                    method="post"
+                    class="form"
+                    role="form"
+                    onsubmit={ props.onsubmit.clone() }
+                >
+                    {
+                        for props.children.iter()
+                    }
+                    <input
+                        class="btn btn-primary"
+                        id="submit"
+                        name="submit"
+                        type="submit"
+                        value={ props.submit_label.clone() }
+                    />
+                    {" "}
+                    <input
+                        class="btn btn-secondary"
+                        formnovalidate=true
+                        id="cancel"
+                        name="cancel"
+                        type="submit"
+                        value="Cancel" />
+                </form>
             </div>
-        }
+        </div>
     }
 }
 
@@ -80,7 +70,7 @@ pub fn text_field(props: &LabelProps) -> Html {
                 id={ snake_case(label.clone()) }
                 name={ props.name.clone().unwrap_or_else(|| snake_case(label.clone())) }
                 type="text"
-                value=""
+                value={props.value.clone()}
                 onchange={props.onchange.clone()}
             />
         </div>
@@ -91,6 +81,7 @@ pub fn text_field(props: &LabelProps) -> Html {
 pub struct LabelProps {
     pub label: String,
     pub name: Option<String>,
+    pub value: Option<String>,
     pub onchange: Option<Callback<Event>>,
 }
 

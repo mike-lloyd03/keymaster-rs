@@ -858,6 +858,7 @@ dependencies = [
  "log",
  "reqwasm",
  "serde",
+ "serde_json",
  "wasm-bindgen-futures",
  "wasm-logger",
  "web-sys",
