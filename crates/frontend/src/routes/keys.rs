@@ -3,7 +3,8 @@ use crate::components::table::{Cell, Row, Table};
 use crate::routes::Route;
 use web_sys::HtmlInputElement;
 
-use reqwasm::http::Request;
+// use reqwasm::http::Request;
+use gloo_net::http::Request;
 use serde::Deserialize;
 use serde_json::json;
 use yew::prelude::*;
@@ -35,17 +36,19 @@ pub fn new_key() -> Html {
     let onchange_desc = onchange(description.clone());
 
     let onsubmit = {
+        let history = use_history().unwrap();
+        let name = name.clone();
+        let description = description.clone();
         Callback::once(move |e: FocusEvent| {
             e.prevent_default();
-            let history = use_history().unwrap();
             wasm_bindgen_futures::spawn_local(async move {
                 Request::post("http://localhost:8080/api/keys")
-                    .body(
-                        r#"{
-                        "name": "name",
-                        "description": "desc"
-                    }"#,
-                    )
+                    // .header("content-type", "application/json")
+                    .json(&json!({
+                        "name": (*name).clone(),
+                        "description": (*description).clone()
+                    }))
+                    .unwrap()
                     .send()
                     .await
                     .unwrap();

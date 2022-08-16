@@ -6,6 +6,7 @@ edition = "2021"
 
 [dependencies]
 chrono = { version = "0.4.21", features = ["serde"] }
+gloo-net = "0.2.3"
 log = "0.4.17"
 reqwasm = "0.5.0"
 serde = { version = "1.0.143", features = ["derive"] }
