@@ -43,7 +43,7 @@ pub fn new_key() -> Html {
             log::info!("{:?}", e.clone());
             e.prevent_default();
             wasm_bindgen_futures::spawn_local(async move {
-                Request::post("http://localhost:8080/api/keys")
+                let resp = Request::post("api/keys")
                     .json(&json!({
                         "name": (*name).clone(),
                         "description": (*description).clone()
@@ -52,8 +52,13 @@ pub fn new_key() -> Html {
                     .send()
                     .await
                     .unwrap();
+
+                match resp.status() {
+                    400 => (),
+                    401 => (),
+                    _ => history.push(Route::Keys),
+                }
             });
-            history.push(Route::Keys)
         })
     };
 
