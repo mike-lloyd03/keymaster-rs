@@ -40,10 +40,10 @@ pub fn new_key() -> Html {
         let name = name.clone();
         let description = description.clone();
         Callback::once(move |e: FocusEvent| {
+            log::info!("{:?}", e.clone());
             e.prevent_default();
             wasm_bindgen_futures::spawn_local(async move {
                 Request::post("http://localhost:8080/api/keys")
-                    // .header("content-type", "application/json")
                     .json(&json!({
                         "name": (*name).clone(),
                         "description": (*description).clone()
@@ -59,7 +59,7 @@ pub fn new_key() -> Html {
 
     html! {
         <Form title="New Key" action="keys" submit_label="Add Key" {onsubmit}>
-            <TextField label="Key Name" name="name" value={(*name).clone()} onchange={onchange_name} />
+            <TextField label="Key Name" name="name" required=true value={(*name).clone()} onchange={onchange_name} pattern=r#"[\w\d]{3,}"# />
             <TextField label="Description" value={(*description).clone()} onchange={onchange_desc} />
         </Form>
     }

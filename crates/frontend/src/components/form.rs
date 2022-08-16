@@ -50,7 +50,6 @@ pub fn form(props: &FormProps) -> Html {
                         formnovalidate=true
                         id="cancel"
                         name="cancel"
-                        type="submit"
                         value="Cancel" />
                 </form>
             </div>
@@ -71,6 +70,8 @@ pub fn text_field(props: &LabelProps) -> Html {
                 name={ props.name.clone().unwrap_or_else(|| snake_case(label.clone())) }
                 type="text"
                 value={props.value.clone()}
+                required={props.required.unwrap_or(false)}
+                pattern={props.pattern.clone()}
                 onchange={props.onchange.clone()}
             />
         </div>
@@ -83,6 +84,8 @@ pub struct LabelProps {
     pub name: Option<String>,
     pub value: Option<String>,
     pub onchange: Option<Callback<Event>>,
+    pub required: Option<bool>,
+    pub pattern: Option<String>,
 }
 
 #[function_component(CheckboxField)]
