@@ -29,7 +29,7 @@ pub fn new_assignment() -> Html {
     });
 
     html! {
-        <Form title="Assign Key" submit_label="Assign Key">
+        <Form title="Assign Key">
             <MultiSelectField label="User">
                 { for user_options }
             </MultiSelectField>
@@ -44,7 +44,7 @@ pub fn new_assignment() -> Html {
 #[function_component(EditAssignment)]
 pub fn edit_assignment() -> Html {
     html! {
-        <Form title="Edit Assignment" submit_label="Save Changes">
+        <Form title="Edit Assignment">
             <TextField label="User" />
             <TextField label="Key" />
             <DateField label="Date Out" />

@@ -15,7 +15,7 @@ pub struct User {
 #[function_component(NewUser)]
 pub fn new_user() -> Html {
     html! {
-        <Form title="New User" submit_label="User">
+        <Form title="New User">
             <TextField label="Username" />
             <TextField label="Email" />
             <TextField label="Display Name" />
@@ -27,7 +27,7 @@ pub fn new_user() -> Html {
 #[function_component(EditUser)]
 pub fn edit_user() -> Html {
     html! {
-        <Form title="Edit User" submit_label="Save Changes">
+        <Form title="Edit User">
             <TextField label="Email" />
             <TextField label="Display Name" />
             <CheckboxField label="Can Login?" />

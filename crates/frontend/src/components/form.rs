@@ -6,8 +6,6 @@ pub struct FormProps {
     pub subtitle: Option<String>,
     pub action: Option<String>,
     pub method: Option<String>,
-    pub submit_label: String,
-    pub redirect: Option<String>,
     pub onsubmit: Option<Callback<FocusEvent>>,
     pub children: Children,
 }
@@ -21,7 +19,7 @@ pub fn form(props: &FormProps) -> Html {
                 {
                     match props.subtitle.clone() {
                         Some(s) => html!{<h4>{ s.to_string() }</h4>},
-                        None => html!{{ "" }},
+                        None => html!{},
                     }
                 }
                 <form action={
@@ -37,24 +35,55 @@ pub fn form(props: &FormProps) -> Html {
                     {
                         for props.children.iter()
                     }
-                    <input
-                        class="btn btn-primary"
-                        id="submit"
-                        name="submit"
-                        type="submit"
-                        value={ props.submit_label.clone() }
-                    />
-                    {" "}
-                    <input
-                        class="btn btn-secondary"
-                        formnovalidate=true
-                        id="cancel"
-                        name="cancel"
-                        value="Cancel" />
                 </form>
             </div>
         </div>
     }
+}
+
+/// Form submit button.
+///
+/// Props:
+/// - value: String
+/// - name: String
+/// - button_type: Option<ButtonType>
+/// - onclick: Option<Callback<MouseEvent>>
+/// - novalidate: Option<bool>
+#[function_component(Button)]
+pub fn button(props: &ButtonProps) -> Html {
+    html! {
+        <input
+            class={
+                match &props.button_type.clone().unwrap_or(ButtonType::Primary) {
+                    ButtonType::Primary => "btn btn-primary",
+                    ButtonType::Secondary => "btn btn-secondary",
+                    ButtonType::Danger => "btn btn-danger",
+                }
+            }
+            formnovalidate={ props.novalidate.unwrap_or(false) }
+            id={ props.name.clone() }
+            name={ props.name.clone() }
+            type="submit"
+            value={ props.value.clone() }
+            onclick={ props.onclick.clone() }
+        />
+    }
+}
+
+#[derive(PartialEq, Clone)]
+pub enum ButtonType {
+    Primary,
+    Secondary,
+    Danger,
+}
+
+#[derive(Properties, PartialEq)]
+pub struct ButtonProps {
+    pub value: String,
+    pub name: String,
+    pub button_type: Option<ButtonType>,
+    pub onclick: Option<Callback<MouseEvent>>,
+    pub novalidate: Option<bool>,
 }
 
 #[function_component(TextField)]

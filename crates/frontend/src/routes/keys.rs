@@ -1,9 +1,9 @@
-use crate::components::form::{CheckboxField, Form, TextField};
+use crate::components::form::{Button, ButtonType, CheckboxField, Form, TextField};
+use crate::components::notifier::{Notification, Notifier};
 use crate::components::table::{Cell, Row, Table};
 use crate::routes::Route;
 use web_sys::HtmlInputElement;
 
-// use reqwasm::http::Request;
 use gloo_net::http::Request;
 use serde::Deserialize;
 use serde_json::json;
@@ -23,9 +23,11 @@ pub struct Key {
 pub fn new_key() -> Html {
     let name = use_state(|| "".to_string());
     let description = use_state(|| "".to_string());
+    let alert = use_state(|| Notification {
+        ..Default::default()
+    });
 
     fn onchange(state: UseStateHandle<String>) -> Callback<Event> {
-        let state = state.clone();
         Callback::from(move |e: Event| {
             let input: HtmlInputElement = e.target_unchecked_into();
             state.set(input.value());
@@ -35,12 +37,18 @@ pub fn new_key() -> Html {
     let onchange_name = onchange(name.clone());
     let onchange_desc = onchange(description.clone());
 
+    let oncancel = {
+        let history = use_history().unwrap();
+        Callback::once(move |_: MouseEvent| history.push(Route::Keys))
+    };
+
     let onsubmit = {
         let history = use_history().unwrap();
         let name = name.clone();
         let description = description.clone();
+        let alert = alert.clone();
+
         Callback::once(move |e: FocusEvent| {
-            log::info!("{:?}", e.clone());
             e.prevent_default();
             wasm_bindgen_futures::spawn_local(async move {
                 let resp = Request::post("api/keys")
@@ -54,7 +62,10 @@ pub fn new_key() -> Html {
                     .unwrap();
 
                 match resp.status() {
-                    400 => (),
+                    400 => alert.set(Notification {
+                        message: "fail".to_string(),
+                        level: "error".to_string(),
+                    }),
                     401 => (),
                     _ => history.push(Route::Keys),
                 }
@@ -63,10 +74,27 @@ pub fn new_key() -> Html {
     };
 
     html! {
-        <Form title="New Key" action="keys" submit_label="Add Key" {onsubmit}>
-            <TextField label="Key Name" name="name" required=true value={(*name).clone()} onchange={onchange_name} pattern=r#"[\w\d]{3,}"# />
-            <TextField label="Description" value={(*description).clone()} onchange={onchange_desc} />
-        </Form>
+        <>
+        {
+            if alert.message.clone() != "" {
+                html!{<Notifier message={alert.message.clone()} level={alert.level.clone()} />}
+             } else {
+                 html!{}
+             }
+        }
+            <Form title="New Key" action="keys" {onsubmit}>
+                <TextField label="Key Name" name="name" required=true value={(*name).clone()} onchange={onchange_name} pattern=r#"[\w\d]{3,}"# />
+                <TextField label="Description" value={(*description).clone()} onchange={onchange_desc} />
+                <Button name="submit" value="Add Key" button_type={ButtonType::Primary} />
+                <Button
+                    name="cancel"
+                    value="Cancel"
+                    button_type={ButtonType::Secondary}
+                    onclick={oncancel}
+                    novalidate=true
+                />
+            </Form>
+        </>
     }
 }
 
@@ -78,7 +106,7 @@ pub struct EditKeyProps {
 #[function_component(EditKey)]
 pub fn edit_key(props: &EditKeyProps) -> Html {
     html! {
-        <Form title="Edit Key" action={ format!("keys/{}", props.key_name.clone()) } submit_label="Save Changes">
+        <Form title="Edit Key" action={ format!("keys/{}", props.key_name.clone()) } >
             <TextField label="Description" />
             <CheckboxField label="Active" />
         </Form>
@@ -87,7 +115,7 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
 
 #[function_component(KeyTable)]
 pub fn key_table() -> Html {
-    let keys = use_state(|| vec![]);
+    let keys = use_state(std::vec::Vec::new);
     let response_code = use_state(|| 0);
 
     {

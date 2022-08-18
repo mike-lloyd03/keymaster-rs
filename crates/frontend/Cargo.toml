@@ -15,4 +15,5 @@ wasm-bindgen-futures = "0.4.32"
 wasm-logger = "0.2.0"
 web-sys = { version = "0.3.59", features = ["Event", "FocusEvent"] }
 yew = "0.19.3"
+yew-agent = "0.1.0"
 yew-router = "0.16.0"
