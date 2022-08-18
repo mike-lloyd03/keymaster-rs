@@ -881,6 +881,7 @@ dependencies = [
  "yew",
  "yew-agent",
  "yew-router",
+ "yewdux",
 ]
 
 [[package]]
@@ -2824,6 +2825,19 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "yewdux"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "65cc23608d6e72b0bb3cbf766a73fc169e7d965edcd8f7aced9a9ab15a82a88c"
+dependencies = [
+ "serde",
+ "serde_json",
+ "web-sys",
+ "yew",
+ "yew-agent",
 ]
 
 [[package]]

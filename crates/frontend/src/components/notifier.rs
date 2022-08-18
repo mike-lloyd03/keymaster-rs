@@ -1,32 +1,31 @@
 use yew::prelude::*;
+use yewdux::prelude::*;
+use yewdux::store::Store;
 
-#[derive(Properties, Clone, Debug, PartialEq)]
+#[derive(Properties, Clone, Default, PartialEq, Eq, Store)]
 pub struct Notification {
-    pub message: String,
-    pub level: String,
-}
-
-impl Default for Notification {
-    fn default() -> Self {
-        Self {
-            message: "".to_string(),
-            level: "info".to_string(),
-        }
-    }
+    pub msg: Option<String>,
+    pub lvl: Option<String>,
 }
 
 #[function_component(Notifier)]
-pub fn notifier(props: &Notification) -> Html {
+pub fn notifier() -> Html {
+    let (state, dispatch) = use_store::<Notification>();
+    let dismiss = dispatch.set_callback(|_| Notification {
+        ..Default::default()
+    });
+
     html! {
         <div class="container">
             <div
-                class={match props.level.clone().as_str() {
+                class={match state.lvl.as_str() {
                     "warn" => "alert alert-warning",
                     "error" =>  "alert alert-danger",
                     _ => "alert alert-info",
                 }}
+                onclick={dismiss}
                 role="alert">
-                {props.message.clone()}
+                {state.msg}
             </div>
         </div>
     }

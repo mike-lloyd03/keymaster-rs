@@ -62,10 +62,7 @@ pub fn new_key() -> Html {
                     .unwrap();
 
                 match resp.status() {
-                    400 => alert.set(Notification {
-                        message: "fail".to_string(),
-                        level: "error".to_string(),
-                    }),
+                    400 => (),
                     401 => (),
                     _ => history.push(Route::Keys),
                 }
@@ -74,27 +71,18 @@ pub fn new_key() -> Html {
     };
 
     html! {
-        <>
-        {
-            if alert.message.clone() != "" {
-                html!{<Notifier message={alert.message.clone()} level={alert.level.clone()} />}
-             } else {
-                 html!{}
-             }
-        }
-            <Form title="New Key" action="keys" {onsubmit}>
-                <TextField label="Key Name" name="name" required=true value={(*name).clone()} onchange={onchange_name} pattern=r#"[\w\d]{3,}"# />
-                <TextField label="Description" value={(*description).clone()} onchange={onchange_desc} />
-                <Button name="submit" value="Add Key" button_type={ButtonType::Primary} />
-                <Button
-                    name="cancel"
-                    value="Cancel"
-                    button_type={ButtonType::Secondary}
-                    onclick={oncancel}
-                    novalidate=true
-                />
-            </Form>
-        </>
+        <Form title="New Key" action="keys" {onsubmit}>
+            <TextField label="Key Name" name="name" required=true value={(*name).clone()} onchange={onchange_name} pattern=r#"[\w\d]{3,}"# />
+            <TextField label="Description" value={(*description).clone()} onchange={onchange_desc} />
+            <Button name="submit" value="Add Key" button_type={ButtonType::Primary} />
+            <Button
+                name="cancel"
+                value="Cancel"
+                button_type={ButtonType::Secondary}
+                onclick={oncancel}
+                novalidate=true
+            />
+        </Form>
     }
 }
 
