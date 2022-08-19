@@ -14,6 +14,7 @@ use crate::models::{Credentials, User};
 
 #[derive(Serialize)]
 struct SessionInfo {
+    username: Option<String>,
     is_auth: bool,
     is_admin: bool,
 }
@@ -48,21 +49,27 @@ async fn logout(session: Session) -> Result<impl Responder, actix_web::Error> {
 
 #[get("/session")]
 async fn session_info(session: Session, pool: web::Data<PgPool>) -> impl Responder {
+    let mut username = None;
     let mut is_auth = false;
     let mut is_admin = false;
 
-    if validate_session(&session).is_ok() {
+    if let Ok(u) = validate_session(&session) {
+        username = Some(u);
         is_auth = true;
     }
     if validate_admin(&session, &pool).await.is_ok() {
         is_admin = true;
     }
 
-    HttpResponse::Ok().json(SessionInfo { is_auth, is_admin })
+    HttpResponse::Ok().json(SessionInfo {
+        username,
+        is_auth,
+        is_admin,
+    })
 }
 
 pub fn validate_session(session: &Session) -> Result<String, actix_web::Error> {
-    let username: Option<String> = session.get("username").unwrap_or(None);
+    let username: Option<String> = session.get("username").unwrap_or_default();
 
     match username {
         Some(u) => {
