@@ -1,8 +1,9 @@
 use actix_session::Session;
 use actix_web::{
     error::{self, ErrorUnauthorized},
-    post, web, Either, HttpResponse, Responder,
+    get, post, web, Either, HttpResponse, Responder,
 };
+use serde::Serialize;
 use sqlx::PgPool;
 
 pub mod assignments;
@@ -10,6 +11,12 @@ pub mod keys;
 pub mod users;
 
 use crate::models::{Credentials, User};
+
+#[derive(Serialize)]
+struct SessionInfo {
+    is_auth: bool,
+    is_admin: bool,
+}
 
 #[post("/login")]
 async fn login(
@@ -22,7 +29,7 @@ async fn login(
     match User::authenticate(&pool, creds).await {
         Ok(user) => {
             session.insert("username", user.username).unwrap();
-            HttpResponse::Ok().body("Success")
+            HttpResponse::Ok().finish()
         }
         Err(_) => HttpResponse::Unauthorized().json("Authentication failed"),
     }
@@ -36,7 +43,22 @@ async fn logout(session: Session) -> Result<impl Responder, actix_web::Error> {
 
     session.purge();
 
-    Ok(HttpResponse::Ok().body("Logged out."))
+    Ok(HttpResponse::Ok().body("Logged out"))
+}
+
+#[get("/session")]
+async fn session_info(session: Session, pool: web::Data<PgPool>) -> impl Responder {
+    let mut is_auth = false;
+    let mut is_admin = false;
+
+    if validate_session(&session).is_ok() {
+        is_auth = true;
+    }
+    if validate_admin(&session, &pool).await.is_ok() {
+        is_admin = true;
+    }
+
+    HttpResponse::Ok().json(SessionInfo { is_auth, is_admin })
 }
 
 pub fn validate_session(session: &Session) -> Result<String, actix_web::Error> {

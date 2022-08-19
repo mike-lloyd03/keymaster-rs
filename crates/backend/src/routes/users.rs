@@ -18,7 +18,7 @@ struct UpdateQuery {
 }
 
 #[derive(Deserialize)]
-struct ChangePasswdPayload {
+struct SetPasswdPayload {
     new_password: String,
 }
 
@@ -156,7 +156,7 @@ async fn delete(
 async fn set_password(
     session: Session,
     username: web::Path<String>,
-    payload: web::Json<ChangePasswdPayload>,
+    payload: web::Json<SetPasswdPayload>,
     pool: web::Data<PgPool>,
 ) -> Result<impl Responder, actix_web::Error> {
     validate_admin(&session, &pool).await?;
