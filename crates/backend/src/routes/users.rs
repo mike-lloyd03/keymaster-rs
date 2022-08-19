@@ -6,10 +6,10 @@ use sqlx::PgPool;
 
 use crate::{
     models::User,
-    routes::{validate_admin, validate_session},
+    routes::{unpack, validate_admin, validate_session},
 };
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
 struct UpdateQuery {
     display_name: Option<String>,
     email: Option<String>,
@@ -20,22 +20,6 @@ struct UpdateQuery {
 #[derive(Deserialize)]
 struct ChangePasswdPayload {
     new_password: String,
-}
-
-#[get("/users")]
-async fn get_all(
-    session: Session,
-    pool: web::Data<PgPool>,
-) -> Result<impl Responder, actix_web::Error> {
-    validate_session(&session)?;
-
-    match User::get_all(&pool).await {
-        Ok(u) => Ok(HttpResponse::Ok().json(u)),
-        Err(e) => {
-            error!("Failed to get users. {}", e);
-            Err(error::ErrorInternalServerError("Failed to get users."))
-        }
-    }
 }
 
 #[get("/users/{username}")]
@@ -62,16 +46,34 @@ async fn get(
     }
 }
 
+#[get("/users")]
+async fn get_all(
+    session: Session,
+    pool: web::Data<PgPool>,
+) -> Result<impl Responder, actix_web::Error> {
+    validate_session(&session)?;
+
+    match User::get_all(&pool).await {
+        Ok(u) => Ok(HttpResponse::Ok().json(u)),
+        Err(e) => {
+            error!("Failed to get users. {}", e);
+            Err(error::ErrorInternalServerError("Failed to get users."))
+        }
+    }
+}
+
 #[post("/users")]
 async fn create(
     session: Session,
-    user: web::Json<User>,
+    user: web::Either<web::Json<User>, web::Form<User>>,
     pool: web::Data<PgPool>,
 ) -> Result<impl Responder, actix_web::Error> {
     validate_admin(&session, &pool).await?;
 
+    let user = unpack(user);
+
     match user.create(&pool).await {
-        Ok(_) => Ok(HttpResponse::Ok().json(format!("Created user '{}'", user.username))),
+        Ok(_) => Ok(HttpResponse::Ok().body(format!("Created user '{}'", user.username))),
         Err(e) => match e.to_string() {
             x if x.contains("duplicate key") => Err(error::ErrorBadRequest(format!(
                 "User '{}' already exists.",
@@ -89,11 +91,12 @@ async fn create(
 async fn update(
     session: Session,
     username: web::Path<String>,
-    query: web::Json<UpdateQuery>,
+    query: web::Either<web::Json<UpdateQuery>, web::Form<UpdateQuery>>,
     pool: web::Data<PgPool>,
 ) -> Result<impl Responder, actix_web::Error> {
     validate_admin(&session, &pool).await?;
 
+    let query = unpack(query);
     let username = &username.into_inner();
 
     let mut user = match User::get(&pool, username).await {
@@ -121,7 +124,7 @@ async fn update(
     };
 
     match user.update(&pool).await {
-        Ok(_) => Ok(HttpResponse::Ok().json(user)),
+        Ok(_) => Ok(HttpResponse::Ok().body(format!("Updated user '{}'", user.username))),
         Err(e) => {
             error!("Failed to update user. {}", e);
             Err(error::ErrorInternalServerError("Failed to update user."))
@@ -139,7 +142,7 @@ async fn delete(
 
     match User::get(&pool, &username.into_inner()).await {
         Ok(u) => match u.delete(&pool).await {
-            Ok(_) => Ok(HttpResponse::Ok().json(format!("Deleted user '{}'", u.username))),
+            Ok(_) => Ok(HttpResponse::Ok().body(format!("Deleted user '{}'", u.username))),
             Err(e) => {
                 error!("Failed to delete user. {}", e);
                 Err(error::ErrorInternalServerError("Failed to delete user."))
@@ -161,7 +164,7 @@ async fn set_password(
     match User::get(&pool, &username.into_inner()).await {
         Ok(mut u) => match u.set_password(&pool, &payload.new_password).await {
             Ok(_) => {
-                Ok(HttpResponse::Ok().json(format!("Password updated for user '{}'", u.username)))
+                Ok(HttpResponse::Ok().body(format!("Password updated for user '{}'", u.username)))
             }
             Err(e) => {
                 error!("Failed to update password. {}", e);

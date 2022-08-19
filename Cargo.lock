@@ -871,6 +871,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "gloo-net 0.2.3",
+ "gloo-timers",
  "log",
  "reqwasm",
  "serde",
@@ -882,6 +883,7 @@ dependencies = [
  "yew-agent",
  "yew-router",
  "yewdux",
+ "yewdux-functional",
 ]
 
 [[package]]
@@ -2838,6 +2840,16 @@ dependencies = [
  "web-sys",
  "yew",
  "yew-agent",
+]
+
+[[package]]
+name = "yewdux-functional"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "64b88b59aac63c9b6f01087b22d1888f8732faac599fe9438523cc781bc49b78"
+dependencies = [
+ "yew",
+ "yewdux",
 ]
 
 [[package]]

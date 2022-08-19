@@ -22,7 +22,7 @@ async fn login(
     match User::authenticate(&pool, creds).await {
         Ok(user) => {
             session.insert("username", user.username).unwrap();
-            HttpResponse::Ok().json("Success")
+            HttpResponse::Ok().body("Success")
         }
         Err(_) => HttpResponse::Unauthorized().json("Authentication failed"),
     }
@@ -36,7 +36,7 @@ async fn logout(session: Session) -> Result<impl Responder, actix_web::Error> {
 
     session.purge();
 
-    Ok(HttpResponse::Ok())
+    Ok(HttpResponse::Ok().body("Logged out."))
 }
 
 pub fn validate_session(session: &Session) -> Result<String, actix_web::Error> {

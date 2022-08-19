@@ -5,6 +5,7 @@ mod components;
 mod nav;
 mod routes;
 
+use components::notifier::Notifier;
 use nav::Nav;
 use routes::{switch, Route};
 
@@ -14,6 +15,7 @@ fn app() -> Html {
         <BrowserRouter>
             <Nav />
             <Switch<Route> render={Switch::render(switch)} />
+            <Notifier />
         </BrowserRouter>
     }
 }

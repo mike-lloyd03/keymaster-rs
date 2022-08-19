@@ -1,13 +1,14 @@
-use crate::components::form::{Form, PasswordField, TextField};
-use reqwasm::http::Request;
+use crate::components::form::{Button, ButtonType, Form, PasswordField, TextField};
+use gloo_net::http::Request;
 use yew::prelude::*;
 
 #[function_component(Login)]
 pub fn login() -> Html {
     html! {
-        <Form title="Login" action="login">
+        <Form title="Login" action="login" >
             <TextField label="Username" />
             <PasswordField label="Password" />
+            <Button name="submit" value="Login" button_type={ButtonType::Primary} />
         </Form>
     }
 }

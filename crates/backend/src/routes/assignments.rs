@@ -1,7 +1,7 @@
 use actix_session::Session;
 use actix_web::{
     delete,
-    error::{ErrorBadRequest, ErrorInternalServerError, ErrorNotFound, ErrorUnauthorized},
+    error::{ErrorBadRequest, ErrorInternalServerError, ErrorNotFound},
     get, post, web, HttpResponse, Responder,
 };
 use chrono::NaiveDate;
@@ -11,31 +11,15 @@ use sqlx::PgPool;
 
 use crate::{
     models::Assignment,
-    routes::{validate_admin, validate_session},
+    routes::{unpack, validate_admin, validate_session},
 };
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Clone)]
 struct UpdateQuery {
     user: Option<String>,
     key: Option<String>,
     date_out: Option<NaiveDate>,
     date_in: Option<NaiveDate>,
-}
-
-#[get("/assignments")]
-async fn get_all(
-    pool: web::Data<PgPool>,
-    session: Session,
-) -> Result<impl Responder, actix_web::Error> {
-    validate_session(&session)?;
-
-    match Assignment::get_all(&pool).await {
-        Ok(a) => Ok(HttpResponse::Ok().json(a)),
-        Err(e) => {
-            error!("Failed to get assignments. {}", e);
-            Err(ErrorInternalServerError("Failed to get assignments."))
-        }
-    }
 }
 
 #[get("/assignments/{assignment_id}")]
@@ -60,16 +44,34 @@ async fn get(
     }
 }
 
+#[get("/assignments")]
+async fn get_all(
+    pool: web::Data<PgPool>,
+    session: Session,
+) -> Result<impl Responder, actix_web::Error> {
+    validate_session(&session)?;
+
+    match Assignment::get_all(&pool).await {
+        Ok(a) => Ok(HttpResponse::Ok().json(a)),
+        Err(e) => {
+            error!("Failed to get assignments. {}", e);
+            Err(ErrorInternalServerError("Failed to get assignments."))
+        }
+    }
+}
+
 #[post("/assignments")]
 async fn create(
-    assignment: web::Json<Assignment>,
+    assignment: web::Either<web::Json<Assignment>, web::Form<Assignment>>,
     pool: web::Data<PgPool>,
     session: Session,
 ) -> Result<impl Responder, actix_web::Error> {
     validate_admin(&session, &pool).await?;
 
+    let assignment = unpack(assignment);
+
     match assignment.create(&pool).await {
-        Ok(_) => Ok(HttpResponse::Ok().json(format!(
+        Ok(_) => Ok(HttpResponse::Ok().body(format!(
             "Key '{}' assigned to '{}'",
             assignment.key, assignment.user
         ))),
@@ -103,11 +105,13 @@ async fn create(
 #[post("/assignments/{assignment_id}")]
 async fn update(
     assignment_id: web::Path<i64>,
-    query: web::Json<UpdateQuery>,
+    query: web::Either<web::Json<UpdateQuery>, web::Form<UpdateQuery>>,
     pool: web::Data<PgPool>,
     session: Session,
 ) -> Result<impl Responder, actix_web::Error> {
     validate_admin(&session, &pool).await?;
+
+    let query = unpack(query);
 
     let assignment_id = assignment_id.into_inner();
 
@@ -136,7 +140,7 @@ async fn update(
     };
 
     match assignment.update(&pool).await {
-        Ok(_) => Ok(HttpResponse::Ok().json(assignment)),
+        Ok(_) => Ok(HttpResponse::Ok().body(format!("Updated assignment '{}.", assignment.id()))),
         Err(e) => {
             error!("Failed to update assignment. {}", e);
             Err(ErrorInternalServerError("Failed to update assignment."))
@@ -154,7 +158,7 @@ async fn delete(
 
     match Assignment::get(&pool, assignment_id.into_inner()).await {
         Ok(a) => match a.delete(&pool).await {
-            Ok(_) => Ok(HttpResponse::Ok().json(format!("Deleted assignment '{}'", a.id()))),
+            Ok(_) => Ok(HttpResponse::Ok().body(format!("Deleted assignment '{}'", a.id()))),
             Err(e) => {
                 error!("Failed to delete assignment. {}", e);
                 Err(ErrorInternalServerError("Failed to delete assignment."))

@@ -3,7 +3,7 @@ use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
 
-#[derive(Debug, PartialEq, FromRow, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, FromRow, Serialize, Deserialize)]
 pub struct Assignment {
     #[serde(skip_deserializing)]
     id: i64,
@@ -86,23 +86,6 @@ impl Assignment {
         .await
     }
 
-    pub async fn check_in(
-        &mut self,
-        pool: &PgPool,
-        date: NaiveDate,
-    ) -> Result<PgQueryResult, sqlx::Error> {
-        self.date_in = Some(date);
-
-        query!(
-            r#"UPDATE assignments SET date_in = $1 WHERE "user" = $2 AND key = $3"#,
-            date,
-            self.user,
-            self.key,
-        )
-        .execute(pool)
-        .await
-    }
-
     pub async fn delete(&self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
         query!(
             r#"DELETE FROM assignments WHERE "user" = $1 AND key = $2"#,
@@ -148,18 +131,6 @@ mod assignment_tests {
         assert_eq!("key1", assgn1.key);
         assert_eq!(date_out, assgn1.date_out);
         assert_eq!(None, assgn1.date_in);
-
-        Ok(())
-    }
-
-    #[sqlx::test(fixtures("users", "keys", "assignments"))]
-    async fn check_in_assignment(pool: PgPool) -> Result<()> {
-        let date_in = NaiveDate::from_ymd(1988, 11, 3);
-        let mut assgn1 = Assignment::get(&pool, 1).await?;
-        assgn1.check_in(&pool, date_in).await?;
-        let assgn2 = Assignment::get(&pool, 1).await?;
-
-        assert_eq!(date_in, assgn2.date_in.unwrap());
 
         Ok(())
     }

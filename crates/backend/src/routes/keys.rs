@@ -1,7 +1,5 @@
 use actix_session::Session;
-use actix_web::error::{
-    ErrorBadRequest, ErrorInternalServerError, ErrorNotFound, ErrorUnauthorized,
-};
+use actix_web::error::{ErrorBadRequest, ErrorInternalServerError, ErrorNotFound};
 use actix_web::{delete, get, post, web, HttpResponse, Responder};
 use log::error;
 use serde::Deserialize;
@@ -64,7 +62,7 @@ async fn create(
     let key = unpack(key);
 
     match key.create(&pool).await {
-        Ok(_) => Ok(HttpResponse::Ok().json(key)),
+        Ok(_) => Ok(HttpResponse::Ok().body(format!("Created key '{}'", key.name))),
         Err(e) => match e.to_string() {
             x if x.contains("duplicate key") => Err(ErrorBadRequest("Key already exists.")),
             _ => {
@@ -104,7 +102,7 @@ async fn update(
     };
 
     match key.update(&pool).await {
-        Ok(_) => Ok(HttpResponse::Ok().json(key)),
+        Ok(_) => Ok(HttpResponse::Ok().body(format!("Updated key '{}'", key.name))),
         Err(e) => {
             error!("Failed to update key. {}", e);
             Err(ErrorInternalServerError("Failed to update key."))
@@ -122,7 +120,7 @@ async fn delete(
 
     match Key::get(&pool, &key_name.into_inner()).await {
         Ok(k) => match k.delete(&pool).await {
-            Ok(_) => Ok(HttpResponse::Ok().json(format!("Deleted key '{}'", k.name))),
+            Ok(_) => Ok(HttpResponse::Ok().body(format!("Deleted key '{}'", k.name))),
             Err(e) => {
                 error!("Failed to delete key. {}", e);
                 Err(ErrorInternalServerError("Failed to delete key."))

@@ -1,16 +1,17 @@
 use crate::components::form::{Button, ButtonType, CheckboxField, Form, TextField};
-use crate::components::notifier::{Notification, Notifier};
+use crate::components::notifier::Notification;
 use crate::components::table::{Cell, Row, Table};
-use crate::routes::Route;
+use crate::routes::{oninput, onsubmit, Route};
 use web_sys::HtmlInputElement;
 
 use gloo_net::http::Request;
 use serde::Deserialize;
-use serde_json::json;
 use yew::prelude::*;
 use yew_router::history::History;
 use yew_router::hooks::use_history;
 use yew_router::prelude::Redirect;
+use yewdux::prelude::*;
+use yewdux_functional::use_store;
 
 #[derive(PartialEq, Default, Deserialize)]
 pub struct Key {
@@ -23,19 +24,10 @@ pub struct Key {
 pub fn new_key() -> Html {
     let name = use_state(|| "".to_string());
     let description = use_state(|| "".to_string());
-    let alert = use_state(|| Notification {
-        ..Default::default()
-    });
+    let store = use_store::<BasicStore<Notification>>();
 
-    fn onchange(state: UseStateHandle<String>) -> Callback<Event> {
-        Callback::from(move |e: Event| {
-            let input: HtmlInputElement = e.target_unchecked_into();
-            state.set(input.value());
-        })
-    }
-
-    let onchange_name = onchange(name.clone());
-    let onchange_desc = onchange(description.clone());
+    let oninput_name = oninput(name.clone());
+    let oninput_desc = oninput(description.clone());
 
     let oncancel = {
         let history = use_history().unwrap();
@@ -44,37 +36,16 @@ pub fn new_key() -> Html {
 
     let onsubmit = {
         let history = use_history().unwrap();
-        let name = name.clone();
-        let description = description.clone();
-        let alert = alert.clone();
-
-        Callback::once(move |e: FocusEvent| {
-            e.prevent_default();
-            wasm_bindgen_futures::spawn_local(async move {
-                let resp = Request::post("api/keys")
-                    .json(&json!({
-                        "name": (*name).clone(),
-                        "description": (*description).clone()
-                    }))
-                    .unwrap()
-                    .send()
-                    .await
-                    .unwrap();
-
-                match resp.status() {
-                    400 => (),
-                    401 => (),
-                    _ => history.push(Route::Keys),
-                }
-            });
-        })
+        let fields = vec![("name", name.clone()), ("description", description.clone())];
+        onsubmit("api/keys", fields, store, history)
     };
 
     html! {
         <Form title="New Key" action="keys" {onsubmit}>
-            <TextField label="Key Name" name="name" required=true value={(*name).clone()} onchange={onchange_name} pattern=r#"[\w\d]{3,}"# />
-            <TextField label="Description" value={(*description).clone()} onchange={onchange_desc} />
+            <TextField label="Key Name" name="name" required=true value={(*name).clone()} oninput={oninput_name} pattern=r#"[\w\d]{3,}"# />
+            <TextField label="Description" value={(*description).clone()} oninput={oninput_desc} />
             <Button name="submit" value="Add Key" button_type={ButtonType::Primary} />
+            {" "}
             <Button
                 name="cancel"
                 value="Cancel"
@@ -159,7 +130,7 @@ pub fn key_table() -> Html {
     html! {
         <div class="container text-light my-3">
             <div class="row justify-content-center">
-                <Table title="Keys">
+                <Table title="Keys" button_label="Add Key" button_route={Route::AddKey}>
                 { for rows }
                 </Table>
             </div>

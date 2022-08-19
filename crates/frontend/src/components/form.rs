@@ -41,14 +41,6 @@ pub fn form(props: &FormProps) -> Html {
     }
 }
 
-/// Form submit button.
-///
-/// Props:
-/// - value: String
-/// - name: String
-/// - button_type: Option<ButtonType>
-/// - onclick: Option<Callback<MouseEvent>>
-/// - novalidate: Option<bool>
 #[function_component(Button)]
 pub fn button(props: &ButtonProps) -> Html {
     html! {
@@ -101,7 +93,7 @@ pub fn text_field(props: &LabelProps) -> Html {
                 value={props.value.clone()}
                 required={props.required.unwrap_or(false)}
                 pattern={props.pattern.clone()}
-                onchange={props.onchange.clone()}
+                oninput={props.oninput.clone()}
             />
         </div>
     }
@@ -112,7 +104,7 @@ pub struct LabelProps {
     pub label: String,
     pub name: Option<String>,
     pub value: Option<String>,
-    pub onchange: Option<Callback<Event>>,
+    pub oninput: Option<Callback<InputEvent>>,
     pub required: Option<bool>,
     pub pattern: Option<String>,
 }

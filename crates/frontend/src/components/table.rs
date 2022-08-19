@@ -1,4 +1,6 @@
+use crate::routes::Route;
 use yew::prelude::*;
+use yew_router::prelude::Link;
 
 #[function_component(Cell)]
 pub fn cell(props: &CellProps) -> Html {
@@ -40,16 +42,31 @@ pub fn table(props: &TableProps) -> Html {
     html! {
         <div style="text-align: center">
             <h2>{ props.title.clone() }</h2>
-                <table class="table table-striped table-hover table-bordered table-dark">
-                    <thead class="table-dark">
-                        <tr>
-                            { for headings.iter().map(|heading| html!{<th>{ heading.clone() }</th>}) }
-                        </tr>
-                    </thead>
-                    <tbody>
-                        { for props.children.iter()}
-                    </tbody>
-                </table>
+            {
+                match props.button_label.clone() {
+                    Some(label) => {
+                        let route = props.button_route.clone().unwrap_or(Route::Home);
+                        html! {
+                            <div class="container py-2">
+                                <Link<Route> classes={classes!("btn", "btn-primary")} to={route}>
+                                {label}
+                            </Link<Route>>
+                            </div>
+                        }
+                    }
+                    None => html!{},
+                }
+            }
+            <table class="table table-striped table-hover table-bordered table-dark">
+                <thead class="table-dark">
+                    <tr>
+                        { for headings.iter().map(|heading| html!{<th>{ heading.clone() }</th>}) }
+                    </tr>
+                </thead>
+                <tbody>
+                    { for props.children.iter()}
+                </tbody>
+            </table>
         </div>
     }
 }
@@ -57,5 +74,7 @@ pub fn table(props: &TableProps) -> Html {
 #[derive(Properties, PartialEq)]
 pub struct TableProps {
     pub title: String,
+    pub button_label: Option<String>,
+    pub button_route: Option<Route>,
     pub children: ChildrenWithProps<Row>,
 }
