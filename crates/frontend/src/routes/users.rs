@@ -63,7 +63,7 @@ pub fn user_table() -> Html {
                     user.display_name.clone().unwrap_or_else(|| user.username.clone())
                 } />
                 <Cell heading="Email" value={
-                    user.email.clone().unwrap_or_else(|| "".to_string())
+                    user.email.clone().unwrap_or_default()
                 } />
                 <Cell heading="" value="Edit" />
             </Row>

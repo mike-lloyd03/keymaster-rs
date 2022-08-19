@@ -24,7 +24,7 @@ pub fn form(props: &FormProps) -> Html {
                 }
                 <form action={
                         format!("http://localhost:8080/api/{}",
-                        props.action.clone().unwrap_or_else(|| "".to_string())
+                        props.action.clone().unwrap_or_default()
                         )
                     }
                     method="post"
@@ -52,7 +52,7 @@ pub fn button(props: &ButtonProps) -> Html {
                     ButtonType::Danger => "btn btn-danger",
                 }
             }
-            formnovalidate={ props.novalidate.unwrap_or(false) }
+            formnovalidate={ props.novalidate.unwrap_or_default() }
             id={ props.name.clone() }
             name={ props.name.clone() }
             type="submit"
@@ -72,7 +72,7 @@ pub enum ButtonType {
 #[derive(Properties, PartialEq)]
 pub struct ButtonProps {
     pub value: String,
-    pub name: String,
+    pub name: Option<String>,
     pub button_type: Option<ButtonType>,
     pub onclick: Option<Callback<MouseEvent>>,
     pub novalidate: Option<bool>,
@@ -91,7 +91,7 @@ pub fn text_field(props: &LabelProps) -> Html {
                 name={ props.name.clone().unwrap_or_else(|| snake_case(label.clone())) }
                 type="text"
                 value={props.value.clone()}
-                required={props.required.unwrap_or(false)}
+                required={props.required.unwrap_or_default()}
                 pattern={props.pattern.clone()}
                 oninput={props.oninput.clone()}
             />
@@ -107,10 +107,11 @@ pub struct LabelProps {
     pub oninput: Option<Callback<InputEvent>>,
     pub required: Option<bool>,
     pub pattern: Option<String>,
+    pub checked: Option<bool>,
 }
 
 #[function_component(CheckboxField)]
-pub fn checkbox_field(props: &LabelProps) -> Html {
+pub fn checkbox_field(props: &CheckboxProps) -> Html {
     let label = &props.label;
 
     html! {
@@ -120,11 +121,20 @@ pub fn checkbox_field(props: &LabelProps) -> Html {
                     id={ snake_case(label.clone()) }
                     name={ snake_case(label.clone()) }
                     type="checkbox"
-                    value="n"
-                />{ format!(" {}", label) }
+                    checked={props.checked.unwrap_or_default()}
+                    onchange={props.onchange.clone()}
+                />
+                { format!(" {}", label) }
             </label>
         </div>
     }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct CheckboxProps {
+    pub label: String,
+    pub onchange: Option<Callback<Event>>,
+    pub checked: Option<bool>,
 }
 
 #[function_component(MultiSelectField)]
@@ -199,7 +209,8 @@ pub fn password_field(props: &LabelProps) -> Html {
                 name={ snake_case(label.clone()) }
                 required=true
                 type="password"
-                value=""
+                value={props.value.clone()}
+                oninput={props.oninput.clone()}
             />
         </div>
     }

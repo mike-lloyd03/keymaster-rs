@@ -4,15 +4,25 @@ use yew_router::prelude::Link;
 
 #[function_component(Cell)]
 pub fn cell(props: &CellProps) -> Html {
-    html! {
-        <td>{ props.value.clone() }</td>
+    match props.edit_route.clone() {
+        Some(route) => html! {
+            <td>
+                <Link<Route> classes={classes!("btn", "btn-outline-primary")} to={route}>
+                    {"Edit"}
+                </Link<Route>>
+            </td>
+        },
+        None => html! {
+            <td>{ props.value.clone().unwrap_or_default() }</td>
+        },
     }
 }
 
 #[derive(Properties, PartialEq)]
 pub struct CellProps {
     pub heading: String,
-    pub value: String,
+    pub value: Option<String>,
+    pub edit_route: Option<Route>,
 }
 
 #[function_component(Row)]

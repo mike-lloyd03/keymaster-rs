@@ -26,9 +26,12 @@ impl Key {
     }
 
     pub async fn get_all(pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
-        query_as!(Self, "SELECT name, description, active FROM keys")
-            .fetch_all(pool)
-            .await
+        query_as!(
+            Self,
+            "SELECT name, description, active FROM keys ORDER BY name"
+        )
+        .fetch_all(pool)
+        .await
     }
 
     pub async fn create(&self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
