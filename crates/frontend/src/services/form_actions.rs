@@ -6,14 +6,13 @@ use serde::Serialize;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::*;
-use yewdux_functional::StoreRef;
 
 use crate::services::requests::{delete, post};
 
 pub fn onsubmit<T: Serialize + 'static>(
     path: String,
     body: T,
-    store: StoreRef<BasicStore<Notification>>,
+    dispatch: Dispatch<Notification>,
     history: AnyHistory,
     next_route: Route,
 ) -> Callback<FocusEvent> {
@@ -22,12 +21,12 @@ pub fn onsubmit<T: Serialize + 'static>(
         wasm_bindgen_futures::spawn_local(async move {
             match post(path, body).await {
                 Ok(data) => {
-                    notify(store, data, "info".to_string());
+                    notify(dispatch, data, "info".to_string());
                     history.push(next_route)
                 }
                 Err(e) => {
                     let error_message = format!("{:?}", e);
-                    notify(store, error_message, "error".to_string());
+                    notify(dispatch, error_message, "error".to_string());
                 }
             };
         })
@@ -36,7 +35,7 @@ pub fn onsubmit<T: Serialize + 'static>(
 
 pub fn ondelete(
     path: String,
-    store: StoreRef<BasicStore<Notification>>,
+    dispatch: Dispatch<Notification>,
     history: AnyHistory,
     next_route: Route,
 ) -> Callback<MouseEvent> {
@@ -45,12 +44,12 @@ pub fn ondelete(
         wasm_bindgen_futures::spawn_local(async move {
             match delete(path).await {
                 Ok(data) => {
-                    notify(store, data, "info".to_string());
+                    notify(dispatch, data, "info".to_string());
                     history.push(next_route)
                 }
                 Err(e) => {
                     let error_message = format!("{:?}", e);
-                    notify(store, error_message, "error".to_string());
+                    notify(dispatch, error_message, "error".to_string());
                 }
             };
         })

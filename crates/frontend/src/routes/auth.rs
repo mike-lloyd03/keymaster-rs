@@ -1,23 +1,18 @@
-use crate::components::{
-    form::{Button, ButtonType, Form, PasswordField, TextField},
-    notifier::Notification,
-    user_context_provider::UserInfo,
+use crate::types::{Credentials, UserInfo};
+use crate::{
+    components::{
+        form::{Button, ButtonType, Form, PasswordField, TextField},
+        notifier::{notify, Notification},
+    },
+    services::requests::{get, post},
 };
 use gloo_net::http::Request;
-use serde::Serialize;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::*;
-use yewdux_functional::use_store;
 
 use super::Route;
-use crate::services::form_actions::{oninput_string, onsubmit};
-
-#[derive(Serialize)]
-struct Credentials {
-    username: String,
-    password: String,
-}
+use crate::services::form_actions::oninput_string;
 
 #[function_component(Login)]
 pub fn login() -> Html {
@@ -31,9 +26,29 @@ pub fn login() -> Html {
             username: (*username).clone(),
             password: (*password).clone(),
         };
-        let store = use_store::<BasicStore<Notification>>();
+        let (_, notify_dispatch) = use_store::<Notification>();
+        let (_, user_dispatch) = use_store::<UserInfo>();
         let history = use_history().unwrap();
-        onsubmit("api/login".into(), creds, store, history, Route::Home)
+        Callback::once(move |e: FocusEvent| {
+            e.prevent_default();
+            wasm_bindgen_futures::spawn_local(async move {
+                match post::<Credentials, String>("/api/login".into(), creds).await {
+                    Ok(_) => {
+                        let ui: UserInfo = get("/api/session".into()).await.unwrap();
+                        user_dispatch.reduce_mut(|s| {
+                            s.username = ui.username;
+                            s.is_auth = ui.is_auth;
+                            s.is_admin = ui.is_admin;
+                        });
+                        history.push(Route::Home)
+                    }
+                    Err(e) => {
+                        let error_message = format!("{:?}", e);
+                        notify(notify_dispatch, error_message, "error".into());
+                    }
+                };
+            })
+        })
     };
 
     html! {
@@ -47,13 +62,13 @@ pub fn login() -> Html {
 
 #[function_component(Logout)]
 pub fn logout() -> Html {
-    let user_store = use_store::<BasicStore<UserInfo>>();
+    let (_, user_dispatch) = use_store::<UserInfo>();
 
     wasm_bindgen_futures::spawn_local(async move {
         Request::post("/api/logout").send().await.unwrap();
     });
 
-    user_store.dispatch().reduce(|s| {
+    user_dispatch.reduce_mut(|s| {
         s.username = None;
         s.is_auth = false;
         s.is_admin = false;

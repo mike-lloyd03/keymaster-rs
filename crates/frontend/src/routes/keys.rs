@@ -4,22 +4,14 @@ use crate::components::table::{Cell, Row, Table};
 use crate::error::Error;
 use crate::services::form_actions::{ondelete, oninput_bool, oninput_string, onsubmit};
 use crate::services::requests::get;
+use crate::types::Key;
 
-use serde::{Deserialize, Serialize};
 use yew::prelude::*;
 use yew_router::history::History;
 use yew_router::hooks::use_history;
 use yewdux::prelude::*;
-use yewdux_functional::use_store;
 
 use super::Route;
-
-#[derive(PartialEq, Eq, Default, Serialize, Deserialize)]
-pub struct Key {
-    pub name: String,
-    pub description: Option<String>,
-    pub active: bool,
-}
 
 #[function_component(NewKey)]
 pub fn new_key() -> Html {
@@ -39,9 +31,9 @@ pub fn new_key() -> Html {
             description: Some((*description).clone()),
             active: true,
         };
-        let store = use_store::<BasicStore<Notification>>();
+        let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();
-        onsubmit("/api/keys".to_string(), key, store, history, Route::Keys)
+        onsubmit("/api/keys".to_string(), key, dispatch, history, Route::Keys)
     };
 
     html! {
@@ -86,7 +78,7 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
         let key_name = key_name.clone();
         let description = description.clone();
         let active = active.clone();
-        let store = use_store::<BasicStore<Notification>>();
+        let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();
         let url = format!("/api/keys/{}", &key_name);
         use_effect_with_deps(
@@ -101,12 +93,12 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
                             Error::Unauthorized => {
                                 history.push(Route::Login);
                                 notify(
-                                    store,
+                                    dispatch,
                                     "You must log in to access this page".into(),
                                     "error".into(),
                                 );
                             }
-                            _ => notify(store, e.to_string(), "error".into()),
+                            _ => notify(dispatch, e.to_string(), "error".into()),
                         },
                     }
                 });
@@ -122,17 +114,17 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
             description: Some((*description).clone()),
             active: true,
         };
-        let store = use_store::<BasicStore<Notification>>();
+        let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();
         let path = format!("/api/keys/{}", key_name);
-        onsubmit(path, key, store, history, Route::Keys)
+        onsubmit(path, key, dispatch, history, Route::Keys)
     };
 
     let ondelete = {
-        let store = use_store::<BasicStore<Notification>>();
+        let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();
         let path = format!("/api/keys/{}", key_name);
-        ondelete(path, store, history, Route::Keys)
+        ondelete(path, dispatch, history, Route::Keys)
     };
 
     let oncancel = {
@@ -174,7 +166,7 @@ pub fn key_table() -> Html {
 
     // Get keys on load
     {
-        let store = use_store::<BasicStore<Notification>>();
+        let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();
         let keys = keys.clone();
         use_effect_with_deps(
@@ -187,12 +179,12 @@ pub fn key_table() -> Html {
                             Error::Unauthorized => {
                                 history.push(Route::Login);
                                 notify(
-                                    store,
+                                    dispatch,
                                     "You must log in to access this page".into(),
                                     "error".into(),
                                 );
                             }
-                            _ => notify(store, e.to_string(), "error".into()),
+                            _ => notify(dispatch, e.to_string(), "error".into()),
                         },
                     }
                 });

@@ -1,9 +1,8 @@
 use gloo_timers::callback::Timeout;
 use yew::prelude::*;
 use yewdux::prelude::*;
-use yewdux_functional::{use_store, StoreRef};
 
-#[derive(Clone, Default, PartialEq, Eq)]
+#[derive(Clone, Default, PartialEq, Eq, Store)]
 pub struct Notification {
     pub msg: Option<String>,
     pub lvl: Option<String>,
@@ -11,10 +10,10 @@ pub struct Notification {
 
 #[function_component(Notifier)]
 pub fn notifier() -> Html {
-    let store = use_store::<BasicStore<Notification>>();
-    let msg = store.state().map(|s| s.msg.clone()).unwrap_or_default();
-    let lvl = store.state().map(|s| s.lvl.clone()).unwrap_or_default();
-    let dismiss = store.dispatch().reduce_callback(|s| {
+    let (state, dispatch) = use_store::<Notification>();
+    let msg = state.msg.clone();
+    let lvl = state.lvl.clone();
+    let dismiss = dispatch.reduce_mut_callback(|s| {
         s.msg = None;
         s.lvl = None;
     });
@@ -22,7 +21,7 @@ pub fn notifier() -> Html {
     {
         use_effect(move || {
             let timeout = Timeout::new(10000, move || {
-                store.dispatch().reduce(|s| {
+                dispatch.reduce_mut(|s| {
                     s.msg = None;
                     s.lvl = None;
                 });
@@ -61,8 +60,8 @@ pub fn notifier() -> Html {
 }
 
 /// Sends a notification to the user.
-pub fn notify(store: StoreRef<BasicStore<Notification>>, msg: String, lvl: String) {
-    store.dispatch().reduce(|s| {
+pub fn notify(dispatch: Dispatch<Notification>, msg: String, lvl: String) {
+    dispatch.reduce_mut(|s| {
         s.msg = Some(msg);
         s.lvl = Some(lvl);
     });

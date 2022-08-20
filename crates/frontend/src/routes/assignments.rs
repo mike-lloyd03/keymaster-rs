@@ -1,16 +1,8 @@
 use crate::components::form::{DateField, Form, MultiSelectField, MultiSelectOption, TextField};
 use crate::components::table::{Cell, Row, Table};
+use crate::types::Assignment;
 use chrono::NaiveDate;
 use yew::prelude::*;
-
-#[derive(PartialEq, Default, Clone)]
-pub struct Assignment {
-    id: i64,
-    pub user: String,
-    pub key: String,
-    pub date_out: NaiveDate,
-    pub date_in: Option<NaiveDate>,
-}
 
 #[function_component(NewAssignment)]
 pub fn new_assignment() -> Html {

@@ -1,16 +1,7 @@
 use crate::components::form::{CheckboxField, Form, TextField};
 use crate::components::table::{Cell, Row, Table};
+use crate::types::User;
 use yew::prelude::*;
-
-#[derive(PartialEq, Default, Clone)]
-pub struct User {
-    pub id: i64,
-    pub username: String,
-    pub display_name: Option<String>,
-    pub email: Option<String>,
-    pub can_login: bool,
-    pub admin: bool,
-}
 
 #[function_component(NewUser)]
 pub fn new_user() -> Html {
