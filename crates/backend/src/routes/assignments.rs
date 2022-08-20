@@ -71,7 +71,7 @@ async fn create(
     let assignment = unpack(assignment);
 
     match assignment.create(&pool).await {
-        Ok(_) => Ok(HttpResponse::Ok().body(format!(
+        Ok(_) => Ok(HttpResponse::Ok().json(format!(
             "Key '{}' assigned to '{}'",
             assignment.key, assignment.user
         ))),
@@ -140,7 +140,7 @@ async fn update(
     };
 
     match assignment.update(&pool).await {
-        Ok(_) => Ok(HttpResponse::Ok().body(format!("Updated assignment '{}.", assignment.id()))),
+        Ok(_) => Ok(HttpResponse::Ok().json(format!("Updated assignment '{}.", assignment.id()))),
         Err(e) => {
             error!("Failed to update assignment. {}", e);
             Err(ErrorInternalServerError("Failed to update assignment."))
@@ -158,7 +158,7 @@ async fn delete(
 
     match Assignment::get(&pool, assignment_id.into_inner()).await {
         Ok(a) => match a.delete(&pool).await {
-            Ok(_) => Ok(HttpResponse::Ok().body(format!("Deleted assignment '{}'", a.id()))),
+            Ok(_) => Ok(HttpResponse::Ok().json(format!("Deleted assignment '{}'", a.id()))),
             Err(e) => {
                 error!("Failed to delete assignment. {}", e);
                 Err(ErrorInternalServerError("Failed to delete assignment."))

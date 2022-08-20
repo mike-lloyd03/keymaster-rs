@@ -44,7 +44,7 @@ async fn logout(session: Session) -> Result<impl Responder, actix_web::Error> {
 
     session.purge();
 
-    Ok(HttpResponse::Ok().body("Logged out"))
+    Ok(HttpResponse::Ok().json("Logged out"))
 }
 
 #[get("/session")]

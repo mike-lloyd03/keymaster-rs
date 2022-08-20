@@ -73,7 +73,7 @@ async fn create(
     let user = unpack(user);
 
     match user.create(&pool).await {
-        Ok(_) => Ok(HttpResponse::Ok().body(format!("Created user '{}'", user.username))),
+        Ok(_) => Ok(HttpResponse::Ok().json(format!("Created user '{}'", user.username))),
         Err(e) => match e.to_string() {
             x if x.contains("duplicate key") => Err(error::ErrorBadRequest(format!(
                 "User '{}' already exists.",
@@ -124,7 +124,7 @@ async fn update(
     };
 
     match user.update(&pool).await {
-        Ok(_) => Ok(HttpResponse::Ok().body(format!("Updated user '{}'", user.username))),
+        Ok(_) => Ok(HttpResponse::Ok().json(format!("Updated user '{}'", user.username))),
         Err(e) => {
             error!("Failed to update user. {}", e);
             Err(error::ErrorInternalServerError("Failed to update user."))
@@ -142,7 +142,7 @@ async fn delete(
 
     match User::get(&pool, &username.into_inner()).await {
         Ok(u) => match u.delete(&pool).await {
-            Ok(_) => Ok(HttpResponse::Ok().body(format!("Deleted user '{}'", u.username))),
+            Ok(_) => Ok(HttpResponse::Ok().json(format!("Deleted user '{}'", u.username))),
             Err(e) => {
                 error!("Failed to delete user. {}", e);
                 Err(error::ErrorInternalServerError("Failed to delete user."))
@@ -164,7 +164,7 @@ async fn set_password(
     match User::get(&pool, &username.into_inner()).await {
         Ok(mut u) => match u.set_password(&pool, &payload.new_password).await {
             Ok(_) => {
-                Ok(HttpResponse::Ok().body(format!("Password updated for user '{}'", u.username)))
+                Ok(HttpResponse::Ok().json(format!("Password updated for user '{}'", u.username)))
             }
             Err(e) => {
                 error!("Failed to update password. {}", e);
