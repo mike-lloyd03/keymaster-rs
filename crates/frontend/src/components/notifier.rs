@@ -34,7 +34,7 @@ pub fn notifier() -> Html {
     }
 
     match msg {
-        Some(message) => {
+        Some(message) if !message.is_empty() => {
             let mut classes = classes!("alert", "alert-float");
             match lvl {
                 Some(l) => match l.as_str() {
@@ -56,7 +56,7 @@ pub fn notifier() -> Html {
                 </div>
             }
         }
-        None => html! {},
+        _ => html! {},
     }
 }
 

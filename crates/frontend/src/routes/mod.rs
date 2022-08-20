@@ -1,6 +1,7 @@
 use crate::components::notifier::{notify, Notification};
-use gloo_net::http::Request;
+use crate::services::requests::{delete, post};
 
+use serde::Serialize;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -12,7 +13,7 @@ mod auth;
 mod keys;
 mod users;
 
-#[derive(Clone, Routable, PartialEq)]
+#[derive(Clone, Routable, PartialEq, Eq)]
 pub enum Route {
     #[at("/")]
     Home,
@@ -39,7 +40,7 @@ pub enum Route {
     #[at("/edit-user")]
     EditUser,
     #[not_found]
-    #[at("/404")]
+    #[at("/not-found")]
     NotFound,
 }
 
@@ -70,9 +71,9 @@ pub fn switch(routes: &Route) -> Html {
     }
 }
 
-pub fn onsubmit(
+pub fn onsubmit<T: Serialize + 'static>(
     path: String,
-    json: serde_json::Value,
+    json: T,
     store: StoreRef<BasicStore<Notification>>,
     history: AnyHistory,
     next_route: Route,
@@ -80,21 +81,16 @@ pub fn onsubmit(
     Callback::once(move |e: FocusEvent| {
         e.prevent_default();
         wasm_bindgen_futures::spawn_local(async move {
-            let resp = Request::post(&path)
-                .json(&json)
-                .unwrap()
-                .send()
-                .await
-                .unwrap();
-
-            let resp_text = resp.text().await;
-            match resp.ok() {
-                false => notify(store, resp_text.unwrap(), "error".to_string()),
-                true => {
-                    notify(store, resp_text.unwrap(), "info".to_string());
+            match post(path, json).await {
+                Ok(data) => {
+                    notify(store, data, "info".to_string());
                     history.push(next_route)
                 }
-            }
+                Err(e) => {
+                    let error_message = format!("{:?}", e);
+                    notify(store, error_message, "error".to_string());
+                }
+            };
         })
     })
 }
@@ -122,16 +118,16 @@ pub fn ondelete(
     Callback::once(move |e: MouseEvent| {
         e.prevent_default();
         wasm_bindgen_futures::spawn_local(async move {
-            let resp = Request::delete(&path).send().await.unwrap();
-
-            let resp_text = resp.text().await;
-            match resp.ok() {
-                false => notify(store, resp_text.unwrap(), "error".to_string()),
-                true => {
-                    notify(store, resp_text.unwrap(), "info".to_string());
+            match delete(path).await {
+                Ok(data) => {
+                    notify(store, data, "info".to_string());
                     history.push(next_route)
                 }
-            }
+                Err(e) => {
+                    let error_message = format!("{:?}", e);
+                    notify(store, error_message, "error".to_string());
+                }
+            };
         })
     })
 }

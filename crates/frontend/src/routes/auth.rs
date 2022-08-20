@@ -1,11 +1,12 @@
 use crate::components::{
     form::{Button, ButtonType, Form, PasswordField, TextField},
     notifier::Notification,
+    user_context_provider::UserInfo,
 };
 use gloo_net::http::Request;
 use yew::prelude::*;
-use yew_router::prelude::use_history;
-use yewdux::prelude::BasicStore;
+use yew_router::prelude::*;
+use yewdux::prelude::*;
 use yewdux_functional::use_store;
 
 use super::{oninput_string, onsubmit, Route};
@@ -25,7 +26,7 @@ pub fn login() -> Html {
         });
         let store = use_store::<BasicStore<Notification>>();
         let history = use_history().unwrap();
-        onsubmit("api/login".to_string(), json, store, history, Route::Home)
+        onsubmit("api/login".into(), json, store, history, Route::Home)
     };
 
     html! {
@@ -39,14 +40,19 @@ pub fn login() -> Html {
 
 #[function_component(Logout)]
 pub fn logout() -> Html {
+    let user_store = use_store::<BasicStore<UserInfo>>();
+
     wasm_bindgen_futures::spawn_local(async move {
-        Request::post("http://localhost:8080/api/logout")
-            .send()
-            .await
-            .unwrap();
+        Request::post("/api/logout").send().await.unwrap();
+    });
+
+    user_store.dispatch().reduce(|s| {
+        s.username = None;
+        s.is_auth = false;
+        s.is_admin = false;
     });
 
     html! {
-        {"Logged out"}
+        <Redirect<Route> to={Route::Login} />
     }
 }

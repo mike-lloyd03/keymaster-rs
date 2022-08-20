@@ -1,9 +1,17 @@
-use crate::routes::Route;
+use crate::{components::user_context_provider::UserInfo, routes::Route};
 use yew::prelude::*;
 use yew_router::prelude::Link;
+use yewdux::prelude::BasicStore;
+use yewdux_functional::use_store;
 
 #[function_component(Nav)]
 pub fn nav() -> Html {
+    let user_store = use_store::<BasicStore<UserInfo>>();
+    let username = user_store
+        .state()
+        .map(|s| s.username.clone())
+        .unwrap_or_default();
+
     html! {
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
             <div class="container-fluid">
@@ -42,6 +50,9 @@ pub fn nav() -> Html {
                         </li>
 
                     </ul>
+                    <span class="navbar-text">
+                        {username.unwrap_or_default()}
+                    </span>
                 </div>
             </div>
         </nav>

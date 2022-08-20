@@ -2,10 +2,14 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 
 mod components;
+mod error;
+mod hooks;
 mod nav;
 mod routes;
+mod services;
 
 use components::notifier::Notifier;
+use components::user_context_provider::UserContextProvider;
 use nav::Nav;
 use routes::{switch, Route};
 
@@ -13,9 +17,11 @@ use routes::{switch, Route};
 fn app() -> Html {
     html! {
         <BrowserRouter>
-            <Nav />
-            <Switch<Route> render={Switch::render(switch)} />
-            <Notifier />
+            <UserContextProvider>
+                <Nav />
+                <Switch<Route> render={Switch::render(switch)} />
+                <Notifier />
+            </UserContextProvider>
         </BrowserRouter>
     }
 }
