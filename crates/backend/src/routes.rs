@@ -30,7 +30,7 @@ async fn login(
     match User::authenticate(&pool, creds).await {
         Ok(user) => {
             session.insert("username", user.username).unwrap();
-            HttpResponse::Ok().finish()
+            HttpResponse::Ok().json("Success")
         }
         Err(_) => HttpResponse::Unauthorized().json("Authentication failed"),
     }
