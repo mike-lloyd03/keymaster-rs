@@ -1,7 +1,7 @@
-use super::{ondelete, oninput_bool, oninput_string, onsubmit, Route};
 use crate::components::form::{Button, ButtonType, CheckboxField, Form, TextField};
 use crate::components::notifier::{notify, Notification};
 use crate::components::table::{Cell, Row, Table};
+use crate::services::form_actions::{ondelete, oninput_bool, oninput_string, onsubmit};
 use crate::services::requests::get;
 
 use gloo_net::http::Request;
@@ -12,6 +12,8 @@ use yew_router::history::History;
 use yew_router::hooks::use_history;
 use yewdux::prelude::*;
 use yewdux_functional::use_store;
+
+use super::Route;
 
 #[derive(PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Key {

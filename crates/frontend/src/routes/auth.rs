@@ -9,7 +9,8 @@ use yew_router::prelude::*;
 use yewdux::prelude::*;
 use yewdux_functional::use_store;
 
-use super::{oninput_string, onsubmit, Route};
+use super::Route;
+use crate::services::form_actions::{oninput_string, onsubmit};
 
 #[function_component(Login)]
 pub fn login() -> Html {

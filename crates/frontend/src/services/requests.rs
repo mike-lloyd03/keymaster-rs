@@ -14,7 +14,7 @@ where
             Ok(req) => req.send().await,
             Err(_) => return Err(Error::SerializationError),
         },
-        _ => unimplemented!(),
+        _ => unimplemented!(), // We're not using any other methods
     };
 
     match resp {
