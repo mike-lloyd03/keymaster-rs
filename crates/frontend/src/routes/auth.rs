@@ -4,6 +4,7 @@ use crate::components::{
     user_context_provider::UserInfo,
 };
 use gloo_net::http::Request;
+use serde::Serialize;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::*;
@@ -12,22 +13,27 @@ use yewdux_functional::use_store;
 use super::Route;
 use crate::services::form_actions::{oninput_string, onsubmit};
 
+#[derive(Serialize)]
+struct Credentials {
+    username: String,
+    password: String,
+}
+
 #[function_component(Login)]
 pub fn login() -> Html {
     let username = use_state(String::new);
     let password = use_state(String::new);
-
     let oninput_username = oninput_string(username.clone());
     let oninput_password = oninput_string(password.clone());
 
     let onsubmit = {
-        let json = serde_json::json!({
-            "username": (*username).clone(),
-            "password": (*password).clone(),
-        });
+        let creds = Credentials {
+            username: (*username).clone(),
+            password: (*password).clone(),
+        };
         let store = use_store::<BasicStore<Notification>>();
         let history = use_history().unwrap();
-        onsubmit("api/login".into(), json, store, history, Route::Home)
+        onsubmit("api/login".into(), creds, store, history, Route::Home)
     };
 
     html! {

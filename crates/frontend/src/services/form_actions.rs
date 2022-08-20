@@ -12,7 +12,7 @@ use crate::services::requests::{delete, post};
 
 pub fn onsubmit<T: Serialize + 'static>(
     path: String,
-    json: T,
+    body: T,
     store: StoreRef<BasicStore<Notification>>,
     history: AnyHistory,
     next_route: Route,
@@ -20,7 +20,30 @@ pub fn onsubmit<T: Serialize + 'static>(
     Callback::once(move |e: FocusEvent| {
         e.prevent_default();
         wasm_bindgen_futures::spawn_local(async move {
-            match post(path, json).await {
+            match post(path, body).await {
+                Ok(data) => {
+                    notify(store, data, "info".to_string());
+                    history.push(next_route)
+                }
+                Err(e) => {
+                    let error_message = format!("{:?}", e);
+                    notify(store, error_message, "error".to_string());
+                }
+            };
+        })
+    })
+}
+
+pub fn ondelete(
+    path: String,
+    store: StoreRef<BasicStore<Notification>>,
+    history: AnyHistory,
+    next_route: Route,
+) -> Callback<MouseEvent> {
+    Callback::once(move |e: MouseEvent| {
+        e.prevent_default();
+        wasm_bindgen_futures::spawn_local(async move {
+            match delete(path).await {
                 Ok(data) => {
                     notify(store, data, "info".to_string());
                     history.push(next_route)
@@ -45,28 +68,5 @@ pub fn oninput_bool(state: UseStateHandle<bool>) -> Callback<Event> {
     Callback::from(move |e: Event| {
         let input: HtmlInputElement = e.target_unchecked_into();
         state.set(input.checked());
-    })
-}
-
-pub fn ondelete(
-    path: String,
-    store: StoreRef<BasicStore<Notification>>,
-    history: AnyHistory,
-    next_route: Route,
-) -> Callback<MouseEvent> {
-    Callback::once(move |e: MouseEvent| {
-        e.prevent_default();
-        wasm_bindgen_futures::spawn_local(async move {
-            match delete(path).await {
-                Ok(data) => {
-                    notify(store, data, "info".to_string());
-                    history.push(next_route)
-                }
-                Err(e) => {
-                    let error_message = format!("{:?}", e);
-                    notify(store, error_message, "error".to_string());
-                }
-            };
-        })
     })
 }
