@@ -15,15 +15,19 @@ use routes::{switch, Route};
 #[function_component(App)]
 fn app() -> Html {
     html! {
+        <>
         <BrowserRouter>
             <Nav />
             <Switch<Route> render={Switch::render(switch)} />
             <Notifier />
         </BrowserRouter>
+        </>
     }
 }
 
 fn main() {
     wasm_logger::init(wasm_logger::Config::default());
-    yew::start_app::<App>();
+    let document = web_sys::window().unwrap().document().unwrap();
+    let yew = document.query_selector("#yew").unwrap().unwrap();
+    yew::start_app_in_element::<App>(yew);
 }

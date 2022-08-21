@@ -40,10 +40,20 @@ pub enum Route {
 #[function_component(Home)]
 fn home() -> Html {
     html! {
-        <div>
-            <h1>{ "This is home" }</h1>
-        </div>
-    }
+            <div>
+                <h1>{ "This is home" }</h1>
+                <div class="dropdown">
+      <button class="btn btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
+        {"Dropdown button"}
+      </button>
+      <div class="dropdown-menu">
+        <a class="dropdown-item" href="#">{ "Action" }</a>
+        <a class="dropdown-item" href="#">{ "Another action" }</a>
+        <a class="dropdown-item" href="#">{ "Something else here" }</a>
+      </div>
+    </div>
+            </div>
+        }
 }
 
 pub fn switch(routes: &Route) -> Html {
