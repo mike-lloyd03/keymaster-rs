@@ -27,7 +27,5 @@ fn app() -> Html {
 
 fn main() {
     wasm_logger::init(wasm_logger::Config::default());
-    let document = web_sys::window().unwrap().document().unwrap();
-    let yew = document.query_selector("#yew").unwrap().unwrap();
-    yew::start_app_in_element::<App>(yew);
+    yew::start_app::<App>();
 }
