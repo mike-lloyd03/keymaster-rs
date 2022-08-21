@@ -26,10 +26,6 @@ pub fn nav() -> Html {
     let auth_links = html! {
         <>
             <li class="nav-item">
-                <Link<Route> to={Route::Home} classes={classes!("nav-link")}>{ "Home" }</Link<Route>>
-            </li>
-
-            <li class="nav-item">
                 <Link<Route> to={Route::AssignKey} classes={classes!("nav-link")}>{ "Assign Key" }</Link<Route>>
             </li>
 
@@ -43,17 +39,7 @@ pub fn nav() -> Html {
                 <li><Link<Route> to={Route::Users} classes={classes!("dropdown-item")}>{ "Users" }</Link<Route>></li>
               </ul>
             </li>
-
-            <li class="nav-item">
-                <Link<Route> to={Route::Logout} classes={classes!("nav-link")}>{ "Logout" }</Link<Route>>
-            </li>
         </>
-    };
-
-    let unauth_links = html! {
-        <li class="nav-item">
-            <Link<Route> to={Route::Login} classes={classes!("nav-link")}>{ "Login" }</Link<Route>>
-        </li>
     };
 
     html! {
@@ -65,19 +51,38 @@ pub fn nav() -> Html {
                 </button>
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-
                         {
                             if user_state.is_auth {
                                 auth_links
                             } else {
-                                unauth_links
+                                html!{}
                             }
                         }
-
                     </ul>
-                    <span class="navbar-text">
-                        {username}
-                    </span>
+                        {
+                            if user_state.is_auth {
+                                html!{
+                                    <>
+                                        <span class="navbar-text">
+                                            {username}
+                                        </span>
+                                        <div class="nav-item">
+                                            <Link<Route> to={Route::Logout}
+                                                classes={classes!("nav-link")}
+                                            >
+                                                { "Logout" }
+                                            </Link<Route>>
+                                        </div>
+                                    </>
+                                }
+                            } else {
+                                html! {
+                                    <div class="nav-item">
+                                        <Link<Route> to={Route::Login} classes={classes!("nav-link")}>{ "Login" }</Link<Route>>
+                                    </div>
+                                }
+                            }
+                        }
                 </div>
             </div>
         </nav>
