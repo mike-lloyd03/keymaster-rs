@@ -11,7 +11,7 @@ pub struct Credentials {
     pub password: String,
 }
 
-#[derive(Debug, Default, PartialEq, Clone, FromRow, Serialize, Deserialize)]
+#[derive(Debug, Default, PartialEq, Eq, Clone, FromRow, Serialize, Deserialize)]
 pub struct User {
     #[serde(skip_deserializing)]
     pub id: i64,
@@ -47,9 +47,19 @@ impl User {
     }
 
     pub async fn authenticate(pool: &PgPool, creds: Credentials) -> Result<Self, actix_web::Error> {
-        let user = Self::get(pool, &creds.username)
-            .await
-            .map_err(|_| actix_web::error::ErrorUnauthorized("Authentication failed"))?;
+        let user = match Self::get(pool, &creds.username).await {
+            Ok(u) => u,
+            Err(_) => {
+                // Attempt to validate the password on a fake account to prevent a timing attack
+                User {
+                    username: "_".into(),
+                    password_hash: Some("$argon2i$v=19$m=65536,t=3,p=1$4MHN0rGSFfQxAfCHfD1Ncg$+psDULFfyWAaQ6H/tI/KH5LMcfZBjlpxOyFXJIa4ezM".into()),
+                    ..Default::default()
+                }
+                .validate_password("hunter2");
+                return Err(actix_web::error::ErrorUnauthorized("Authentication failed"));
+            }
+        };
         if user.can_login && user.validate_password(&creds.password) {
             Ok(user)
         } else {
