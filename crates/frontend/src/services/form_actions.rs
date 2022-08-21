@@ -1,5 +1,5 @@
-use crate::components::notifier::{notify, Notification};
 use crate::routes::Route;
+use crate::{components::notifier::notify, types::Notification};
 use web_sys::HtmlInputElement;
 
 use serde::Serialize;
@@ -21,12 +21,12 @@ pub fn onsubmit<T: Serialize + 'static>(
         wasm_bindgen_futures::spawn_local(async move {
             match post(path, body).await {
                 Ok(data) => {
-                    notify(dispatch, data, "info".to_string());
+                    notify(&dispatch, data, "info".to_string());
                     history.push(next_route)
                 }
                 Err(e) => {
                     let error_message = format!("{:?}", e);
-                    notify(dispatch, error_message, "error".to_string());
+                    notify(&dispatch, error_message, "error".to_string());
                 }
             };
         })
@@ -44,12 +44,12 @@ pub fn ondelete(
         wasm_bindgen_futures::spawn_local(async move {
             match delete(path).await {
                 Ok(data) => {
-                    notify(dispatch, data, "info".to_string());
+                    notify(&dispatch, data, "info".to_string());
                     history.push(next_route)
                 }
                 Err(e) => {
                     let error_message = format!("{:?}", e);
-                    notify(dispatch, error_message, "error".to_string());
+                    notify(&dispatch, error_message, "error".to_string());
                 }
             };
         })

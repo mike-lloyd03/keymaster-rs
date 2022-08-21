@@ -1,10 +1,10 @@
 use crate::components::form::{Button, ButtonType, CheckboxField, Form, TextField};
-use crate::components::notifier::{notify, Notification};
+use crate::components::notifier::notify;
 use crate::components::table::{Cell, Row, Table};
 use crate::error::Error;
 use crate::services::form_actions::{ondelete, oninput_bool, oninput_string, onsubmit};
 use crate::services::requests::get;
-use crate::types::Key;
+use crate::types::{Key, Notification};
 
 use yew::prelude::*;
 use yew_router::history::History;
@@ -93,12 +93,12 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
                             Error::Unauthorized => {
                                 history.push(Route::Login);
                                 notify(
-                                    dispatch,
+                                    &dispatch,
                                     "You must log in to access this page".into(),
                                     "error".into(),
                                 );
                             }
-                            _ => notify(dispatch, e.to_string(), "error".into()),
+                            _ => notify(&dispatch, e.to_string(), "error".into()),
                         },
                     }
                 });
@@ -179,12 +179,12 @@ pub fn key_table() -> Html {
                             Error::Unauthorized => {
                                 history.push(Route::Login);
                                 notify(
-                                    dispatch,
+                                    &dispatch,
                                     "You must log in to access this page".into(),
                                     "error".into(),
                                 );
                             }
-                            _ => notify(dispatch, e.to_string(), "error".into()),
+                            _ => notify(&dispatch, e.to_string(), "error".into()),
                         },
                     }
                 });

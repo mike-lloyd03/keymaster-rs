@@ -2,19 +2,6 @@ use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use yewdux::store::Store;
 
-#[derive(Serialize)]
-pub struct Credentials {
-    pub username: String,
-    pub password: String,
-}
-
-#[derive(Deserialize, Clone, Debug, PartialEq, Eq, Default, Store)]
-pub struct UserInfo {
-    pub username: Option<String>,
-    pub is_auth: bool,
-    pub is_admin: bool,
-}
-
 #[derive(PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct Key {
     pub name: String,
@@ -39,4 +26,23 @@ pub struct Assignment {
     pub key: String,
     pub date_out: NaiveDate,
     pub date_in: Option<NaiveDate>,
+}
+
+#[derive(Serialize)]
+pub struct Credentials {
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Deserialize, Clone, Debug, PartialEq, Eq, Default, Store)]
+pub struct UserInfo {
+    pub username: Option<String>,
+    pub is_auth: bool,
+    pub is_admin: bool,
+}
+
+#[derive(Clone, Default, PartialEq, Eq, Store)]
+pub struct Notification {
+    pub msg: Option<String>,
+    pub lvl: Option<String>,
 }

@@ -2,11 +2,7 @@ use gloo_timers::callback::Timeout;
 use yew::prelude::*;
 use yewdux::prelude::*;
 
-#[derive(Clone, Default, PartialEq, Eq, Store)]
-pub struct Notification {
-    pub msg: Option<String>,
-    pub lvl: Option<String>,
-}
+use crate::types::Notification;
 
 #[function_component(Notifier)]
 pub fn notifier() -> Html {
@@ -60,7 +56,7 @@ pub fn notifier() -> Html {
 }
 
 /// Sends a notification to the user.
-pub fn notify(dispatch: Dispatch<Notification>, msg: String, lvl: String) {
+pub fn notify(dispatch: &Dispatch<Notification>, msg: String, lvl: String) {
     dispatch.reduce_mut(|s| {
         s.msg = Some(msg);
         s.lvl = Some(lvl);

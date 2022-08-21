@@ -1,12 +1,9 @@
-use crate::types::{Credentials, UserInfo};
+use crate::services::auth::login_user;
+use crate::types::{Credentials, Notification, UserInfo};
 use crate::{
-    components::{
-        form::{Button, ButtonType, Form, PasswordField, TextField},
-        notifier::{notify, Notification},
-    },
-    services::requests::{get, post},
+    components::form::{Button, ButtonType, Form, PasswordField, TextField},
+    services::auth::logout_user,
 };
-use gloo_net::http::Request;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::*;
@@ -32,21 +29,9 @@ pub fn login() -> Html {
         Callback::once(move |e: FocusEvent| {
             e.prevent_default();
             wasm_bindgen_futures::spawn_local(async move {
-                match post::<Credentials, String>("/api/login".into(), creds).await {
-                    Ok(_) => {
-                        let ui: UserInfo = get("/api/session".into()).await.unwrap();
-                        user_dispatch.reduce_mut(|s| {
-                            s.username = ui.username;
-                            s.is_auth = ui.is_auth;
-                            s.is_admin = ui.is_admin;
-                        });
-                        history.push(Route::Home)
-                    }
-                    Err(e) => {
-                        let error_message = format!("{:?}", e);
-                        notify(notify_dispatch, error_message, "error".into());
-                    }
-                };
+                if (login_user(creds, &user_dispatch, &notify_dispatch, &history).await).is_ok() {
+                    history.push(Route::Home)
+                }
             })
         })
     };
@@ -65,13 +50,7 @@ pub fn logout() -> Html {
     let (_, user_dispatch) = use_store::<UserInfo>();
 
     wasm_bindgen_futures::spawn_local(async move {
-        Request::post("/api/logout").send().await.unwrap();
-    });
-
-    user_dispatch.reduce_mut(|s| {
-        s.username = None;
-        s.is_auth = false;
-        s.is_admin = false;
+        logout_user(&user_dispatch).await;
     });
 
     html! {
