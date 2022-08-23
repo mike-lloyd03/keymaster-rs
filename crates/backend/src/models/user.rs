@@ -20,9 +20,9 @@ pub struct User {
     pub email: Option<String>,
     #[serde(skip)]
     password_hash: Option<String>,
-    #[serde(skip_serializing, default = "_default_false")]
+    #[serde(default = "_default_false")]
     pub can_login: bool,
-    #[serde(skip_serializing, default = "_default_false")]
+    #[serde(default = "_default_false")]
     pub admin: bool,
 }
 
@@ -130,10 +130,18 @@ impl User {
             .execute(pool)
             .await
     }
+
+    pub async fn count_admins(pool: &PgPool) -> Result<i64, sqlx::Error> {
+        let count =
+            sqlx::query_scalar!(r#"SELECT count(*) as "count!" FROM users WHERE admin = 't'"#)
+                .fetch_one(pool)
+                .await?;
+        Ok(count)
+    }
 }
 
 pub async fn initialize_admin(pool: &PgPool) -> Result<(), sqlx::Error> {
-    if User::get(pool, "admin").await.is_ok() {
+    if User::count_admins(pool).await? >= 1 {
         println!("Admin user exists.");
         return Ok(());
     }

@@ -1,6 +1,6 @@
 use actix_session::Session;
 use actix_web::{delete, error, get, post, web, HttpResponse, Responder};
-use log::error;
+use log::{error, info};
 use serde::Deserialize;
 use sqlx::PgPool;
 
@@ -141,14 +141,36 @@ async fn delete(
     validate_admin(&session, &pool).await?;
 
     match User::get(&pool, &username.into_inner()).await {
-        Ok(u) => match u.delete(&pool).await {
-            Ok(_) => Ok(HttpResponse::Ok().json(format!("Deleted user '{}'", u.username))),
-            Err(e) => {
-                error!("Failed to delete user. {}", e);
-                Err(error::ErrorInternalServerError("Failed to delete user."))
+        Ok(u) => {
+            // Check if the user being deleted is an administrator. If so, check that we're
+            // not about to delete the last admin in the database.
+            if u.admin {
+                match User::count_admins(&pool).await {
+                    Ok(count) => {
+                        if count <= 1 {
+                            return Err(error::ErrorBadRequest(
+                                "Unable to delete the last admin user",
+                            ));
+                        }
+                    }
+                    Err(e) => {
+                        error!("Unable to count the number of existing admin users and thus cannot delete the user. {}", e);
+                        return Err(error::ErrorInternalServerError("Failed to delete user"));
+                    }
+                }
+            };
+            match u.delete(&pool).await {
+                Ok(_) => Ok(HttpResponse::Ok().json(format!("Deleted user '{}'", u.username))),
+                Err(e) => {
+                    error!("Failed to delete user. {}", e);
+                    Err(error::ErrorInternalServerError("Failed to delete user"))
+                }
             }
-        },
-        Err(_) => Err(error::ErrorNotFound("User not found")),
+        }
+        Err(e) => {
+            error!("{}", e);
+            Err(error::ErrorNotFound("User not found"))
+        }
     }
 }
 
