@@ -112,7 +112,7 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
         let key = Key {
             name: key_name.clone(),
             description: Some((*description).clone()),
-            active: true,
+            active: *active,
         };
         let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();

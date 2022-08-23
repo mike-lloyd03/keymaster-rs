@@ -30,8 +30,8 @@ pub enum Route {
     Users,
     #[at("/add-user")]
     AddUser,
-    #[at("/edit-user")]
-    EditUser,
+    #[at("/edit-user/:username")]
+    EditUser { username: String },
     #[not_found]
     #[at("/not-found")]
     NotFound,
@@ -69,7 +69,7 @@ pub fn switch(routes: &Route) -> Html {
         Route::EditAssignment => html! { <assignments::EditAssignment />},
         Route::Users => html! { <users::UserTable /> },
         Route::AddUser => html! { <users::NewUser />},
-        Route::EditUser => html! { <users::EditUser />},
+        Route::EditUser { username } => html! { <users::EditUser username={username.clone()}/>},
         Route::NotFound => html! { <h1>{ "404" }</h1> },
     }
 }

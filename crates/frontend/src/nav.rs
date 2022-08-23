@@ -26,19 +26,18 @@ pub fn nav() -> Html {
     let auth_links = html! {
         <>
             <li class="nav-item">
-                <Link<Route> to={Route::AssignKey} classes={classes!("nav-link")}>{ "Assign Key" }</Link<Route>>
+                <Link<Route> to={Route::AssignKey} classes="nav-link">{ "Assign Key" }</Link<Route>>
+            </li>
+            <li>
+                <Link<Route> to={Route::Assignments} classes="nav-link">{ "Assignments" }</Link<Route>>
+            </li>
+            <li>
+                <Link<Route> to={Route::Keys} classes="nav-link">{ "Keys" }</Link<Route>>
+            </li>
+            <li>
+                <Link<Route> to={Route::Users} classes="nav-link">{ "Users" }</Link<Route>>
             </li>
 
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-expanded="false">
-                  { "Configuration" }
-              </a>
-              <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDropdownMenuLink">
-                <li><Link<Route> to={Route::Assignments} classes={classes!("dropdown-item")}>{ "Assignments" }</Link<Route>></li>
-                <li><Link<Route> to={Route::Keys} classes={classes!("dropdown-item")}>{ "Keys" }</Link<Route>></li>
-                <li><Link<Route> to={Route::Users} classes={classes!("dropdown-item")}>{ "Users" }</Link<Route>></li>
-              </ul>
-            </li>
         </>
     };
 
@@ -78,7 +77,7 @@ pub fn nav() -> Html {
                             } else {
                                 html! {
                                     <div class="nav-item">
-                                        <Link<Route> to={Route::Login} classes={classes!("nav-link")}>{ "Login" }</Link<Route>>
+                                        <Link<Route> to={Route::Login} classes="nav-link">{ "Login" }</Link<Route>>
                                     </div>
                                 }
                             }

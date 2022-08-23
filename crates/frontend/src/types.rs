@@ -9,7 +9,7 @@ pub struct Key {
     pub active: bool,
 }
 
-#[derive(PartialEq, Eq, Default, Clone)]
+#[derive(PartialEq, Eq, Default, Clone, Serialize, Deserialize)]
 pub struct User {
     pub id: i64,
     pub username: String,
@@ -19,7 +19,7 @@ pub struct User {
     pub admin: bool,
 }
 
-#[derive(PartialEq, Eq, Default, Clone)]
+#[derive(PartialEq, Eq, Default, Clone, Serialize, Deserialize)]
 pub struct Assignment {
     pub id: i64,
     pub user: String,
