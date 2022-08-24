@@ -56,6 +56,7 @@ async fn main() -> std::io::Result<()> {
                     .service(routes::assignments::get_all)
                     .service(routes::assignments::update)
                     .service(routes::assignments::create)
+                    .service(routes::assignments::create_multiple)
                     .service(routes::assignments::delete)
                     .service(routes::login)
                     .service(routes::logout)

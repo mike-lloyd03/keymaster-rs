@@ -5,9 +5,10 @@ use actix_web::{
     get, post, web, HttpResponse, Responder,
 };
 use chrono::NaiveDate;
-use log::error;
+use log::{error, info};
 use serde::Deserialize;
 use sqlx::PgPool;
+use std::fmt::Write;
 
 use crate::{
     models::Assignment,
@@ -99,6 +100,65 @@ async fn create(
                 Err(ErrorInternalServerError("Failed to create assignment."))
             }
         },
+    }
+}
+
+#[post("/multi-assign")]
+async fn create_multiple(
+    assignment: web::Either<web::Json<Vec<Assignment>>, web::Form<Vec<Assignment>>>,
+    pool: web::Data<PgPool>,
+    session: Session,
+) -> Result<impl Responder, actix_web::Error> {
+    info!("{:?}", assignment);
+    validate_admin(&session, &pool).await?;
+
+    let assignment = unpack(assignment);
+
+    let mut error_msg = String::new();
+
+    for a in &assignment {
+        match a.create(&pool).await {
+            Ok(_) => (),
+            Err(e) => match e.to_string() {
+                x if x.contains("duplicate key") => {
+                    writeln!(error_msg, "Key '{}' already assigned to {}", a.key, a.user).unwrap();
+                }
+                x if x.contains("violates foreign key") => match x {
+                    y if y.contains("assignments_key_fkey") => {
+                        writeln!(error_msg, "Key '{}' does not exist", a.key).unwrap();
+                    }
+                    y if y.contains("assignments_user_fkey") => {
+                        writeln!(error_msg, "User '{}' does not exist", a.user).unwrap();
+                    }
+                    _ => {
+                        error!("Foreign key error. {}", e);
+                        writeln!(
+                            error_msg,
+                            "Failed to assign key '{}' to user '{}'",
+                            a.key, a.user
+                        )
+                        .unwrap();
+                    }
+                },
+                _ => {
+                    error!("Failed to create assignment. {}", e);
+                    writeln!(
+                        error_msg,
+                        "Failed to assign key '{}' to user '{}'",
+                        a.key, a.user
+                    )
+                    .unwrap();
+                }
+            },
+        }
+    }
+    if error_msg.is_empty() {
+        Ok(HttpResponse::Ok().json(format!("Created {} assignments.", &assignment.len())))
+    } else {
+        Err(ErrorBadRequest(format!(
+            "Error creating assignments: {}",
+            error_msg
+        )))
     }
 }
 
