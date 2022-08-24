@@ -1,6 +1,6 @@
 use crate::routes::Route;
 use crate::{components::notifier::notify, types::Notification};
-use web_sys::{HtmlInputElement, HtmlOptionElement, HtmlSelectElement};
+use web_sys::{Document, HtmlInputElement, HtmlOptionElement, HtmlSelectElement};
 
 use serde::Serialize;
 use yew::prelude::*;
@@ -91,18 +91,16 @@ pub fn oninput_option(state: UseStateHandle<Vec<String>>) -> Callback<MouseEvent
     })
 }
 
-pub fn oninput_select(state: UseStateHandle<Vec<String>>) -> Callback<MouseEvent> {
-    Callback::from(move |e: MouseEvent| {
-        // let mut options: Vec<String> = state.iter().map(|v| v.to_owned()).collect();
-        let input: HtmlSelectElement = e.target_unchecked_into();
-        // log::info!("{:?}", input.selected_options().);
-        let collection = input.selected_options();
-        let selected: Vec<String> = (0..input.selected_options().length())
-            .filter_map(|i| collection.item(i))
-            .filter_map(|e| e.text_content())
-            .collect();
-        log::info!("Filtered and mapped data");
+pub fn oninput_select(state: UseStateHandle<Vec<String>>) -> Callback<Event> {
+    Callback::from(move |e: Event| {
+        if let Some(input) = e.target_dyn_into::<HtmlSelectElement>() {
+            let collection = input.selected_options();
+            let selected: Vec<String> = (0..input.selected_options().length())
+                .filter_map(|i| collection.item(i))
+                .filter_map(|e| e.text_content())
+                .collect();
 
-        state.set(selected);
+            state.set(selected);
+        }
     })
 }

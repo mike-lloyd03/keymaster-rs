@@ -27,6 +27,7 @@ pub fn form(props: &FormProps) -> Html {
                         props.action.clone().unwrap_or_default()
                         )
                     }
+                    id="form"
                     method="post"
                     class="form"
                     role="form"
@@ -119,11 +120,12 @@ pub fn date_field(props: &LabelProps) -> Html {
             <label class="control-label" for={ snake_case(label.clone()) }>{ label }</label>
             <input
                 class="form-control"
+                type="date"
                 id={ snake_case(label.clone()) }
                 name={ snake_case(label.clone()) }
-                required=true
-                type="date"
-                value=""
+                required={props.required.clone().unwrap_or_default()}
+                value={props.value.clone()}
+                oninput={props.oninput.clone()}
             />
         </div>
     }
@@ -180,7 +182,7 @@ pub fn checkbox_field(props: &CheckboxProps) -> Html {
 pub struct MultiSelectFieldProps {
     pub label: String,
     pub children: ChildrenWithProps<MultiSelectOption>,
-    pub onclick: Option<Callback<MouseEvent>>,
+    pub onchange: Option<Callback<Event>>,
 }
 
 #[function_component(MultiSelectField)]
@@ -190,7 +192,14 @@ pub fn multi_select_field(props: &MultiSelectFieldProps) -> Html {
     html! {
         <div class="form-group  required">
             <label class="control-label" for={ snake_case(label.clone()) }>{ label.clone() }</label>
-            <select class="form-control" id="user" multiple=true name={ snake_case(label.clone()) } required=true onclick={props.onclick.clone()}>
+            <select
+                class="form-control"
+                id={ snake_case(label.clone()) }
+                multiple=true
+                name={ snake_case(label.clone()) }
+                required=true
+                onchange={props.onchange.clone()}
+            >
                 {
                     for props.children.iter()
                 }

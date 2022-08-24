@@ -24,8 +24,8 @@ pub enum Route {
     Assignments,
     #[at("/assign-key")]
     AssignKey,
-    #[at("/edit-assignment")]
-    EditAssignment,
+    #[at("/edit-assignment/:id")]
+    EditAssignment { id: i64 },
     #[at("/users")]
     Users,
     #[at("/add-user")]
@@ -66,7 +66,7 @@ pub fn switch(routes: &Route) -> Html {
         Route::EditKey { key_name } => html! { <keys::EditKey key_name={ key_name.clone() }/>},
         Route::Assignments => html! { <assignments::Assignments />},
         Route::AssignKey => html! { <assignments::NewAssignment />},
-        Route::EditAssignment => html! { <assignments::EditAssignment />},
+        Route::EditAssignment { id } => html! { <assignments::EditAssignment id={ id.clone() }/>},
         Route::Users => html! { <users::UserTable /> },
         Route::AddUser => html! { <users::NewUser />},
         Route::EditUser { username } => html! { <users::EditUser username={username.clone()}/>},
