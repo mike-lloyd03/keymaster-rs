@@ -41,6 +41,22 @@ pub fn form(props: &FormProps) -> Html {
     }
 }
 
+#[derive(PartialEq, Clone)]
+pub enum ButtonType {
+    Primary,
+    Secondary,
+    Danger,
+}
+
+#[derive(Properties, PartialEq)]
+pub struct ButtonProps {
+    pub value: String,
+    pub name: Option<String>,
+    pub button_type: Option<ButtonType>,
+    pub onclick: Option<Callback<MouseEvent>>,
+    pub novalidate: Option<bool>,
+}
+
 #[function_component(Button)]
 pub fn button(props: &ButtonProps) -> Html {
     html! {
@@ -62,20 +78,15 @@ pub fn button(props: &ButtonProps) -> Html {
     }
 }
 
-#[derive(PartialEq, Clone)]
-pub enum ButtonType {
-    Primary,
-    Secondary,
-    Danger,
-}
-
 #[derive(Properties, PartialEq)]
-pub struct ButtonProps {
-    pub value: String,
+pub struct LabelProps {
+    pub label: String,
     pub name: Option<String>,
-    pub button_type: Option<ButtonType>,
-    pub onclick: Option<Callback<MouseEvent>>,
-    pub novalidate: Option<bool>,
+    pub value: Option<String>,
+    pub oninput: Option<Callback<InputEvent>>,
+    pub required: Option<bool>,
+    pub pattern: Option<String>,
+    pub checked: Option<bool>,
 }
 
 #[function_component(TextField)]
@@ -97,84 +108,6 @@ pub fn text_field(props: &LabelProps) -> Html {
             />
         </div>
     }
-}
-
-#[derive(Properties, PartialEq)]
-pub struct LabelProps {
-    pub label: String,
-    pub name: Option<String>,
-    pub value: Option<String>,
-    pub oninput: Option<Callback<InputEvent>>,
-    pub required: Option<bool>,
-    pub pattern: Option<String>,
-    pub checked: Option<bool>,
-}
-
-#[function_component(CheckboxField)]
-pub fn checkbox_field(props: &CheckboxProps) -> Html {
-    let label = &props.label;
-
-    html! {
-        <div class="checkbox">
-            <label>
-                <input
-                    id={ snake_case(label.clone()) }
-                    name={ snake_case(label.clone()) }
-                    type="checkbox"
-                    checked={props.checked.unwrap_or_default()}
-                    onchange={props.onchange.clone()}
-                />
-                { format!(" {}", label) }
-            </label>
-        </div>
-    }
-}
-
-#[derive(Properties, PartialEq)]
-pub struct CheckboxProps {
-    pub label: String,
-    pub onchange: Option<Callback<Event>>,
-    pub checked: Option<bool>,
-}
-
-#[function_component(MultiSelectField)]
-pub fn multi_select_field(props: &MultiSelectFieldProps) -> Html {
-    let label = &props.label;
-
-    html! {
-        <div class="form-group  required">
-            <label class="control-label" for={ snake_case(label.clone()) }>{ label.clone() }</label>
-            <select class="form-control" id="user" multiple=true name={ snake_case(label.clone()) } required=true>
-                {
-                    for props.children.iter()
-                }
-            </select>
-        </div>
-    }
-}
-
-#[derive(Properties, PartialEq)]
-pub struct MultiSelectFieldProps {
-    pub label: String,
-    pub children: ChildrenWithProps<MultiSelectOption>,
-}
-
-#[function_component(MultiSelectOption)]
-pub fn multi_select_option(props: &MultiSelectOptionProps) -> Html {
-    html! {
-        <option value={ props.value.clone() }>{
-            match props.label.clone() {
-                Some(l) => l,
-                None => props.value.clone()
-            }
-        }</option>
-    }
-}
-
-#[derive(Properties, PartialEq)]
-pub struct MultiSelectOptionProps {
-    pub value: String,
-    pub label: Option<String>,
 }
 
 #[function_component(DateField)]
@@ -216,6 +149,74 @@ pub fn password_field(props: &LabelProps) -> Html {
     }
 }
 
+#[derive(Properties, PartialEq)]
+pub struct CheckboxProps {
+    pub label: String,
+    pub onchange: Option<Callback<Event>>,
+    pub checked: Option<bool>,
+}
+
+#[function_component(CheckboxField)]
+pub fn checkbox_field(props: &CheckboxProps) -> Html {
+    let label = &props.label;
+
+    html! {
+        <div class="checkbox">
+            <label>
+                <input
+                    id={ snake_case(label.clone()) }
+                    name={ snake_case(label.clone()) }
+                    type="checkbox"
+                    checked={props.checked.unwrap_or_default()}
+                    onchange={props.onchange.clone()}
+                />
+                { format!(" {}", label) }
+            </label>
+        </div>
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct MultiSelectFieldProps {
+    pub label: String,
+    pub children: ChildrenWithProps<MultiSelectOption>,
+    pub onclick: Option<Callback<MouseEvent>>,
+}
+
+#[function_component(MultiSelectField)]
+pub fn multi_select_field(props: &MultiSelectFieldProps) -> Html {
+    let label = &props.label;
+
+    html! {
+        <div class="form-group  required">
+            <label class="control-label" for={ snake_case(label.clone()) }>{ label.clone() }</label>
+            <select class="form-control" id="user" multiple=true name={ snake_case(label.clone()) } required=true onclick={props.onclick.clone()}>
+                {
+                    for props.children.iter()
+                }
+            </select>
+        </div>
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct MultiSelectOptionProps {
+    pub value: String,
+    pub label: Option<String>,
+    pub onclick: Option<Callback<MouseEvent>>,
+}
+
+#[function_component(MultiSelectOption)]
+pub fn multi_select_option(props: &MultiSelectOptionProps) -> Html {
+    html! {
+        <option value={ props.value.clone() } onclick={props.onclick.clone()}>{
+            props.label.clone().unwrap_or_else(|| props.value.clone())
+        }</option>
+    }
+}
+
+/// Converts a normal case string to lower snake case
+/// Example: snake_case("Date out".into()) -> "date_out"
 fn snake_case(s: String) -> String {
-    str::replace(&s.to_lowercase(), " ", "_")
+    s.to_lowercase().replace(" ", "_")
 }

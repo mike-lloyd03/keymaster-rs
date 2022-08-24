@@ -2,7 +2,7 @@ use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use yewdux::store::Store;
 
-#[derive(PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Default, Clone, Serialize, Deserialize)]
 pub struct Key {
     pub name: String,
     pub description: Option<String>,
