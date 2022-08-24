@@ -148,6 +148,7 @@ pub async fn initialize_admin(pool: &PgPool) -> Result<(), sqlx::Error> {
 
     println!("Creating admin user");
     let mut pw_from_env = false;
+    let admin_username = env::var("KEYMASTER_ADMIN_USER").unwrap_or_else(|_| "admin".into());
     let admin_pass = match env::var("KEYMASTER_ADMIN_PASS") {
         Ok(v) => {
             pw_from_env = true;
@@ -157,8 +158,8 @@ pub async fn initialize_admin(pool: &PgPool) -> Result<(), sqlx::Error> {
     };
 
     let mut admin = User {
-        username: "admin".to_string(),
-        display_name: Some("admin".to_string()),
+        username: admin_username,
+        display_name: None,
         can_login: true,
         admin: true,
         ..Default::default()

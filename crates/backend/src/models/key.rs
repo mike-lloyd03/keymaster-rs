@@ -34,6 +34,16 @@ impl Key {
         .await
     }
 
+    pub async fn get_all_active(pool: &PgPool, active: bool) -> Result<Vec<Self>, sqlx::Error> {
+        query_as!(
+            Self,
+            "SELECT name, description, active FROM keys where active = $1 ORDER BY name",
+            active
+        )
+        .fetch_all(pool)
+        .await
+    }
+
     pub async fn create(&self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
         query!(
             "INSERT INTO keys (name, description, active) VALUES ($1, $2, $3)",
@@ -90,6 +100,17 @@ mod key_tests {
         assert_eq!("key1", key.name);
         assert_eq!("this is a key", key.description.unwrap());
         assert!(key.active);
+
+        Ok(())
+    }
+
+    #[sqlx::test(fixtures("keys"))]
+    async fn get_all_active_keys(pool: PgPool) -> Result<()> {
+        let active_keys = Key::get_all_active(&pool, true).await?;
+        let inactive_keys = Key::get_all_active(&pool, false).await?;
+
+        assert_eq!(2, active_keys.len());
+        assert_eq!(1, inactive_keys.len());
 
         Ok(())
     }

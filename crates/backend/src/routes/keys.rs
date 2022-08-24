@@ -9,8 +9,13 @@ use crate::models::Key;
 use crate::routes::{unpack, validate_admin, validate_session};
 
 #[derive(Deserialize, Clone)]
-struct UpdateQuery {
+struct UpdateBody {
     description: Option<String>,
+    active: Option<bool>,
+}
+
+#[derive(Deserialize, Clone)]
+struct GetAllFilter {
     active: Option<bool>,
 }
 
@@ -39,15 +44,25 @@ async fn get(
 async fn get_all(
     pool: web::Data<PgPool>,
     session: Session,
+    filter: web::Query<GetAllFilter>,
 ) -> Result<impl Responder, actix_web::Error> {
     validate_session(&session)?;
 
-    match Key::get_all(&pool).await {
-        Ok(k) => Ok(HttpResponse::Ok().json(k)),
-        Err(e) => {
-            error!("Failed to get keys. {}", e);
-            Err(ErrorInternalServerError("Failed to get keys."))
-        }
+    match filter.into_inner().active {
+        None => match Key::get_all(&pool).await {
+            Ok(k) => Ok(HttpResponse::Ok().json(k)),
+            Err(e) => {
+                error!("Failed to get keys. {}", e);
+                Err(ErrorInternalServerError("Failed to get keys."))
+            }
+        },
+        Some(a) => match Key::get_all_active(&pool, a).await {
+            Ok(k) => Ok(HttpResponse::Ok().json(k)),
+            Err(e) => {
+                error!("Failed to get keys. {}", e);
+                Err(ErrorInternalServerError("Failed to get keys."))
+            }
+        },
     }
 }
 
@@ -76,13 +91,13 @@ async fn create(
 #[post("/keys/{key_name}")]
 async fn update(
     key_name: web::Path<String>,
-    query: web::Either<web::Json<UpdateQuery>, web::Form<UpdateQuery>>,
+    body: web::Either<web::Json<UpdateBody>, web::Form<UpdateBody>>,
     pool: web::Data<PgPool>,
     session: Session,
 ) -> Result<impl Responder, actix_web::Error> {
     validate_admin(&session, &pool).await?;
 
-    let query = unpack(query);
+    let body = unpack(body);
     let key_name = &key_name.into_inner();
 
     let mut key = match Key::get(&pool, key_name).await {
@@ -93,11 +108,11 @@ async fn update(
         }
     };
 
-    if let Some(d) = &query.description {
+    if let Some(d) = &body.description {
         key.description = Some(d.to_string())
     };
 
-    if let Some(a) = query.active {
+    if let Some(a) = body.active {
         key.active = a
     };
 

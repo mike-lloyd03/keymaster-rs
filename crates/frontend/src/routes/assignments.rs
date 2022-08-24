@@ -1,12 +1,39 @@
 use crate::components::form::{DateField, Form, MultiSelectField, MultiSelectOption, TextField};
 use crate::components::table::{Cell, Row, Table};
+use crate::services::form_actions::oninput_string;
 use crate::types::Assignment;
 use chrono::NaiveDate;
 use yew::prelude::*;
+use yew_router::prelude::*;
+
+use super::Route;
 
 #[function_component(NewAssignment)]
 pub fn new_assignment() -> Html {
-    let users = vec![("gunther", "Gunther Morrison"), ("matt", "Matt Chandler")];
+    let assignments = use_state(std::vec::Vec::new);
+    let users = use_state(String::new);
+    let keys = use_state(String::new);
+    let date_out = use_state(String::new);
+    let oninput_users = oninput_string(users.clone());
+    let oninput_keys = oninput_string(keys.clone());
+    let oninput_date_out = oninput_string(date_out.clone());
+
+    let oncancel = {
+        let history = use_history().unwrap();
+        Callback::once(move |_: MouseEvent| history.push(Route::Assignments))
+    };
+
+    let onsubmit = {
+        let assgn = Assignment {
+            name: (*name).clone(),
+            description: Some((*description).clone()),
+            active: true,
+        };
+        let (_, dispatch) = use_store::<Notification>();
+        let history = use_history().unwrap();
+        onsubmit("/api/keys".to_string(), key, dispatch, history, Route::Keys)
+    };
+
     let user_options = users.iter().map(|user| {
         html_nested! {
             <MultiSelectOption value={ user.0 } label={ user.1 } />

@@ -16,7 +16,7 @@ use crate::{
 };
 
 #[derive(Deserialize, Clone)]
-struct UpdateQuery {
+struct UpdateBody {
     user: Option<String>,
     key: Option<String>,
     date_out: Option<NaiveDate>,
@@ -61,50 +61,51 @@ async fn get_all(
     }
 }
 
+// #[post("/assignments")]
+// async fn create(
+//     assignment: web::Either<web::Json<Assignment>, web::Form<Assignment>>,
+//     pool: web::Data<PgPool>,
+//     session: Session,
+// ) -> Result<impl Responder, actix_web::Error> {
+//     validate_admin(&session, &pool).await?;
+
+//     let assignment = unpack(assignment);
+
+//     match assignment.create(&pool).await {
+//         Ok(_) => Ok(HttpResponse::Ok().json(format!(
+//             "Key '{}' assigned to '{}'",
+//             assignment.key, assignment.user
+//         ))),
+//         Err(e) => match e.to_string() {
+//             x if x.contains("duplicate key") => Err(ErrorBadRequest(format!(
+//                 "Key '{}' already assigned to {}",
+//                 assignment.key, assignment.user
+//             ))),
+//             x if x.contains("violates foreign key") => match x {
+//                 y if y.contains("assignments_key_fkey") => Err(ErrorBadRequest(format!(
+//                     "Key '{}' does not exist.",
+//                     assignment.key
+//                 ))),
+//                 y if y.contains("assignments_user_fkey") => Err(ErrorBadRequest(format!(
+//                     "User '{}' does not exist.",
+//                     assignment.user
+//                 ))),
+//                 _ => {
+//                     error!("Foreign key error. {}", e);
+//                     Err(ErrorInternalServerError("Failed to create assignment."))
+//                 }
+//             },
+//             _ => {
+//                 error!("Failed to create assignment. {}", e);
+//                 Err(ErrorInternalServerError("Failed to create assignment."))
+//             }
+//         },
+//     }
+// }
+
+/// Accepts an array of Assignment objects as either a form or json body
 #[post("/assignments")]
 async fn create(
-    assignment: web::Either<web::Json<Assignment>, web::Form<Assignment>>,
-    pool: web::Data<PgPool>,
-    session: Session,
-) -> Result<impl Responder, actix_web::Error> {
-    validate_admin(&session, &pool).await?;
-
-    let assignment = unpack(assignment);
-
-    match assignment.create(&pool).await {
-        Ok(_) => Ok(HttpResponse::Ok().json(format!(
-            "Key '{}' assigned to '{}'",
-            assignment.key, assignment.user
-        ))),
-        Err(e) => match e.to_string() {
-            x if x.contains("duplicate key") => Err(ErrorBadRequest(format!(
-                "Key '{}' already assigned to {}",
-                assignment.key, assignment.user
-            ))),
-            x if x.contains("violates foreign key") => match x {
-                y if y.contains("assignments_key_fkey") => Err(ErrorBadRequest(format!(
-                    "Key '{}' does not exist.",
-                    assignment.key
-                ))),
-                y if y.contains("assignments_user_fkey") => Err(ErrorBadRequest(format!(
-                    "User '{}' does not exist.",
-                    assignment.user
-                ))),
-                _ => {
-                    error!("Foreign key error. {}", e);
-                    Err(ErrorInternalServerError("Failed to create assignment."))
-                }
-            },
-            _ => {
-                error!("Failed to create assignment. {}", e);
-                Err(ErrorInternalServerError("Failed to create assignment."))
-            }
-        },
-    }
-}
-
-#[post("/multi-assign")]
-async fn create_multiple(
     assignment: web::Either<web::Json<Vec<Assignment>>, web::Form<Vec<Assignment>>>,
     pool: web::Data<PgPool>,
     session: Session,
@@ -165,13 +166,13 @@ async fn create_multiple(
 #[post("/assignments/{assignment_id}")]
 async fn update(
     assignment_id: web::Path<i64>,
-    query: web::Either<web::Json<UpdateQuery>, web::Form<UpdateQuery>>,
+    body: web::Either<web::Json<UpdateBody>, web::Form<UpdateBody>>,
     pool: web::Data<PgPool>,
     session: Session,
 ) -> Result<impl Responder, actix_web::Error> {
     validate_admin(&session, &pool).await?;
 
-    let query = unpack(query);
+    let body = unpack(body);
 
     let assignment_id = assignment_id.into_inner();
 
@@ -183,19 +184,19 @@ async fn update(
         }
     };
 
-    if let Some(u) = &query.user {
+    if let Some(u) = &body.user {
         assignment.user = u.to_string()
     };
 
-    if let Some(k) = &query.key {
+    if let Some(k) = &body.key {
         assignment.key = k.to_string()
     };
 
-    if let Some(d) = query.date_out {
+    if let Some(d) = body.date_out {
         assignment.date_out = d
     };
 
-    if let Some(d) = query.date_in {
+    if let Some(d) = body.date_in {
         assignment.date_in = Some(d)
     };
 

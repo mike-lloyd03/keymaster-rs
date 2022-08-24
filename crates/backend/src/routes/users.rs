@@ -1,6 +1,6 @@
 use actix_session::Session;
 use actix_web::{delete, error, get, post, web, HttpResponse, Responder};
-use log::{error, info};
+use log::error;
 use serde::Deserialize;
 use sqlx::PgPool;
 
@@ -10,7 +10,7 @@ use crate::{
 };
 
 #[derive(Deserialize, Clone)]
-struct UpdateQuery {
+struct UpdateBody {
     display_name: Option<String>,
     email: Option<String>,
     can_login: Option<bool>,
@@ -91,12 +91,12 @@ async fn create(
 async fn update(
     session: Session,
     username: web::Path<String>,
-    query: web::Either<web::Json<UpdateQuery>, web::Form<UpdateQuery>>,
+    body: web::Either<web::Json<UpdateBody>, web::Form<UpdateBody>>,
     pool: web::Data<PgPool>,
 ) -> Result<impl Responder, actix_web::Error> {
     validate_admin(&session, &pool).await?;
 
-    let query = unpack(query);
+    let body = unpack(body);
     let username = &username.into_inner();
 
     let mut user = match User::get(&pool, username).await {
@@ -107,19 +107,19 @@ async fn update(
         }
     };
 
-    if let Some(d) = &query.display_name {
+    if let Some(d) = &body.display_name {
         user.display_name = Some(d.to_string())
     };
 
-    if let Some(e) = &query.email {
+    if let Some(e) = &body.email {
         user.email = Some(e.to_string())
     };
 
-    if let Some(c) = query.can_login {
+    if let Some(c) = body.can_login {
         user.can_login = c
     };
 
-    if let Some(c) = query.admin {
+    if let Some(c) = body.admin {
         user.admin = c
     };
 

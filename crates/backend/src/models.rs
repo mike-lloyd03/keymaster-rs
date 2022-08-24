@@ -13,7 +13,7 @@ pub use key::Key;
 pub use user::{initialize_admin, Credentials, User};
 
 pub async fn db() -> Result<Pool<Postgres>> {
-    dotenv()?;
+    // dotenv()?;
     let db_url = match env::var("DATABASE_URL") {
         // Ok(u) => format!("{}_test", u),
         Ok(u) => u,
@@ -22,11 +22,6 @@ pub async fn db() -> Result<Pool<Postgres>> {
             exit(1);
         }
     };
-
-    // if sqlx::Postgres::database_exists(database_url).await? {
-    //     sqlx::Postgres::drop_database(database_url).await?;
-    // }
-    // sqlx::Postgres::create_database(database_url).await?;
 
     let pool = PgPoolOptions::new()
         .max_connections(5)
