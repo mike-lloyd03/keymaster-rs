@@ -196,8 +196,14 @@ async fn update(
         assignment.date_out = d
     };
 
+    // If the front end wants to unset the date_in variable, it will send the default date of
+    // 1970-01-01. This should be understood as null.
     if let Some(d) = body.date_in {
-        assignment.date_in = Some(d)
+        if d == NaiveDate::default() {
+            assignment.date_in = None
+        } else {
+            assignment.date_in = Some(d)
+        }
     };
 
     match assignment.update(&pool).await {
