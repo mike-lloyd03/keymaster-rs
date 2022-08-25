@@ -1,12 +1,14 @@
+use std::vec::Vec;
+
 use crate::components::form::{
     Button, ButtonType, DateField, Form, MultiSelectField, MultiSelectOption, TextField,
 };
 use crate::components::notifier::notify;
 use crate::components::table::{Cell, Row, Table};
 use crate::error::Error;
-use crate::services::form_actions::{oninput_select, oninput_string, onsubmit};
+use crate::services::form_actions::{ondelete, onload_all, onsubmit};
 use crate::services::requests::get;
-use crate::services::{format_date, parse_date};
+use crate::services::{format_date, handle_unauthorized, parse_date};
 use crate::types::{Assignment, Notification};
 
 use yew::prelude::*;
@@ -17,15 +19,11 @@ use super::Route;
 
 #[function_component(NewAssignment)]
 pub fn new_assignment() -> Html {
-    let available_users = use_state(std::vec::Vec::new);
-    let available_keys = use_state(std::vec::Vec::new);
+    let available_users = use_state(Vec::new);
+    let available_keys = use_state(Vec::new);
     let date_out = use_state(String::new);
-    let selected_users = use_state(std::vec::Vec::new);
-    let selected_keys = use_state(std::vec::Vec::new);
-
-    let oninput_users = oninput_select(selected_users.clone());
-    let oninput_keys = oninput_select(selected_keys.clone());
-    let oninput_date_out = oninput_string(date_out.clone());
+    let selected_users = use_state(Vec::<String>::new);
+    let selected_keys = use_state(Vec::<String>::new);
 
     {
         let users = available_users.clone();
@@ -85,17 +83,16 @@ pub fn new_assignment() -> Html {
 
     html! {
         <Form title="Assign Key" {onsubmit}>
-            <MultiSelectField label="User" onchange={oninput_users}>
+            <MultiSelectField label="User" state={selected_users}>
                 { for user_options.clone() }
             </MultiSelectField>
-            <MultiSelectField label="Key" onchange={oninput_keys}>
+            <MultiSelectField label="Key" state={selected_keys}>
                 { for key_options }
             </MultiSelectField>
             <DateField
                 label="Date Out"
                 required=true
-                value={(*date_out).clone()}
-                oninput={oninput_date_out}
+                state={date_out}
             />
             <Button
                 value="Assign Key"
@@ -106,11 +103,7 @@ pub fn new_assignment() -> Html {
                 value="Cancel"
                 button_type={ButtonType::Secondary}
                 onclick={oncancel}
-                novalidate=true
             />
-            <p>{(*selected_users).clone()}</p>
-            <p>{(*selected_keys).clone()}</p>
-            <p>{(*date_out).clone()}</p>
         </Form>
     }
 }
@@ -149,14 +142,7 @@ pub fn edit_assignment(props: &EditAssignmentProps) -> Html {
                             });
                         }
                         Err(e) => match e {
-                            Error::Unauthorized => {
-                                history.push(Route::Login);
-                                notify(
-                                    &dispatch,
-                                    "You must log in to access this page".into(),
-                                    "error".into(),
-                                );
-                            }
+                            Error::Unauthorized => handle_unauthorized(history, dispatch),
                             _ => notify(&dispatch, e.to_string(), "error".into()),
                         },
                     }
@@ -172,10 +158,6 @@ pub fn edit_assignment(props: &EditAssignmentProps) -> Html {
             user: (*user).clone(),
             key: (*key).clone(),
             date_out: parse_date((*date_out).clone()),
-            // date_in: match (*date_in).clone().as_str() {
-            //     "" => None,
-            //     _ => Some(parse_date((*date_in).clone())),
-            // },
             date_in: Some(parse_date((*date_in).clone())),
             ..Default::default()
         };
@@ -183,6 +165,13 @@ pub fn edit_assignment(props: &EditAssignmentProps) -> Html {
         let history = use_history().unwrap();
         let path = format!("/api/assignments/{}", props.id);
         onsubmit(path, assignment, dispatch, history, Route::Assignments)
+    };
+
+    let ondelete = {
+        let (_, dispatch) = use_store::<Notification>();
+        let history = use_history().unwrap();
+        let path = format!("/api/assignments/{}", props.id);
+        ondelete(path, dispatch, history, Route::Assignments)
     };
 
     let oncancel = {
@@ -204,20 +193,20 @@ pub fn edit_assignment(props: &EditAssignmentProps) -> Html {
             <Button
                 value="Delete Key"
                 button_type={ButtonType::Danger}
+                onclick={ondelete}
             />
             {" "}
             <Button
                 value="Cancel"
                 button_type={ButtonType::Secondary}
                 onclick={oncancel}
-                novalidate=true
             />
         </Form>
     }
 }
 #[function_component(Assignments)]
 pub fn assignments() -> Html {
-    let assignments = use_state(std::vec::Vec::new);
+    let assignments = use_state(Vec::<Assignment>::new);
 
     // Get assignments on load
     {
@@ -226,23 +215,7 @@ pub fn assignments() -> Html {
         let assignments = assignments.clone();
         use_effect_with_deps(
             move |_| {
-                let assignments = assignments.clone();
-                wasm_bindgen_futures::spawn_local(async move {
-                    match get::<Vec<Assignment>>("/api/assignments".into()).await {
-                        Ok(a) => assignments.set(a),
-                        Err(e) => match e {
-                            Error::Unauthorized => {
-                                history.push(Route::Login);
-                                notify(
-                                    &dispatch,
-                                    "You must log in to access this page".into(),
-                                    "error".into(),
-                                );
-                            }
-                            _ => notify(&dispatch, e.to_string(), "error".into()),
-                        },
-                    }
-                });
+                onload_all("/api/assignments".into(), dispatch, history, assignments);
                 || ()
             },
             (),

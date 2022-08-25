@@ -1,8 +1,11 @@
+use std::vec::Vec;
+
 use crate::components::form::{Button, ButtonType, CheckboxField, Form, TextField};
 use crate::components::notifier::notify;
 use crate::components::table::{Cell, Row, Table};
 use crate::error::Error;
-use crate::services::form_actions::{ondelete, oninput_bool, oninput_string, onsubmit};
+use crate::services::form_actions::{ondelete, onload_all, onsubmit};
+use crate::services::handle_unauthorized;
 use crate::services::requests::get;
 use crate::types::{Key, Notification};
 
@@ -17,8 +20,6 @@ use super::Route;
 pub fn new_key() -> Html {
     let name = use_state(String::new);
     let description = use_state(String::new);
-    let oninput_name = oninput_string(name.clone());
-    let oninput_desc = oninput_string(description.clone());
 
     let oncancel = {
         let history = use_history().unwrap();
@@ -41,11 +42,10 @@ pub fn new_key() -> Html {
             <TextField
                 label="Key Name"
                 required=true
-                value={(*name).clone()}
-                oninput={oninput_name}
+                state={name}
                 pattern=r#"[\w\d]{3,}"#
             />
-            <TextField label="Description" value={(*description).clone()} oninput={oninput_desc} />
+            <TextField label="Description" state={description} />
             <Button
                 value="Add Key"
                 button_type={ButtonType::Primary}
@@ -55,7 +55,6 @@ pub fn new_key() -> Html {
                 value="Cancel"
                 button_type={ButtonType::Secondary}
                 onclick={oncancel}
-                novalidate=true
             />
         </Form>
     }
@@ -71,8 +70,6 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
     let key_name = props.key_name.clone();
     let description = use_state(String::new);
     let active = use_state(|| false);
-    let oninput_desc = oninput_string(description.clone());
-    let oninput_active = oninput_bool(active.clone());
 
     {
         let key_name = key_name.clone();
@@ -90,14 +87,7 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
                             active.set(k.active);
                         }
                         Err(e) => match e {
-                            Error::Unauthorized => {
-                                history.push(Route::Login);
-                                notify(
-                                    &dispatch,
-                                    "You must log in to access this page".into(),
-                                    "error".into(),
-                                );
-                            }
+                            Error::Unauthorized => handle_unauthorized(history, dispatch),
                             _ => notify(&dispatch, e.to_string(), "error".into()),
                         },
                     }
@@ -134,9 +124,13 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
 
     html! {
         <>
-        <Form title="Edit Key" subtitle={props.key_name.clone()} action={format!("keys/{}", props.key_name.clone())} {onsubmit} >
-            <TextField label="Description" value={(*description).clone()} oninput={oninput_desc} />
-            <CheckboxField label="Active" checked={*active} onchange={oninput_active} />
+        <Form title="Edit Key"
+            subtitle={props.key_name.clone()}
+            action={format!("keys/{}", props.key_name.clone())}
+            {onsubmit}
+        >
+            <TextField label="Description" state={description} />
+            <CheckboxField label="Active" state={active} />
             <Button
                 value="Update Key"
                 button_type={ButtonType::Primary}
@@ -152,17 +146,15 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
                 value="Cancel"
                 button_type={ButtonType::Secondary}
                 onclick={oncancel}
-                novalidate=true
             />
         </Form>
-        <p>{*active}</p>
         </>
     }
 }
 
 #[function_component(KeyTable)]
 pub fn key_table() -> Html {
-    let keys = use_state(std::vec::Vec::new);
+    let keys = use_state(Vec::<Key>::new);
 
     // Get keys on load
     {
@@ -171,23 +163,7 @@ pub fn key_table() -> Html {
         let keys = keys.clone();
         use_effect_with_deps(
             move |_| {
-                let keys = keys.clone();
-                wasm_bindgen_futures::spawn_local(async move {
-                    match get::<Vec<Key>>("/api/keys".into()).await {
-                        Ok(k) => keys.set(k),
-                        Err(e) => match e {
-                            Error::Unauthorized => {
-                                history.push(Route::Login);
-                                notify(
-                                    &dispatch,
-                                    "You must log in to access this page".into(),
-                                    "error".into(),
-                                );
-                            }
-                            _ => notify(&dispatch, e.to_string(), "error".into()),
-                        },
-                    }
-                });
+                onload_all("/api/keys".into(), dispatch, history, keys);
                 || ()
             },
             (),

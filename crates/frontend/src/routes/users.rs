@@ -1,8 +1,11 @@
+use std::vec::Vec;
+
 use crate::components::form::{Button, ButtonType, CheckboxField, Form, TextField};
 use crate::components::notifier::notify;
 use crate::components::table::{Cell, Row, Table};
 use crate::error::Error;
-use crate::services::form_actions::{ondelete, oninput_bool, oninput_string, onsubmit};
+use crate::services::form_actions::{ondelete, onload_all, onsubmit};
+use crate::services::handle_unauthorized;
 use crate::services::requests::get;
 use crate::types::{Notification, User};
 use yew::prelude::*;
@@ -17,11 +20,6 @@ pub fn new_user() -> Html {
     let email = use_state(String::new);
     let display_name = use_state(String::new);
     let can_login = use_state(|| false);
-
-    let oninput_username = oninput_string(username.clone());
-    let oninput_email = oninput_string(email.clone());
-    let oninput_display_name = oninput_string(display_name.clone());
-    let oninput_can_login = oninput_bool(can_login.clone());
 
     let oncancel = {
         let history = use_history().unwrap();
@@ -60,22 +58,19 @@ pub fn new_user() -> Html {
             <TextField
                 label="Username"
                 required=true
-                value={(*username).clone()}
-                oninput={oninput_username}
+                state={username}
                 pattern=r#"[\w\d]{3,}"#
             />
             <TextField
                 label="Email"
-                value={(*email).clone()}
-                oninput={oninput_email}
+                state={email}
                 pattern=r#"[^@]+@[\w\d]+\.[\w\.]{2,}"#
             />
             <TextField
                 label="Display Name"
-                value={(*display_name).clone()}
-                oninput={oninput_display_name}
+                state={display_name}
             />
-            <CheckboxField label="Can Login?" checked={*can_login} onchange={oninput_can_login} />
+            <CheckboxField label="Can Login?" state={can_login} />
             <Button
                 value="Add User"
                 button_type={ButtonType::Primary}
@@ -85,7 +80,7 @@ pub fn new_user() -> Html {
                 value="Cancel"
                 button_type={ButtonType::Secondary}
                 onclick={oncancel}
-                novalidate=true
+                // novalidate=true
             />
         </Form>
     }
@@ -104,10 +99,6 @@ pub fn edit_user(props: &EditUserProps) -> Html {
     let display_name = use_state(String::new);
     let can_login = use_state(|| false);
     let admin = use_state(|| false);
-
-    let oninput_email = oninput_string(email.clone());
-    let oninput_display_name = oninput_string(display_name.clone());
-    let oninput_can_login = oninput_bool(can_login.clone());
 
     {
         let id = id.clone();
@@ -131,14 +122,7 @@ pub fn edit_user(props: &EditUserProps) -> Html {
                             admin.set(u.admin);
                         }
                         Err(e) => match e {
-                            Error::Unauthorized => {
-                                history.push(Route::Login);
-                                notify(
-                                    &dispatch,
-                                    "You must log in to access this page".into(),
-                                    "error".into(),
-                                );
-                            }
+                            Error::Unauthorized => handle_unauthorized(history, dispatch),
                             _ => notify(&dispatch, e.to_string(), "error".into()),
                         },
                     }
@@ -180,16 +164,14 @@ pub fn edit_user(props: &EditUserProps) -> Html {
         <Form title="Edit User" subtitle={props.username.clone()} action={format!("users/{}", props.username.clone())} {onsubmit} >
             <TextField
                 label="Email"
-                value={(*email).clone()}
-                oninput={oninput_email}
+                state={email}
                 pattern=r#"[^@]+@[\w\d]+\.[\w\.]{2,}"#
             />
             <TextField
                 label="Display Name"
-                value={(*display_name).clone()}
-                oninput={oninput_display_name}
+                state={display_name}
             />
-            <CheckboxField label="Can Login?" checked={*can_login} onchange={oninput_can_login} />
+            <CheckboxField label="Can Login?" state={can_login} />
             <Button
                 value="Update User"
                 button_type={ButtonType::Primary}
@@ -205,7 +187,6 @@ pub fn edit_user(props: &EditUserProps) -> Html {
                 value="Cancel"
                 button_type={ButtonType::Secondary}
                 onclick={oncancel}
-                novalidate=true
             />
         </Form>
     }
@@ -213,7 +194,7 @@ pub fn edit_user(props: &EditUserProps) -> Html {
 
 #[function_component(UserTable)]
 pub fn user_table() -> Html {
-    let users = use_state(std::vec::Vec::new);
+    let users = use_state(Vec::<User>::new);
 
     // Get users on load
     {
@@ -222,23 +203,7 @@ pub fn user_table() -> Html {
         let users = users.clone();
         use_effect_with_deps(
             move |_| {
-                let users = users.clone();
-                wasm_bindgen_futures::spawn_local(async move {
-                    match get::<Vec<User>>("/api/users".into()).await {
-                        Ok(u) => users.set(u),
-                        Err(e) => match e {
-                            Error::Unauthorized => {
-                                history.push(Route::Login);
-                                notify(
-                                    &dispatch,
-                                    "You must log in to access this page".into(),
-                                    "error".into(),
-                                );
-                            }
-                            _ => notify(&dispatch, e.to_string(), "error".into()),
-                        },
-                    }
-                });
+                onload_all("/api/users".into(), dispatch, history, users);
                 || ()
             },
             (),

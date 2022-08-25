@@ -9,14 +9,11 @@ use yew_router::prelude::*;
 use yewdux::prelude::*;
 
 use super::Route;
-use crate::services::form_actions::oninput_string;
 
 #[function_component(Login)]
 pub fn login() -> Html {
     let username = use_state(String::new);
     let password = use_state(String::new);
-    let oninput_username = oninput_string(username.clone());
-    let oninput_password = oninput_string(password.clone());
 
     let onsubmit = {
         let creds = Credentials {
@@ -38,9 +35,9 @@ pub fn login() -> Html {
 
     html! {
         <Form title="Login" {onsubmit}>
-            <TextField label="Username" required=true value={(*username).clone()} oninput={oninput_username}/>
-            <PasswordField label="Password" value={(*password).clone()} oninput={oninput_password}/>
-            <Button name="submit" value="Login" button_type={ButtonType::Primary} />
+            <TextField label="Username" required=true state={username}/>
+            <PasswordField label="Password" state={password}/>
+            <Button value="Login" button_type={ButtonType::Primary} />
         </Form>
     }
 }

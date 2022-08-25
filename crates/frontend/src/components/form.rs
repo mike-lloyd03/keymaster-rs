@@ -1,4 +1,6 @@
-use web_sys::HtmlInputElement;
+use std::fmt::Display;
+
+use web_sys::{HtmlInputElement, HtmlSelectElement};
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
@@ -53,10 +55,8 @@ pub enum ButtonType {
 #[derive(Properties, PartialEq)]
 pub struct ButtonProps {
     pub value: String,
-    pub name: Option<String>,
     pub button_type: Option<ButtonType>,
     pub onclick: Option<Callback<MouseEvent>>,
-    pub novalidate: Option<bool>,
 }
 
 #[function_component(Button)]
@@ -70,9 +70,6 @@ pub fn button(props: &ButtonProps) -> Html {
                     ButtonType::Danger => "btn btn-danger",
                 }
             }
-            formnovalidate={ props.novalidate.unwrap_or_default() }
-            id={ props.name.clone() }
-            name={ props.name.clone() }
             type="submit"
             value={ props.value.clone() }
             onclick={ props.onclick.clone() }
@@ -80,174 +77,137 @@ pub fn button(props: &ButtonProps) -> Html {
     }
 }
 
+#[derive(PartialEq, Clone)]
+pub enum InputType {
+    Text,
+    Date,
+    Password,
+}
+
+impl Display for InputType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            InputType::Text => write!(f, "text"),
+            InputType::Date => write!(f, "date"),
+            InputType::Password => write!(f, "password"),
+        }
+    }
+}
+
 #[derive(Properties, PartialEq)]
-pub struct LabelProps {
+pub struct InputProps {
+    pub input_type: Option<InputType>,
     pub label: String,
+    pub state: UseStateHandle<String>,
     pub name: Option<String>,
     pub value: Option<String>,
     pub oninput: Option<Callback<InputEvent>>,
     pub required: Option<bool>,
     pub pattern: Option<String>,
     pub checked: Option<bool>,
-    pub state: Option<UseStateHandle<String>>,
 }
 
-#[function_component(TextField)]
-pub fn text_field(props: &LabelProps) -> Html {
-    let label = &props.label;
+#[function_component(InputField)]
+pub fn input_field(props: &InputProps) -> Html {
+    let label_snake = snake_case(props.label.clone());
 
     let oninput = {
         let state = props.state.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            if let Some(s) = state.clone() {
-                s.set(input.value());
-            }
+            state.set(input.value());
         })
     };
 
-    match &props.state {
-        Some(s) => {
-            html! {
-                <div class="form-group ">
-                    <label class="control-label" for={ snake_case(label.clone()) }>{ label }</label>
-                    <input
-                    class="form-control"
-                    id={ snake_case(label.clone()) }
-                    name={ props.name.clone().unwrap_or_else(|| snake_case(label.clone())) }
-                    type="text"
-                    value={(&**s).clone()}
-                    required={props.required.unwrap_or_default()}
-                    pattern={props.pattern.clone()}
-                    {oninput}
-                />
-                    </div>
-
-            }
-        }
-        None => html! {
+    html! {
         <div class="form-group ">
-        <label class="control-label" for={ snake_case(label.clone()) }>{ label }</label>
+            <label class="control-label" for={ label_snake.clone() }>{ props.label.clone() }</label>
             <input
                 class="form-control"
-                id={ snake_case(label.clone()) }
-                name={ props.name.clone().unwrap_or_else(|| snake_case(label.clone())) }
-                type="text"
-                value={props.value.clone()}
+                name={ label_snake.clone() }
+                type={ props.input_type.clone().unwrap().to_string() }
+                value={(&*props.state).clone()}
                 required={props.required.unwrap_or_default()}
                 pattern={props.pattern.clone()}
-                oninput={props.oninput.clone()}
+                {oninput}
             />
         </div>
-        },
+
+    }
+}
+
+#[function_component(TextField)]
+pub fn text_field(props: &InputProps) -> Html {
+    html! {
+        <InputField
+            input_type={InputType::Text}
+            label={props.label.clone()}
+            state={props.state.clone()}
+            name={props.name.clone()}
+            value={props.value.clone()}
+            oninput={props.oninput.clone()}
+            required={props.required}
+            pattern={props.pattern.clone()}
+        />
     }
 }
 
 #[function_component(DateField)]
-pub fn date_field(props: &LabelProps) -> Html {
-    let label = &props.label;
-
-    let oninput = {
-        let state = props.state.clone();
-        Callback::from(move |e: InputEvent| {
-            let input: HtmlInputElement = e.target_unchecked_into();
-            if let Some(s) = state.clone() {
-                s.set(input.value());
-            }
-        })
-    };
-
-    // html! {
-    //     <div class="form-group required">
-    //         <label class="control-label" for={ snake_case(label.clone()) }>{ label }</label>
-    //         <input
-    //             class="form-control"
-    //             type="date"
-    //             id={ snake_case(label.clone()) }
-    //             name={ snake_case(label.clone()) }
-    //             required={props.required.clone().unwrap_or_default()}
-    //             value={props.value.clone()}
-    //             oninput={props.oninput.clone()}
-    //         />
-    //     </div>
-    // }
-    match &props.state {
-        Some(s) => {
-            html! {
-                <div class="form-group ">
-                    <label class="control-label" for={ snake_case(label.clone()) }>{ label }</label>
-                    <input
-                    class="form-control"
-                    id={ snake_case(label.clone()) }
-                    name={ props.name.clone().unwrap_or_else(|| snake_case(label.clone())) }
-                    type="date"
-                    value={(&**s).clone()}
-                    required={props.required.unwrap_or_default()}
-                    pattern={props.pattern.clone()}
-                    {oninput}
-                />
-                    </div>
-
-            }
-        }
-        None => html! {
-        <div class="form-group ">
-        <label class="control-label" for={ snake_case(label.clone()) }>{ label }</label>
-            <input
-                class="form-control"
-                id={ snake_case(label.clone()) }
-                name={ props.name.clone().unwrap_or_else(|| snake_case(label.clone())) }
-                type="date"
-                value={props.value.clone()}
-                required={props.required.unwrap_or_default()}
-                pattern={props.pattern.clone()}
-                oninput={props.oninput.clone()}
-            />
-        </div>
-        },
+pub fn date_field(props: &InputProps) -> Html {
+    html! {
+        <InputField
+            input_type={InputType::Date}
+            label={props.label.clone()}
+            state={props.state.clone()}
+            name={props.name.clone()}
+            value={props.value.clone()}
+            oninput={props.oninput.clone()}
+            required={props.required}
+        />
     }
 }
 
 #[function_component(PasswordField)]
-pub fn password_field(props: &LabelProps) -> Html {
-    let label = &props.label;
-
+pub fn password_field(props: &InputProps) -> Html {
     html! {
-        <div class="form-group required">
-        <label class="control-label" for={ snake_case(label.clone()) }>{ label }</label>
-            <input
-                class="form-control"
-                id={ snake_case(label.clone()) }
-                name={ snake_case(label.clone()) }
-                required=true
-                type="password"
-                value={props.value.clone()}
-                oninput={props.oninput.clone()}
-            />
-        </div>
+        <InputField
+            input_type={InputType::Password}
+            label={props.label.clone()}
+            state={props.state.clone()}
+            name={props.name.clone()}
+            value={props.value.clone()}
+            oninput={props.oninput.clone()}
+            required={props.required}
+        />
     }
 }
 
 #[derive(Properties, PartialEq)]
 pub struct CheckboxProps {
     pub label: String,
-    pub onchange: Option<Callback<Event>>,
-    pub checked: Option<bool>,
+    pub state: UseStateHandle<bool>,
 }
 
 #[function_component(CheckboxField)]
 pub fn checkbox_field(props: &CheckboxProps) -> Html {
     let label = &props.label;
 
+    let onchange = {
+        let state = props.state.clone();
+        Callback::from(move |e: Event| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            state.set(input.checked());
+        })
+    };
+
     html! {
         <div class="checkbox">
             <label>
                 <input
-                    id={ snake_case(label.clone()) }
                     name={ snake_case(label.clone()) }
                     type="checkbox"
-                    checked={props.checked.unwrap_or_default()}
-                    onchange={props.onchange.clone()}
+                    checked={*(props.state)}
+                    {onchange}
                 />
                 { format!(" {}", label) }
             </label>
@@ -258,24 +218,39 @@ pub fn checkbox_field(props: &CheckboxProps) -> Html {
 #[derive(Properties, PartialEq)]
 pub struct MultiSelectFieldProps {
     pub label: String,
+    pub state: UseStateHandle<Vec<String>>,
     pub children: ChildrenWithProps<MultiSelectOption>,
-    pub onchange: Option<Callback<Event>>,
 }
 
 #[function_component(MultiSelectField)]
 pub fn multi_select_field(props: &MultiSelectFieldProps) -> Html {
-    let label = &props.label;
+    let label_sn = snake_case(props.label.clone());
+
+    let onchange = {
+        let state = props.state.clone();
+        Callback::from(move |e: Event| {
+            if let Some(input) = e.target_dyn_into::<HtmlSelectElement>() {
+                let collection = input.selected_options();
+                let selected: Vec<String> = (0..input.selected_options().length())
+                    .filter_map(|i| collection.item(i))
+                    .filter_map(|e| e.text_content())
+                    .collect();
+
+                state.set(selected);
+            }
+        })
+    };
 
     html! {
         <div class="form-group  required">
-            <label class="control-label" for={ snake_case(label.clone()) }>{ label.clone() }</label>
+            <label class="control-label" for={ label_sn.clone() }>{ props.label.clone() }</label>
             <select
                 class="form-control"
-                id={ snake_case(label.clone()) }
+                id={ label_sn.clone() }
                 multiple=true
-                name={ snake_case(label.clone()) }
+                name={ label_sn.clone() }
                 required=true
-                onchange={props.onchange.clone()}
+                {onchange}
             >
                 {
                     for props.children.iter()
