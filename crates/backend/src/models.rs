@@ -1,7 +1,7 @@
 use std::{env, process::exit};
 
 use anyhow::Result;
-use dotenvy::dotenv;
+// use dotenvy::dotenv;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 
 mod assignment;

@@ -1,6 +1,7 @@
 use std::vec::Vec;
 
 use crate::components::form::{Button, ButtonType, CheckboxField, Form, TextField};
+use crate::components::modal::Modal;
 use crate::components::notifier::notify;
 use crate::components::table::{Cell, Row, Table};
 use crate::error::Error;
@@ -110,7 +111,18 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
         onsubmit(path, key, dispatch, history, Route::Keys)
     };
 
-    let ondelete = {
+    // let ondelete = {
+    //     let (_, dispatch) = use_store::<Notification>();
+    //     let history = use_history().unwrap();
+    //     let path = format!("/api/keys/{}", key_name);
+    //     let delete_key = ondelete(path, dispatch, history, Route::Keys);
+    //     Callback::once(move |_: MouseEvent| {
+    //         html! {
+    //             <Modal title="Delete Key" msg="Are you sure you want to delete this key? All assignments which use this key will also be deleted." confirm_action={delete_key} />
+    //         }
+    //     })
+    // };
+    let delete_key = {
         let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();
         let path = format!("/api/keys/{}", key_name);
@@ -124,6 +136,7 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
 
     html! {
         <>
+        <Modal title="Delete Key" msg="Are you sure you want to delete this key? All assignments which use this key will also be deleted." confirm_action={delete_key} />
         <Form title="Edit Key"
             subtitle={props.key_name.clone()}
             action={format!("keys/{}", props.key_name.clone())}
@@ -139,7 +152,7 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
             <Button
                 value="Delete Key"
                 button_type={ButtonType::Danger}
-                onclick={ondelete}
+                // onclick={ondelete}
             />
             {" "}
             <Button
