@@ -57,7 +57,8 @@ impl Assignment {
                 key,
                 date_out,
                 date_in as "date_in?"
-            FROM assignments"#,
+            FROM assignments
+            ORDER BY date_out"#,
         )
         .fetch_all(pool)
         .await

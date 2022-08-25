@@ -40,7 +40,16 @@ impl User {
     pub async fn get_all(pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
         query_as!(
             Self,
-            r#"SELECT id, username, display_name, email, password_hash, can_login, admin FROM users"#
+            r#"SELECT
+                id,
+                username,
+                display_name,
+                email,
+                password_hash,
+                can_login,
+                admin
+                FROM users
+                ORDER BY username"#
         )
         .fetch_all(pool)
         .await
