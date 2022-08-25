@@ -4,12 +4,12 @@ use crate::components::form::{
 use crate::components::notifier::notify;
 use crate::components::table::{Cell, Row, Table};
 use crate::error::Error;
-use crate::services::form_actions::{oninput_option, oninput_select, oninput_string, onsubmit};
-use crate::services::requests::{self, get};
-use crate::types::{Assignment, Key, Notification, User};
-use chrono::NaiveDate;
+use crate::services::form_actions::{oninput_select, oninput_string, onsubmit};
+use crate::services::requests::get;
+use crate::services::{format_date, parse_date};
+use crate::types::{Assignment, Notification};
+
 use yew::prelude::*;
-use yew_hooks::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::use_store;
 
@@ -33,16 +33,7 @@ pub fn new_assignment() -> Html {
         let (_, dispatch) = use_store::<Notification>();
         use_effect_with_deps(
             move |_| {
-                wasm_bindgen_futures::spawn_local(async move {
-                    match get::<Vec<User>>("/api/users".into()).await {
-                        Ok(u) => users.set(u.iter().map(|user| user.username.clone()).collect()),
-                        Err(e) => notify(&dispatch, e.to_string(), "error".into()),
-                    };
-                    match get::<Vec<Key>>("/api/keys?active=true".into()).await {
-                        Ok(k) => keys.set(k.iter().map(|key| key.name.clone()).collect()),
-                        Err(e) => notify(&dispatch, e.to_string(), "error".into()),
-                    }
-                });
+                crate::services::form_actions::get_options(users, keys, dispatch);
                 || ()
             },
             (),
@@ -56,12 +47,10 @@ pub fn new_assignment() -> Html {
 
     let onsubmit = {
         let mut assignments: Vec<Assignment> = Vec::new();
-        let users = (*selected_users).clone();
-        let keys = (*selected_keys).clone();
-        let date_out =
-            NaiveDate::parse_from_str(&(*date_out).clone(), "%Y-%m-%d").unwrap_or_default();
-        for user in &users {
-            for key in &keys {
+        let date_out = parse_date((*date_out).clone());
+
+        for user in &*selected_users {
+            for key in &*selected_keys {
                 let a = Assignment {
                     user: user.into(),
                     key: key.into(),
@@ -133,12 +122,96 @@ pub struct EditAssignmentProps {
 
 #[function_component(EditAssignment)]
 pub fn edit_assignment(props: &EditAssignmentProps) -> Html {
+    let user = use_state(String::new);
+    let key = use_state(String::new);
+    let date_out = use_state(String::new);
+    let date_in = use_state(String::new);
+
+    {
+        let user = user.clone();
+        let key = key.clone();
+        let date_out = date_out.clone();
+        let date_in = date_in.clone();
+        let (_, dispatch) = use_store::<Notification>();
+        let history = use_history().unwrap();
+        let url = format!("/api/assignments/{}", &props.id.clone());
+        use_effect_with_deps(
+            move |_| {
+                wasm_bindgen_futures::spawn_local(async move {
+                    match get::<Assignment>(url).await {
+                        Ok(a) => {
+                            user.set(a.user);
+                            key.set(a.key);
+                            date_out.set(format_date(a.date_out));
+                            date_in.set(match a.date_in {
+                                Some(d) => format_date(d),
+                                None => "".into(),
+                            });
+                        }
+                        Err(e) => match e {
+                            Error::Unauthorized => {
+                                history.push(Route::Login);
+                                notify(
+                                    &dispatch,
+                                    "You must log in to access this page".into(),
+                                    "error".into(),
+                                );
+                            }
+                            _ => notify(&dispatch, e.to_string(), "error".into()),
+                        },
+                    }
+                });
+                || ()
+            },
+            (),
+        );
+    }
+
+    let onsubmit = {
+        let assignment = Assignment {
+            user: (*user).clone(),
+            key: (*key).clone(),
+            date_out: parse_date((*date_out).clone()),
+            // date_in: match (*date_in).clone().as_str() {
+            //     "" => None,
+            //     _ => Some(parse_date((*date_in).clone())),
+            // },
+            date_in: Some(parse_date((*date_in).clone())),
+            ..Default::default()
+        };
+        let (_, dispatch) = use_store::<Notification>();
+        let history = use_history().unwrap();
+        let path = format!("/api/assignments/{}", props.id);
+        onsubmit(path, assignment, dispatch, history, Route::Assignments)
+    };
+
+    let oncancel = {
+        let history = use_history().unwrap();
+        Callback::once(move |_: MouseEvent| history.push(Route::Assignments))
+    };
+
     html! {
-        <Form title="Edit Assignment">
-            <TextField label="User" />
-            <TextField label="Key" />
-            <DateField label="Date Out" />
-            <DateField label="Date In" />
+        <Form title="Edit Assignment" {onsubmit}>
+            <TextField label="User" state={user}/>
+            <TextField label="Key" state={key}/>
+            <DateField label="Date Out" state={date_out}/>
+            <DateField label="Date In" state={date_in}/>
+            <Button
+                value="Update Key"
+                button_type={ButtonType::Primary}
+            />
+            {" "}
+            <Button
+                value="Delete Key"
+                button_type={ButtonType::Danger}
+            />
+            {" "}
+            <Button
+                value="Cancel"
+                button_type={ButtonType::Secondary}
+                onclick={oncancel}
+                novalidate=true
+            />
         </Form>
     }
 }

@@ -1,12 +1,23 @@
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
+use std::string::String;
 use yewdux::store::Store;
+
+pub trait PrimaryKey {
+    fn primary_key(&self) -> String;
+}
 
 #[derive(PartialEq, Eq, Default, Clone, Serialize, Deserialize)]
 pub struct Key {
     pub name: String,
     pub description: Option<String>,
     pub active: bool,
+}
+
+impl PrimaryKey for Key {
+    fn primary_key(&self) -> String {
+        self.name.clone()
+    }
 }
 
 #[derive(PartialEq, Eq, Default, Clone, Serialize, Deserialize)]
@@ -17,6 +28,12 @@ pub struct User {
     pub email: Option<String>,
     pub can_login: bool,
     pub admin: bool,
+}
+
+impl PrimaryKey for User {
+    fn primary_key(&self) -> String {
+        self.username.clone()
+    }
 }
 
 #[derive(PartialEq, Eq, Default, Clone, Serialize, Deserialize)]

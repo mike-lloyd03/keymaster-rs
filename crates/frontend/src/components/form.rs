@@ -1,3 +1,4 @@
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
@@ -88,13 +89,43 @@ pub struct LabelProps {
     pub required: Option<bool>,
     pub pattern: Option<String>,
     pub checked: Option<bool>,
+    pub state: Option<UseStateHandle<String>>,
 }
 
 #[function_component(TextField)]
 pub fn text_field(props: &LabelProps) -> Html {
     let label = &props.label;
 
-    html! {
+    let oninput = {
+        let state = props.state.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            if let Some(s) = state.clone() {
+                s.set(input.value());
+            }
+        })
+    };
+
+    match &props.state {
+        Some(s) => {
+            html! {
+                <div class="form-group ">
+                    <label class="control-label" for={ snake_case(label.clone()) }>{ label }</label>
+                    <input
+                    class="form-control"
+                    id={ snake_case(label.clone()) }
+                    name={ props.name.clone().unwrap_or_else(|| snake_case(label.clone())) }
+                    type="text"
+                    value={(&**s).clone()}
+                    required={props.required.unwrap_or_default()}
+                    pattern={props.pattern.clone()}
+                    {oninput}
+                />
+                    </div>
+
+            }
+        }
+        None => html! {
         <div class="form-group ">
         <label class="control-label" for={ snake_case(label.clone()) }>{ label }</label>
             <input
@@ -108,6 +139,7 @@ pub fn text_field(props: &LabelProps) -> Html {
                 oninput={props.oninput.clone()}
             />
         </div>
+        },
     }
 }
 
@@ -115,19 +147,64 @@ pub fn text_field(props: &LabelProps) -> Html {
 pub fn date_field(props: &LabelProps) -> Html {
     let label = &props.label;
 
-    html! {
-        <div class="form-group required">
-            <label class="control-label" for={ snake_case(label.clone()) }>{ label }</label>
+    let oninput = {
+        let state = props.state.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            if let Some(s) = state.clone() {
+                s.set(input.value());
+            }
+        })
+    };
+
+    // html! {
+    //     <div class="form-group required">
+    //         <label class="control-label" for={ snake_case(label.clone()) }>{ label }</label>
+    //         <input
+    //             class="form-control"
+    //             type="date"
+    //             id={ snake_case(label.clone()) }
+    //             name={ snake_case(label.clone()) }
+    //             required={props.required.clone().unwrap_or_default()}
+    //             value={props.value.clone()}
+    //             oninput={props.oninput.clone()}
+    //         />
+    //     </div>
+    // }
+    match &props.state {
+        Some(s) => {
+            html! {
+                <div class="form-group ">
+                    <label class="control-label" for={ snake_case(label.clone()) }>{ label }</label>
+                    <input
+                    class="form-control"
+                    id={ snake_case(label.clone()) }
+                    name={ props.name.clone().unwrap_or_else(|| snake_case(label.clone())) }
+                    type="date"
+                    value={(&**s).clone()}
+                    required={props.required.unwrap_or_default()}
+                    pattern={props.pattern.clone()}
+                    {oninput}
+                />
+                    </div>
+
+            }
+        }
+        None => html! {
+        <div class="form-group ">
+        <label class="control-label" for={ snake_case(label.clone()) }>{ label }</label>
             <input
                 class="form-control"
-                type="date"
                 id={ snake_case(label.clone()) }
-                name={ snake_case(label.clone()) }
-                required={props.required.clone().unwrap_or_default()}
+                name={ props.name.clone().unwrap_or_else(|| snake_case(label.clone())) }
+                type="date"
                 value={props.value.clone()}
+                required={props.required.unwrap_or_default()}
+                pattern={props.pattern.clone()}
                 oninput={props.oninput.clone()}
             />
         </div>
+        },
     }
 }
 

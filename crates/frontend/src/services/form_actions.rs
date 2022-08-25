@@ -1,6 +1,7 @@
 use crate::routes::Route;
+use crate::types::{Key, PrimaryKey, User};
 use crate::{components::notifier::notify, types::Notification};
-use web_sys::{Document, HtmlInputElement, HtmlOptionElement, HtmlSelectElement};
+use web_sys::{HtmlInputElement, HtmlOptionElement, HtmlSelectElement};
 
 use serde::Serialize;
 use yew::prelude::*;
@@ -8,6 +9,8 @@ use yew_router::prelude::*;
 use yewdux::prelude::*;
 
 use crate::services::requests::{delete, post};
+
+use super::requests::get;
 
 pub fn onsubmit<T: Serialize + 'static>(
     path: String,
@@ -103,4 +106,25 @@ pub fn oninput_select(state: UseStateHandle<Vec<String>>) -> Callback<Event> {
             state.set(selected);
         }
     })
+}
+
+pub fn get_options(
+    users: UseStateHandle<Vec<String>>,
+    keys: UseStateHandle<Vec<String>>,
+    notify_dispatch: Dispatch<Notification>,
+) {
+    wasm_bindgen_futures::spawn_local(async move {
+        match get::<Vec<User>>("/api/users".into()).await {
+            Ok(u) => users.set(make_list(u)),
+            Err(e) => notify(&notify_dispatch, e.to_string(), "error".into()),
+        };
+        match get::<Vec<Key>>("/api/keys?active=true".into()).await {
+            Ok(k) => keys.set(make_list(k)),
+            Err(e) => notify(&notify_dispatch, e.to_string(), "error".into()),
+        }
+    })
+}
+
+fn make_list<T: PrimaryKey>(types: Vec<T>) -> Vec<String> {
+    types.iter().map(|t| t.primary_key().clone()).collect()
 }
