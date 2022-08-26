@@ -30,7 +30,8 @@ async fn login(
     match User::authenticate(&pool, creds).await {
         Ok(user) => {
             session.insert("username", user.username).unwrap();
-            HttpResponse::Ok().json("Success")
+            let si = get_session_info(session, pool).await;
+            HttpResponse::Ok().json(si)
         }
         Err(_) => HttpResponse::Unauthorized().json("Authentication failed"),
     }
@@ -49,23 +50,9 @@ async fn logout(session: Session) -> Result<impl Responder, actix_web::Error> {
 
 #[get("/session")]
 async fn session_info(session: Session, pool: web::Data<PgPool>) -> impl Responder {
-    let mut username = None;
-    let mut is_auth = false;
-    let mut is_admin = false;
+    let si = get_session_info(session, pool).await;
 
-    if let Ok(u) = validate_session(&session) {
-        username = Some(u);
-        is_auth = true;
-    }
-    if validate_admin(&session, &pool).await.is_ok() {
-        is_admin = true;
-    }
-
-    HttpResponse::Ok().json(SessionInfo {
-        username,
-        is_auth,
-        is_admin,
-    })
+    HttpResponse::Ok().json(si)
 }
 
 pub fn validate_session(session: &Session) -> Result<String, actix_web::Error> {
@@ -93,6 +80,26 @@ pub async fn validate_admin(
         Ok(())
     } else {
         Err(ErrorUnauthorized("Unauthorized"))
+    }
+}
+
+async fn get_session_info(session: Session, pool: web::Data<PgPool>) -> SessionInfo {
+    let mut username = None;
+    let mut is_auth = false;
+    let mut is_admin = false;
+
+    if let Ok(u) = validate_session(&session) {
+        username = Some(u);
+        is_auth = true;
+    }
+    if validate_admin(&session, &pool).await.is_ok() {
+        is_admin = true;
+    }
+
+    SessionInfo {
+        username,
+        is_auth,
+        is_admin,
     }
 }
 
