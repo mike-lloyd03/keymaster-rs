@@ -2,18 +2,18 @@ use thiserror::Error as ThisError;
 
 #[derive(ThisError, Debug, PartialEq, Clone)]
 pub enum Error {
-    #[error("invalid user input")]
+    #[error("Invalid user input")]
     BadRequest(String), // 400
-    #[error("unauthorized")]
+    #[error("You are not authorized to access this resource")]
     Unauthorized, // 401
-    #[error("not found")]
+    #[error("Resource not found")]
     NotFound(String), // 404
-    #[error("internal server error")]
+    #[error("Internal server error")]
     InternalServerError(String), // 500
-    #[error("error serializing request")]
+    #[error("Error serializing request")]
     SerializationError,
-    #[error("error deserializing response")]
+    #[error("Error deserializing response")]
     DeserializationError,
-    #[error("error sending request")]
+    #[error("Error sending request")]
     RequestError(String),
 }

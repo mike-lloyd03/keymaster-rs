@@ -1,14 +1,18 @@
 use std::vec::Vec;
 
-use crate::components::form::{Button, ButtonType, CheckboxField, Form, TextField};
+use crate::components::form::{
+    Button, ButtonType, CancelButton, CheckboxField, DeleteButton, Form, TextField,
+};
 use crate::components::modal::Modal;
 use crate::components::notifier::notify_error;
 use crate::components::table::{Cell, Row, Table};
 use crate::error::Error;
+use crate::routes::auth::CheckAuth;
 use crate::services::form_actions::{ondelete, onload_all, submit_form};
 use crate::services::handle_unauthorized;
 use crate::services::requests::get;
 use crate::types::User;
+
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -47,34 +51,36 @@ pub fn new_user() -> Html {
     };
 
     html! {
-        <Form title="New User" {onsubmit}>
-            <TextField
-                label="Username"
-                required=true
-                state={username}
-                pattern=r#"[\w\d]{3,}"#
-            />
-            <TextField
-                label="Email"
-                state={email}
-                pattern=r#"[^@]+@[\w\d]+\.[\w\.]{2,}"#
-            />
-            <TextField
-                label="Display Name"
-                state={display_name}
-            />
-            <CheckboxField label="Can Login?" state={can_login} />
-            <Button
-                value="Add User"
-                button_type={ButtonType::Primary}
-            />
-            {" "}
-            <Button
-                value="Cancel"
-                button_type={ButtonType::Secondary}
-                onclick={oncancel}
-            />
-        </Form>
+        <CheckAuth admin=true>
+            <Form title="New User" {onsubmit}>
+                <TextField
+                    label="Username"
+                    required=true
+                    state={username}
+                    pattern=r#"[\w\d]{3,}"#
+                />
+                <TextField
+                    label="Email"
+                    state={email}
+                    pattern=r#"[^@]+@[\w\d]+\.[\w\.]{2,}"#
+                />
+                <TextField
+                    label="Display Name"
+                    state={display_name}
+                />
+                <CheckboxField label="Can Login?" state={can_login} />
+                <Button
+                    value="Add User"
+                    button_type={ButtonType::Primary}
+                />
+                {" "}
+                <Button
+                    value="Cancel"
+                    button_type={ButtonType::Secondary}
+                    onclick={oncancel}
+                />
+            </Form>
+        </CheckAuth>
     }
 }
 
@@ -92,7 +98,7 @@ pub fn edit_user(props: &EditUserProps) -> Html {
     let can_login = use_state(|| false);
     let admin = use_state(|| false);
 
-    let show_confirm_modal = use_state(|| false);
+    let show_modal = use_state(|| false);
 
     {
         let id = id.clone();
@@ -140,60 +146,45 @@ pub fn edit_user(props: &EditUserProps) -> Html {
         submit_form(path, user, history, Route::Users)
     };
 
-    let onclick_delete = {
-        let show_confirm_modal = show_confirm_modal.clone();
-        Callback::once(move |e: MouseEvent| {
-            e.prevent_default();
-            show_confirm_modal.set(true);
-        })
-    };
-
     let delete_action = {
         let history = use_history().unwrap();
         let path = format!("/api/users/{}", username);
         ondelete(path, history, Route::Users)
     };
 
-    let oncancel = {
-        let history = use_history().unwrap();
-        Callback::once(move |_: MouseEvent| history.push(Route::Users))
-    };
-
     html! {
-        <Form title="Edit User" subtitle={props.username.clone()} action={format!("users/{}", props.username.clone())} {onsubmit} >
-            <TextField
-                label="Email"
-                state={email}
-                pattern=r#"[^@]+@[\w\d]+\.[\w\.]{2,}"#
+        <CheckAuth admin=true>
+            <Form title="Edit User" subtitle={props.username.clone()} action={format!("users/{}", props.username.clone())} {onsubmit} >
+                <TextField
+                    label="Email"
+                    state={email}
+                    pattern=r#"[^@]+@[\w\d]+\.[\w\.]{2,}"#
+                />
+                <TextField
+                    label="Display Name"
+                    state={display_name}
+                />
+                <CheckboxField label="Can Login?" state={can_login} />
+                <Button
+                    value="Update User"
+                    button_type={ButtonType::Primary}
+                />
+                {" "}
+                <DeleteButton
+                    value="Delete User"
+                    route={Route::Users}
+                    show_modal={show_modal.clone()}
+                />
+                {" "}
+                <CancelButton route={Route::Users} />
+            <Modal
+                title="Delete User"
+                msg="Are you sure you want to delete this user? All assignments for with this user is assigned will also be deleted."
+                confirm_action={delete_action}
+                {show_modal}
             />
-            <TextField
-                label="Display Name"
-                state={display_name}
-            />
-            <CheckboxField label="Can Login?" state={can_login} />
-            <Button
-                value="Update User"
-                button_type={ButtonType::Primary}
-            />
-            {" "}
-            <Button
-                value="Delete User"
-                button_type={ButtonType::Danger}
-                onclick={onclick_delete}
-            />
-            {" "}
-            <Button
-                value="Cancel"
-                button_type={ButtonType::Secondary}
-                onclick={oncancel}
-            />
-        <Modal
-            title="Delete User"
-            msg="Are you sure you want to delete this user? All assignments for with this user is assigned will also be deleted."
-            confirm_action={delete_action}
-            show_modal={show_confirm_modal}
-        />
-        </Form>
+            </Form>
+        </CheckAuth>
     }
 }
 
@@ -203,11 +194,10 @@ pub fn user_table() -> Html {
 
     // Get users on load
     {
-        let history = use_history().unwrap();
         let users = users.clone();
         use_effect_with_deps(
             move |_| {
-                onload_all("/api/users".into(), history, users);
+                onload_all("/api/users".into(), users);
                 || ()
             },
             (),
@@ -231,12 +221,14 @@ pub fn user_table() -> Html {
     });
 
     html! {
-        <div class="container text-light my-3">
-            <div class="row justify-content-center">
-                <Table title="Users" button_label="Add User" button_route={Route::AddUser}>
-                { for rows }
-                </Table>
+        <CheckAuth>
+            <div class="container text-light my-3">
+                <div class="row justify-content-center">
+                    <Table title="Users" button_label="Add User" button_route={Route::AddUser}>
+                    { for rows }
+                    </Table>
+                </div>
             </div>
-        </div>
+        </CheckAuth>
     }
 }

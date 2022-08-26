@@ -52,10 +52,12 @@ pub struct Credentials {
 }
 
 #[derive(Deserialize, Clone, Debug, PartialEq, Eq, Default, Store)]
-pub struct UserInfo {
+pub struct SessionInfo {
     pub username: Option<String>,
     pub is_auth: bool,
     pub is_admin: bool,
+    #[serde(skip)]
+    pub loading: bool,
 }
 
 #[derive(Clone, Default, PartialEq, Eq, Store)]

@@ -1,5 +1,5 @@
 use crate::components::notifier::{notify_error, notify_info};
-use crate::error::Error;
+
 use crate::routes::Route;
 
 use crate::types::{Key, PrimaryKey, User};
@@ -11,7 +11,6 @@ use yew_router::prelude::*;
 
 use crate::services::requests::{delete, post};
 
-use super::handle_unauthorized;
 use super::requests::get;
 
 pub fn submit_form<T: Clone + Serialize + 'static>(
@@ -57,16 +56,11 @@ pub fn ondelete(path: String, history: AnyHistory, next_route: Route) -> Callbac
     })
 }
 
-pub fn onload_all<T: DeserializeOwned + 'static>(
-    url: String,
-    history: AnyHistory,
-    types: UseStateHandle<Vec<T>>,
-) {
+pub fn onload_all<T: DeserializeOwned + 'static>(url: String, types: UseStateHandle<Vec<T>>) {
     wasm_bindgen_futures::spawn_local(async move {
         match get::<Vec<T>>(url).await {
             Ok(t) => types.set(t),
             Err(e) => match e {
-                Error::Unauthorized => handle_unauthorized(history),
                 _ => notify_error(&e.to_string()),
             },
         }

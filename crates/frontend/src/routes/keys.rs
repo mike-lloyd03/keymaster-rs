@@ -8,7 +8,6 @@ use crate::components::notifier::notify_error;
 use crate::components::table::{Cell, Row, Table};
 use crate::error::Error;
 use crate::routes::auth::CheckAuth;
-use crate::services::auth::user_is_admin;
 use crate::services::form_actions::{ondelete, onload_all, submit_form};
 use crate::services::handle_unauthorized;
 use crate::services::requests::get;
@@ -149,11 +148,10 @@ pub fn key_table() -> Html {
 
     // Get keys on load
     {
-        let history = use_history().unwrap();
         let keys = keys.clone();
         use_effect_with_deps(
             move |_| {
-                onload_all("/api/keys".into(), history, keys);
+                onload_all("/api/keys".into(), keys);
                 || ()
             },
             (),

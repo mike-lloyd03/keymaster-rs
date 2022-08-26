@@ -9,19 +9,20 @@ mod services;
 mod types;
 
 use components::notifier::Notifier;
+use components::session_provider::SessionProvider;
 use nav::Nav;
 use routes::{switch, Route};
 
 #[function_component(App)]
 fn app() -> Html {
     html! {
-        <>
-        <BrowserRouter>
-            <Nav />
-            <Switch<Route> render={Switch::render(switch)} />
-            <Notifier />
-        </BrowserRouter>
-        </>
+        <SessionProvider>
+            <BrowserRouter>
+                <Nav />
+                <Switch<Route> render={Switch::render(switch)} />
+                <Notifier />
+            </BrowserRouter>
+        </SessionProvider>
     }
 }
 

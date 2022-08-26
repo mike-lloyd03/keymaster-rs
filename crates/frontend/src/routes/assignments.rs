@@ -8,6 +8,7 @@ use crate::components::modal::Modal;
 use crate::components::notifier::notify_error;
 use crate::components::table::{Cell, Row, Table};
 use crate::error::Error;
+use crate::routes::auth::CheckAuth;
 use crate::services::form_actions::{get_options, ondelete, onload_all, submit_form};
 use crate::services::requests::get;
 use crate::services::{format_date, handle_unauthorized, parse_date};
@@ -75,18 +76,20 @@ pub fn new_assignment() -> Html {
     });
 
     html! {
-        <Form title="Assign Key" {onsubmit}>
-            <MultiSelectField label="User" state={selected_users}>
-                { for user_options.clone() }
-            </MultiSelectField>
-            <MultiSelectField label="Key" state={selected_keys}>
-                { for key_options }
-            </MultiSelectField>
-            <DateField label="Date Out" required=true state={date_out} />
-            <Button value="Assign Key" button_type={ButtonType::Primary} />
-            {" "}
-            <CancelButton route={Route::Assignments} />
-        </Form>
+        <CheckAuth admin=true>
+            <Form title="Assign Key" {onsubmit}>
+                <MultiSelectField label="User" state={selected_users}>
+                    { for user_options.clone() }
+                </MultiSelectField>
+                <MultiSelectField label="Key" state={selected_keys}>
+                    { for key_options }
+                </MultiSelectField>
+                <DateField label="Date Out" required=true state={date_out} />
+                <Button value="Assign Key" button_type={ButtonType::Primary} />
+                {" "}
+                <CancelButton route={Route::Assignments} />
+            </Form>
+        </CheckAuth>
     }
 }
 
@@ -156,7 +159,7 @@ pub fn edit_assignment(props: &EditAssignmentProps) -> Html {
     };
 
     html! {
-        <>
+        <CheckAuth admin=true>
             <Form title="Edit Assignment" {onsubmit}>
                 <TextField label="User" state={user}/>
                 <TextField label="Key" state={key}/>
@@ -181,7 +184,7 @@ pub fn edit_assignment(props: &EditAssignmentProps) -> Html {
                 confirm_action={delete_action}
                 {show_modal}
             />
-        </>
+        </CheckAuth>
     }
 }
 #[function_component(Assignments)]
@@ -190,11 +193,10 @@ pub fn assignments() -> Html {
 
     // Get assignments on load
     {
-        let history = use_history().unwrap();
         let assignments = assignments.clone();
         use_effect_with_deps(
             move |_| {
-                onload_all("/api/assignments".into(), history, assignments);
+                onload_all("/api/assignments".into(), assignments);
                 || ()
             },
             (),
@@ -219,12 +221,14 @@ pub fn assignments() -> Html {
     });
 
     html! {
-        <div class="container text-light my-3">
-            <div class="row justify-content-center">
-                <Table title="Assignments" button_label="Assign Key" button_route={Route::AssignKey}>
-                { for rows }
-                </Table>
+        <CheckAuth>
+            <div class="container text-light my-3">
+                <div class="row justify-content-center">
+                    <Table title="Assignments" button_label="Assign Key" button_route={Route::AssignKey}>
+                    { for rows }
+                    </Table>
+                </div>
             </div>
-        </div>
+        </CheckAuth>
     }
 }

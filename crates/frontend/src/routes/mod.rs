@@ -7,8 +7,6 @@ mod home;
 mod keys;
 mod users;
 
-use auth::CheckAuth;
-
 #[derive(Clone, Routable, PartialEq, Eq)]
 pub enum Route {
     #[at("/")]

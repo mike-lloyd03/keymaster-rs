@@ -1,4 +1,4 @@
-use crate::{routes::Route, services::auth::user_is_admin};
+use crate::{routes::Route, services::auth::current_user};
 use yew::prelude::*;
 use yew_router::prelude::Link;
 
@@ -13,7 +13,7 @@ pub struct CellProps {
 pub fn cell(props: &CellProps) -> Html {
     let button_enabled_classes = classes!("btn", "btn-outline-primary");
     let button_disabled_classes = classes!("btn", "btn-outline-secondary", "disabled");
-    let classes = if user_is_admin() {
+    let classes = if current_user().is_admin {
         button_enabled_classes
     } else {
         button_disabled_classes

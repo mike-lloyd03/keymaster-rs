@@ -1,13 +1,13 @@
-use crate::components::notifier::notify_error;
-use crate::services::auth::{get_session_info, login_user};
-use crate::types::{Credentials, UserInfo};
+use crate::components::notifier::{notify_error, notify_info};
+use crate::services::auth::{current_user, login_user};
+use crate::types::{Credentials, SessionInfo};
 use crate::{
     components::form::{Button, ButtonType, Form, PasswordField, TextField},
     services::auth::logout_user,
 };
 use yew::prelude::*;
 use yew_router::prelude::*;
-use yewdux::prelude::use_store;
+use yewdux::prelude::*;
 
 use super::Route;
 
@@ -23,14 +23,12 @@ pub fn login() -> Html {
         };
         let history = use_history().unwrap();
         Callback::from(move |e: FocusEvent| {
+            notify_info("Logging in...");
             let creds = creds.clone();
             let history = history.clone();
             e.prevent_default();
             wasm_bindgen_futures::spawn_local(async move {
-                if (login_user(creds, &history).await).is_ok() {
-                    get_session_info();
-                    history.push(Route::Home)
-                }
+                login_user(creds, &history).await;
             })
         })
     };
@@ -47,7 +45,9 @@ pub fn login() -> Html {
 #[function_component(Logout)]
 pub fn logout() -> Html {
     wasm_bindgen_futures::spawn_local(async move {
-        logout_user().await;
+        if current_user().is_auth {
+            logout_user().await;
+        }
     });
 
     html! {
@@ -63,12 +63,14 @@ pub struct ChildrenProps {
 
 #[function_component(CheckAuth)]
 pub fn check_auth(props: &ChildrenProps) -> Html {
-    let (user_state, _) = use_store::<UserInfo>();
+    let (session, _) = use_store::<SessionInfo>();
 
-    if user_state.is_auth {
+    log::info!("Mounting CheckAuth");
+
+    if session.is_auth {
         match props.admin {
             Some(true) => {
-                if user_state.is_admin {
+                if session.is_admin {
                     html! {
                         {for props.children.iter()}
                     }

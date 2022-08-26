@@ -1,24 +1,13 @@
 use crate::routes::Route;
-use crate::services::auth::get_session_info;
-use crate::types::UserInfo;
+
+use crate::types::SessionInfo;
 use yew::prelude::*;
 use yew_router::prelude::Link;
 use yewdux::prelude::*;
 
 #[function_component(Nav)]
 pub fn nav() -> Html {
-    let (user_state, _) = use_store::<UserInfo>();
-    let username = user_state.username.clone().unwrap_or_default();
-
-    // Get user session info on load
-    use_effect_with_deps(
-        move |_| {
-            get_session_info();
-            || ()
-        },
-        (),
-    );
-
+    let (user, _) = use_store::<SessionInfo>();
     let auth_links = html! {
         <>
             <li class="nav-item">
@@ -47,7 +36,7 @@ pub fn nav() -> Html {
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         {
-                            if user_state.is_auth {
+                            if user.is_auth {
                                 auth_links
                             } else {
                                 html!{}
@@ -55,11 +44,11 @@ pub fn nav() -> Html {
                         }
                     </ul>
                         {
-                            if user_state.is_auth {
+                            if user.is_auth {
                                 html!{
                                     <>
                                         <span class="navbar-text">
-                                            {username}
+                                            {user.username.clone().unwrap_or_default()}
                                         </span>
                                         <div class="nav-item">
                                             <Link<Route> to={Route::Logout}
