@@ -1,11 +1,13 @@
-use crate::services::auth::login_user;
-use crate::types::Credentials;
+use crate::components::notifier::notify_error;
+use crate::services::auth::{get_session_info, login_user};
+use crate::types::{Credentials, UserInfo};
 use crate::{
     components::form::{Button, ButtonType, Form, PasswordField, TextField},
     services::auth::logout_user,
 };
 use yew::prelude::*;
 use yew_router::prelude::*;
+use yewdux::prelude::use_store;
 
 use super::Route;
 
@@ -26,6 +28,7 @@ pub fn login() -> Html {
             e.prevent_default();
             wasm_bindgen_futures::spawn_local(async move {
                 if (login_user(creds, &history).await).is_ok() {
+                    get_session_info();
                     history.push(Route::Home)
                 }
             })
@@ -49,5 +52,41 @@ pub fn logout() -> Html {
 
     html! {
         <Redirect<Route> to={Route::Login} />
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct ChildrenProps {
+    pub admin: Option<bool>,
+    pub children: Children,
+}
+
+#[function_component(CheckAuth)]
+pub fn check_auth(props: &ChildrenProps) -> Html {
+    let (user_state, _) = use_store::<UserInfo>();
+
+    if user_state.is_auth {
+        match props.admin {
+            Some(true) => {
+                if user_state.is_admin {
+                    html! {
+                        {for props.children.iter()}
+                    }
+                } else {
+                    notify_error("You must be an administrator to access this page.");
+                    html! {
+                        <Redirect<Route> to={Route::Home}/>
+                    }
+                }
+            }
+            _ => html! {
+                {for props.children.iter()}
+            },
+        }
+    } else {
+        notify_error("You must login to access this page.");
+        html! {
+            <Redirect<Route> to={Route::Login}/>
+        }
     }
 }

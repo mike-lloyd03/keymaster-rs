@@ -10,18 +10,14 @@ pub fn nav() -> Html {
     let (user_state, _) = use_store::<UserInfo>();
     let username = user_state.username.clone().unwrap_or_default();
 
-    // Get keys on load
-    {
-        use_effect_with_deps(
-            move |_| {
-                wasm_bindgen_futures::spawn_local(async move {
-                    get_session_info().await;
-                });
-                || ()
-            },
-            (),
-        );
-    }
+    // Get user session info on load
+    use_effect_with_deps(
+        move |_| {
+            get_session_info();
+            || ()
+        },
+        (),
+    );
 
     let auth_links = html! {
         <>

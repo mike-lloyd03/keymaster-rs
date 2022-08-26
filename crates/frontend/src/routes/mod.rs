@@ -3,12 +3,17 @@ use yew_router::prelude::*;
 
 mod assignments;
 mod auth;
+mod home;
 mod keys;
 mod users;
+
+use auth::CheckAuth;
 
 #[derive(Clone, Routable, PartialEq, Eq)]
 pub enum Route {
     #[at("/")]
+    Base,
+    #[at("/home")]
     Home,
     #[at("/login")]
     Login,
@@ -37,28 +42,10 @@ pub enum Route {
     NotFound,
 }
 
-#[function_component(Home)]
-fn home() -> Html {
-    html! {
-            <div>
-                <h1>{ "This is home" }</h1>
-                <div class="dropdown">
-      <button class="btn btn-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
-        {"Dropdown button"}
-      </button>
-      <div class="dropdown-menu">
-        <a class="dropdown-item" href="#">{ "Action" }</a>
-        <a class="dropdown-item" href="#">{ "Another action" }</a>
-        <a class="dropdown-item" href="#">{ "Something else here" }</a>
-      </div>
-    </div>
-            </div>
-        }
-}
-
 pub fn switch(routes: &Route) -> Html {
     match routes {
-        Route::Home => html! { <Home /> },
+        Route::Base => html! { <Redirect<Route> to={Route::Home}/> },
+        Route::Home => html! { <home::Home />},
         Route::Login => html! { <auth::Login /> },
         Route::Logout => html! { <auth::Logout /> },
         Route::Keys => html! { <keys::KeyTable /> },

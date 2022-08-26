@@ -7,6 +7,8 @@ use crate::components::modal::Modal;
 use crate::components::notifier::notify_error;
 use crate::components::table::{Cell, Row, Table};
 use crate::error::Error;
+use crate::routes::auth::CheckAuth;
+use crate::services::auth::user_is_admin;
 use crate::services::form_actions::{ondelete, onload_all, submit_form};
 use crate::services::handle_unauthorized;
 use crate::services::requests::get;
@@ -33,21 +35,23 @@ pub fn new_key() -> Html {
     };
 
     html! {
-        <Form title="New Key" {onsubmit}>
-            <TextField
-                label="Key Name"
-                required=true
-                state={name}
-                pattern=r#"[\w\d]{3,}"#
-            />
-            <TextField label="Description" state={description} />
-            <Button
+        <CheckAuth admin=true>
+            <Form title="New Key" {onsubmit}>
+                <TextField
+                    label="Key Name"
+                    required=true
+                    state={name}
+                    pattern=r#"[\w\d]{3,}"#
+                />
+                <TextField label="Description" state={description} />
+                <Button
                 value="Add Key"
                 button_type={ButtonType::Primary}
-            />
-            {" "}
-            <CancelButton route={Route::Keys} />
-        </Form>
+                />
+                {" "}
+                <CancelButton route={Route::Keys} />
+            </Form>
+        </CheckAuth>
     }
 }
 
@@ -108,34 +112,34 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
     };
 
     html! {
-        <>
-        <Form title="Edit Key"
-            subtitle={props.key_name.clone()}
-            action={format!("keys/{}", props.key_name.clone())}
-            {onsubmit}
-        >
-            <TextField label="Description" state={description} />
-            <CheckboxField label="Active" state={active} />
-            <Button
-                value="Update Key"
-                button_type={ButtonType::Primary}
+        <CheckAuth admin=true>
+            <Form title="Edit Key"
+                subtitle={props.key_name.clone()}
+                action={format!("keys/{}", props.key_name.clone())}
+                {onsubmit}
+            >
+                <TextField label="Description" state={description} />
+                <CheckboxField label="Active" state={active} />
+                <Button
+                    value="Update Key"
+                    button_type={ButtonType::Primary}
+                />
+                {" "}
+                <DeleteButton
+                    value="Delete Key"
+                    route={Route::Keys}
+                    show_modal={show_modal.clone()}
+                />
+                {" "}
+                <CancelButton route={Route::Keys} />
+            </Form>
+            <Modal
+                title="Delete Key"
+                msg="Are you sure you want to delete this key? All assignments which use this key will also be deleted."
+                confirm_action={delete_action}
+                {show_modal}
             />
-            {" "}
-            <DeleteButton
-                value="Delete Key"
-                route={Route::Keys}
-                show_modal={show_modal.clone()}
-            />
-            {" "}
-            <CancelButton route={Route::Keys} />
-        </Form>
-        <Modal
-            title="Delete Key"
-            msg="Are you sure you want to delete this key? All assignments which use this key will also be deleted."
-            confirm_action={delete_action}
-            {show_modal}
-        />
-        </>
+        </CheckAuth>
     }
 }
 
@@ -174,12 +178,14 @@ pub fn key_table() -> Html {
     });
 
     html! {
-        <div class="container text-light my-3">
-            <div class="row justify-content-center">
-                <Table title="Keys" button_label="Add Key" button_route={Route::AddKey}>
-                { for rows }
-                </Table>
+        <CheckAuth>
+            <div class="container text-light my-3">
+                <div class="row justify-content-center">
+                    <Table title="Keys" button_label="Add Key" button_route={Route::AddKey}>
+                    { for rows }
+                    </Table>
+                </div>
             </div>
-        </div>
+        </CheckAuth>
     }
 }

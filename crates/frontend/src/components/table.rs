@@ -1,13 +1,28 @@
-use crate::routes::Route;
+use crate::{routes::Route, services::auth::user_is_admin};
 use yew::prelude::*;
 use yew_router::prelude::Link;
 
+#[derive(Properties, PartialEq)]
+pub struct CellProps {
+    pub heading: String,
+    pub value: Option<String>,
+    pub edit_route: Option<Route>,
+}
+
 #[function_component(Cell)]
 pub fn cell(props: &CellProps) -> Html {
+    let button_enabled_classes = classes!("btn", "btn-outline-primary");
+    let button_disabled_classes = classes!("btn", "btn-outline-secondary", "disabled");
+    let classes = if user_is_admin() {
+        button_enabled_classes
+    } else {
+        button_disabled_classes
+    };
+
     match props.edit_route.clone() {
         Some(route) => html! {
             <td>
-                <Link<Route> classes={classes!("btn", "btn-outline-primary")} to={route}>
+                <Link<Route> classes={classes} to={route}>
                     {"Edit"}
                 </Link<Route>>
             </td>
@@ -19,10 +34,8 @@ pub fn cell(props: &CellProps) -> Html {
 }
 
 #[derive(Properties, PartialEq)]
-pub struct CellProps {
-    pub heading: String,
-    pub value: Option<String>,
-    pub edit_route: Option<Route>,
+pub struct RowProps {
+    pub children: ChildrenWithProps<Cell>,
 }
 
 #[function_component(Row)]
@@ -33,8 +46,11 @@ pub fn row(props: &RowProps) -> Html {
 }
 
 #[derive(Properties, PartialEq)]
-pub struct RowProps {
-    pub children: ChildrenWithProps<Cell>,
+pub struct TableProps {
+    pub title: String,
+    pub button_label: Option<String>,
+    pub button_route: Option<Route>,
+    pub children: ChildrenWithProps<Row>,
 }
 
 #[function_component(Table)]
@@ -79,12 +95,4 @@ pub fn table(props: &TableProps) -> Html {
             </table>
         </div>
     }
-}
-
-#[derive(Properties, PartialEq)]
-pub struct TableProps {
-    pub title: String,
-    pub button_label: Option<String>,
-    pub button_route: Option<Route>,
-    pub children: ChildrenWithProps<Row>,
 }

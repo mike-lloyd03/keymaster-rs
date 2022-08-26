@@ -60,18 +60,14 @@ impl User {
             Ok(u) => u,
             Err(_) => {
                 // Attempt to validate the password on a fake account to prevent a timing attack
-                User {
-                    username: "_".into(),
-                    password_hash: Some("$argon2i$v=19$m=65536,t=3,p=1$4MHN0rGSFfQxAfCHfD1Ncg$+psDULFfyWAaQ6H/tI/KH5LMcfZBjlpxOyFXJIa4ezM".into()),
-                    ..Default::default()
-                }
-                .validate_password("hunter2");
+                fake_validate();
                 return Err(actix_web::error::ErrorUnauthorized("Authentication failed"));
             }
         };
         if user.can_login && user.validate_password(&creds.password) {
             Ok(user)
         } else {
+            fake_validate();
             Err(actix_web::error::ErrorUnauthorized("Authentication failed"))
         }
     }
@@ -185,6 +181,14 @@ pub async fn initialize_admin(pool: &PgPool) -> Result<(), sqlx::Error> {
     );
 
     Ok(())
+}
+
+fn fake_validate() {
+    User {
+        username: "_".into(),
+        password_hash: Some("$argon2i$v=19$m=65536,t=3,p=1$4MHN0rGSFfQxAfCHfD1Ncg$+psDULFfyWAaQ6H/tI/KH5LMcfZBjlpxOyFXJIa4ezM".into()),
+        ..Default::default()
+    }.validate_password("hunter2");
 }
 
 #[cfg(test)]
