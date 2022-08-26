@@ -86,9 +86,9 @@ pub fn check_auth(props: &ChildrenProps) -> Html {
             },
         }
     } else {
-        notify_error("You must login to access this page.");
+        // notify_error("You must login to access this page.");
         html! {
-            <Redirect<Route> to={Route::Login}/>
+            <Login />
         }
     }
 }
