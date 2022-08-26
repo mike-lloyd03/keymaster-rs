@@ -4,9 +4,8 @@ pub mod requests;
 
 use chrono::NaiveDate;
 use yew_router::prelude::{AnyHistory, History};
-use yewdux::prelude::Dispatch;
 
-use crate::{components::notifier::notify, routes::Route, types::Notification};
+use crate::{components::notifier::notify_error, routes::Route};
 
 static DATE_FMT: &'static str = "%Y-%m-%d";
 
@@ -18,11 +17,7 @@ pub fn format_date(date: NaiveDate) -> String {
     date.format(DATE_FMT).to_string()
 }
 
-pub fn handle_unauthorized(history: AnyHistory, notify_dispatch: Dispatch<Notification>) {
+pub fn handle_unauthorized(history: AnyHistory) {
     history.push(Route::Login);
-    notify(
-        &notify_dispatch,
-        "You must log in to access this page".into(),
-        "error".into(),
-    );
+    notify_error("You must log in to access this page");
 }

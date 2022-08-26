@@ -1,15 +1,16 @@
 use crate::{
-    components::notifier::notify,
+    components::notifier::notify_error,
     error::Error,
     routes::Route,
-    types::{Credentials, Notification, UserInfo},
+    types::{Credentials, UserInfo},
 };
 use yew_router::prelude::*;
 use yewdux::prelude::*;
 
 use super::requests::{get, post};
 
-pub async fn get_session_info(dispatch: &Dispatch<UserInfo>) {
+pub async fn get_session_info() {
+    let dispatch = Dispatch::<UserInfo>::new();
     let ui: UserInfo = get("/api/session".into()).await.unwrap();
     dispatch.reduce_mut(|s| {
         s.username = ui.username;
@@ -26,26 +27,17 @@ pub async fn clear_session_info(dispatch: &Dispatch<UserInfo>) {
     });
 }
 
-pub async fn login_user(
-    creds: Credentials,
-    user_dispatch: &Dispatch<UserInfo>,
-    notify_dispatch: &Dispatch<Notification>,
-    history: &AnyHistory,
-) -> Result<(), Error> {
+pub async fn login_user(creds: Credentials, history: &AnyHistory) -> Result<(), Error> {
     match post::<Credentials, String>("/api/login".into(), creds).await {
         Ok(_) => {
-            get_session_info(user_dispatch).await;
+            get_session_info().await;
             history.push(Route::Home)
         }
         Err(e) => {
             if e == Error::Unauthorized {
-                notify(
-                    notify_dispatch,
-                    "Invalid credentials".into(),
-                    "error".into(),
-                );
+                notify_error("Invalid credentials");
             } else {
-                notify(notify_dispatch, e.to_string(), "error".into());
+                notify_error(&e.to_string());
             }
             return Err(e);
         }
@@ -53,9 +45,10 @@ pub async fn login_user(
     Ok(())
 }
 
-pub async fn logout_user(dispatch: &Dispatch<UserInfo>) {
+pub async fn logout_user() {
+    let dispatch = Dispatch::<UserInfo>::new();
     if let Err(e) = post::<(), String>("/api/logout".into(), ()).await {
         log::error!("{}", e);
     }
-    clear_session_info(dispatch).await;
+    clear_session_info(&dispatch).await;
 }

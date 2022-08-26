@@ -1,19 +1,19 @@
 use std::vec::Vec;
 
-use crate::components::form::{Button, ButtonType, CheckboxField, Form, TextField};
+use crate::components::form::{
+    Button, ButtonType, CancelButton, CheckboxField, DeleteButton, Form, TextField,
+};
 use crate::components::modal::Modal;
-use crate::components::notifier::notify;
+use crate::components::notifier::notify_error;
 use crate::components::table::{Cell, Row, Table};
 use crate::error::Error;
-use crate::services::form_actions::{ondelete, onload_all, onsubmit};
+use crate::services::form_actions::{ondelete, onload_all, submit_form};
 use crate::services::handle_unauthorized;
 use crate::services::requests::get;
-use crate::types::{Key, Notification};
+use crate::types::Key;
 
 use yew::prelude::*;
-use yew_router::history::History;
 use yew_router::hooks::use_history;
-use yewdux::prelude::*;
 
 use super::Route;
 
@@ -22,20 +22,14 @@ pub fn new_key() -> Html {
     let name = use_state(String::new);
     let description = use_state(String::new);
 
-    let oncancel = {
-        let history = use_history().unwrap();
-        Callback::once(move |_: MouseEvent| history.push(Route::Keys))
-    };
-
     let onsubmit = {
         let key = Key {
             name: (*name).clone(),
             description: Some((*description).clone()),
             active: true,
         };
-        let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();
-        onsubmit("/api/keys".to_string(), key, dispatch, history, Route::Keys)
+        submit_form("/api/keys".to_string(), key, history, Route::Keys)
     };
 
     html! {
@@ -52,11 +46,7 @@ pub fn new_key() -> Html {
                 button_type={ButtonType::Primary}
             />
             {" "}
-            <Button
-                value="Cancel"
-                button_type={ButtonType::Secondary}
-                onclick={oncancel}
-            />
+            <CancelButton route={Route::Keys} />
         </Form>
     }
 }
@@ -72,11 +62,12 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
     let description = use_state(String::new);
     let active = use_state(|| false);
 
+    let show_modal = use_state(|| false);
+
     {
         let key_name = key_name.clone();
         let description = description.clone();
         let active = active.clone();
-        let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();
         let url = format!("/api/keys/{}", &key_name);
         use_effect_with_deps(
@@ -88,8 +79,8 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
                             active.set(k.active);
                         }
                         Err(e) => match e {
-                            Error::Unauthorized => handle_unauthorized(history, dispatch),
-                            _ => notify(&dispatch, e.to_string(), "error".into()),
+                            Error::Unauthorized => handle_unauthorized(history),
+                            _ => notify_error(&e.to_string()),
                         },
                     }
                 });
@@ -105,38 +96,19 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
             description: Some((*description).clone()),
             active: *active,
         };
-        let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();
         let path = format!("/api/keys/{}", key_name);
-        onsubmit(path, key, dispatch, history, Route::Keys)
+        submit_form(path, key, history, Route::Keys)
     };
 
-    // let ondelete = {
-    //     let (_, dispatch) = use_store::<Notification>();
-    //     let history = use_history().unwrap();
-    //     let path = format!("/api/keys/{}", key_name);
-    //     let delete_key = ondelete(path, dispatch, history, Route::Keys);
-    //     Callback::once(move |_: MouseEvent| {
-    //         html! {
-    //             <Modal title="Delete Key" msg="Are you sure you want to delete this key? All assignments which use this key will also be deleted." confirm_action={delete_key} />
-    //         }
-    //     })
-    // };
-    let delete_key = {
-        let (_, dispatch) = use_store::<Notification>();
+    let delete_action = {
         let history = use_history().unwrap();
         let path = format!("/api/keys/{}", key_name);
-        ondelete(path, dispatch, history, Route::Keys)
-    };
-
-    let oncancel = {
-        let history = use_history().unwrap();
-        Callback::once(move |_: MouseEvent| history.push(Route::Keys))
+        ondelete(path, history, Route::Keys)
     };
 
     html! {
         <>
-        <Modal title="Delete Key" msg="Are you sure you want to delete this key? All assignments which use this key will also be deleted." confirm_action={delete_key} />
         <Form title="Edit Key"
             subtitle={props.key_name.clone()}
             action={format!("keys/{}", props.key_name.clone())}
@@ -149,18 +121,20 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
                 button_type={ButtonType::Primary}
             />
             {" "}
-            <Button
+            <DeleteButton
                 value="Delete Key"
-                button_type={ButtonType::Danger}
-                // onclick={ondelete}
+                route={Route::Keys}
+                show_modal={show_modal.clone()}
             />
             {" "}
-            <Button
-                value="Cancel"
-                button_type={ButtonType::Secondary}
-                onclick={oncancel}
-            />
+            <CancelButton route={Route::Keys} />
         </Form>
+        <Modal
+            title="Delete Key"
+            msg="Are you sure you want to delete this key? All assignments which use this key will also be deleted."
+            confirm_action={delete_action}
+            {show_modal}
+        />
         </>
     }
 }
@@ -171,12 +145,11 @@ pub fn key_table() -> Html {
 
     // Get keys on load
     {
-        let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();
         let keys = keys.clone();
         use_effect_with_deps(
             move |_| {
-                onload_all("/api/keys".into(), dispatch, history, keys);
+                onload_all("/api/keys".into(), history, keys);
                 || ()
             },
             (),

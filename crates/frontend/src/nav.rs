@@ -7,7 +7,7 @@ use yewdux::prelude::*;
 
 #[function_component(Nav)]
 pub fn nav() -> Html {
-    let (user_state, user_dispatch) = use_store::<UserInfo>();
+    let (user_state, _) = use_store::<UserInfo>();
     let username = user_state.username.clone().unwrap_or_default();
 
     // Get keys on load
@@ -15,7 +15,7 @@ pub fn nav() -> Html {
         use_effect_with_deps(
             move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
-                    get_session_info(&user_dispatch).await;
+                    get_session_info().await;
                 });
                 || ()
             },

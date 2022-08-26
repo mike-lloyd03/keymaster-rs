@@ -2,6 +2,9 @@ use std::fmt::Display;
 
 use web_sys::{HtmlInputElement, HtmlSelectElement};
 use yew::prelude::*;
+use yew_router::prelude::{use_history, History};
+
+use crate::routes::Route;
 
 #[derive(Properties, PartialEq)]
 pub struct FormProps {
@@ -25,13 +28,10 @@ pub fn form(props: &FormProps) -> Html {
                         None => html!{},
                     }
                 }
-                <form action={
-                        format!("http://localhost:8080/api/{}",
-                        props.action.clone().unwrap_or_default()
-                        )
-                    }
-                    id="form"
+                <form
+                    action="#"
                     method="post"
+                    id="form"
                     class="form"
                     role="form"
                     onsubmit={ props.onsubmit.clone() }
@@ -74,6 +74,46 @@ pub fn button(props: &ButtonProps) -> Html {
             value={ props.value.clone() }
             onclick={ props.onclick.clone() }
         />
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct CancelButtonProps {
+    pub route: Route,
+}
+
+#[function_component(CancelButton)]
+pub fn cancel_button(props: &CancelButtonProps) -> Html {
+    let oncancel = {
+        let history = use_history().unwrap();
+        let route = props.route.clone();
+        Callback::once(move |_: MouseEvent| history.push(route))
+    };
+
+    html! {
+        <Button value="Cancel" button_type={ButtonType::Secondary} onclick={oncancel} />
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct DeleteButtonProps {
+    pub value: String,
+    pub route: Route,
+    pub show_modal: UseStateHandle<bool>,
+}
+
+#[function_component(DeleteButton)]
+pub fn delete_button(props: &DeleteButtonProps) -> Html {
+    let onclick_delete = {
+        let show_modal = props.show_modal.clone();
+        Callback::once(move |e: MouseEvent| {
+            e.prevent_default();
+            show_modal.set(true);
+        })
+    };
+
+    html! {
+        <Button value={props.value.clone()} button_type={ButtonType::Danger} onclick={onclick_delete} />
     }
 }
 

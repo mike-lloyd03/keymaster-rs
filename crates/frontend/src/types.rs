@@ -7,7 +7,7 @@ pub trait PrimaryKey {
     fn primary_key(&self) -> String;
 }
 
-#[derive(PartialEq, Eq, Default, Clone, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Key {
     pub name: String,
     pub description: Option<String>,
@@ -20,7 +20,7 @@ impl PrimaryKey for Key {
     }
 }
 
-#[derive(PartialEq, Eq, Default, Clone, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Default, Debug, Clone, Serialize, Deserialize)]
 pub struct User {
     pub id: i64,
     pub username: String,
@@ -36,7 +36,7 @@ impl PrimaryKey for User {
     }
 }
 
-#[derive(PartialEq, Eq, Default, Clone, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Default, Debug, Clone, Serialize, Deserialize)]
 pub struct Assignment {
     pub id: i64,
     pub user: String,
@@ -45,7 +45,7 @@ pub struct Assignment {
     pub date_in: Option<NaiveDate>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct Credentials {
     pub username: String,
     pub password: String,

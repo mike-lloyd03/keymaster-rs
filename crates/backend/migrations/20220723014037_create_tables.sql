@@ -22,13 +22,6 @@ CREATE TABLE assignments (
 	date_out DATE NOT NULL, 
 	date_in DATE, 
     UNIQUE("user",key),
-	FOREIGN KEY(key) REFERENCES keys (name), 
-	FOREIGN KEY("user") REFERENCES users (username)
-);
-
-CREATE TABLE sessions (
-	username VARCHAR(200) PRIMARY KEY,
-	token VARCHAR(200) NOT NULL,
-	created TIMESTAMP DEFAULT NOW(),
-	FOREIGN KEY(username) REFERENCES users (username)
+	FOREIGN KEY(key) REFERENCES keys (name) ON DELETE CASCADE, 
+	FOREIGN KEY("user") REFERENCES users (username) ON DELETE CASCADE
 );

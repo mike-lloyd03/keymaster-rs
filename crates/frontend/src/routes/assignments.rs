@@ -1,19 +1,20 @@
 use std::vec::Vec;
 
 use crate::components::form::{
-    Button, ButtonType, DateField, Form, MultiSelectField, MultiSelectOption, TextField,
+    Button, ButtonType, CancelButton, DateField, DeleteButton, Form, MultiSelectField,
+    MultiSelectOption, TextField,
 };
-use crate::components::notifier::notify;
+use crate::components::modal::Modal;
+use crate::components::notifier::notify_error;
 use crate::components::table::{Cell, Row, Table};
 use crate::error::Error;
-use crate::services::form_actions::{ondelete, onload_all, onsubmit};
+use crate::services::form_actions::{get_options, ondelete, onload_all, submit_form};
 use crate::services::requests::get;
 use crate::services::{format_date, handle_unauthorized, parse_date};
-use crate::types::{Assignment, Notification};
+use crate::types::Assignment;
 
 use yew::prelude::*;
 use yew_router::prelude::*;
-use yewdux::prelude::use_store;
 
 use super::Route;
 
@@ -28,20 +29,14 @@ pub fn new_assignment() -> Html {
     {
         let users = available_users.clone();
         let keys = available_keys.clone();
-        let (_, dispatch) = use_store::<Notification>();
         use_effect_with_deps(
             move |_| {
-                crate::services::form_actions::get_options(users, keys, dispatch);
+                get_options(users, keys);
                 || ()
             },
             (),
         );
     }
-
-    let oncancel = {
-        let history = use_history().unwrap();
-        Callback::once(move |_: MouseEvent| history.push(Route::Assignments))
-    };
 
     let onsubmit = {
         let mut assignments: Vec<Assignment> = Vec::new();
@@ -58,12 +53,10 @@ pub fn new_assignment() -> Html {
                 assignments.push(a);
             }
         }
-        let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();
-        onsubmit(
+        submit_form(
             "/api/assignments".to_string(),
             assignments,
-            dispatch,
             history,
             Route::Assignments,
         )
@@ -89,21 +82,10 @@ pub fn new_assignment() -> Html {
             <MultiSelectField label="Key" state={selected_keys}>
                 { for key_options }
             </MultiSelectField>
-            <DateField
-                label="Date Out"
-                required=true
-                state={date_out}
-            />
-            <Button
-                value="Assign Key"
-                button_type={ButtonType::Primary}
-            />
+            <DateField label="Date Out" required=true state={date_out} />
+            <Button value="Assign Key" button_type={ButtonType::Primary} />
             {" "}
-            <Button
-                value="Cancel"
-                button_type={ButtonType::Secondary}
-                onclick={oncancel}
-            />
+            <CancelButton route={Route::Assignments} />
         </Form>
     }
 }
@@ -120,12 +102,13 @@ pub fn edit_assignment(props: &EditAssignmentProps) -> Html {
     let date_out = use_state(String::new);
     let date_in = use_state(String::new);
 
+    let show_modal = use_state(|| false);
+
     {
         let user = user.clone();
         let key = key.clone();
         let date_out = date_out.clone();
         let date_in = date_in.clone();
-        let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();
         let url = format!("/api/assignments/{}", &props.id.clone());
         use_effect_with_deps(
@@ -142,8 +125,8 @@ pub fn edit_assignment(props: &EditAssignmentProps) -> Html {
                             });
                         }
                         Err(e) => match e {
-                            Error::Unauthorized => handle_unauthorized(history, dispatch),
-                            _ => notify(&dispatch, e.to_string(), "error".into()),
+                            Error::Unauthorized => handle_unauthorized(history),
+                            _ => notify_error(&e.to_string()),
                         },
                     }
                 });
@@ -161,47 +144,44 @@ pub fn edit_assignment(props: &EditAssignmentProps) -> Html {
             date_in: Some(parse_date((*date_in).clone())),
             ..Default::default()
         };
-        let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();
         let path = format!("/api/assignments/{}", props.id);
-        onsubmit(path, assignment, dispatch, history, Route::Assignments)
+        submit_form(path, assignment, history, Route::Assignments)
     };
 
-    let ondelete = {
-        let (_, dispatch) = use_store::<Notification>();
+    let delete_action = {
         let history = use_history().unwrap();
         let path = format!("/api/assignments/{}", props.id);
-        ondelete(path, dispatch, history, Route::Assignments)
-    };
-
-    let oncancel = {
-        let history = use_history().unwrap();
-        Callback::once(move |_: MouseEvent| history.push(Route::Assignments))
+        ondelete(path, history, Route::Assignments)
     };
 
     html! {
-        <Form title="Edit Assignment" {onsubmit}>
-            <TextField label="User" state={user}/>
-            <TextField label="Key" state={key}/>
-            <DateField label="Date Out" state={date_out}/>
-            <DateField label="Date In" state={date_in}/>
-            <Button
-                value="Update Key"
-                button_type={ButtonType::Primary}
+        <>
+            <Form title="Edit Assignment" {onsubmit}>
+                <TextField label="User" state={user}/>
+                <TextField label="Key" state={key}/>
+                <DateField label="Date Out" state={date_out}/>
+                <DateField label="Date In" state={date_in}/>
+                <Button
+                    value="Update Key"
+                    button_type={ButtonType::Primary}
+                />
+                {" "}
+                <DeleteButton
+                    value="Delete Assignment"
+                    route={Route::Assignments}
+                    show_modal={show_modal.clone()}
+                />
+                {" "}
+                <CancelButton route={Route::Assignments}/>
+            </Form>
+            <Modal
+                title="Delete Assignment"
+                msg="Are you sure you want to delete this assignment?"
+                confirm_action={delete_action}
+                {show_modal}
             />
-            {" "}
-            <Button
-                value="Delete Key"
-                button_type={ButtonType::Danger}
-                onclick={ondelete}
-            />
-            {" "}
-            <Button
-                value="Cancel"
-                button_type={ButtonType::Secondary}
-                onclick={oncancel}
-            />
-        </Form>
+        </>
     }
 }
 #[function_component(Assignments)]
@@ -210,12 +190,11 @@ pub fn assignments() -> Html {
 
     // Get assignments on load
     {
-        let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();
         let assignments = assignments.clone();
         use_effect_with_deps(
             move |_| {
-                onload_all("/api/assignments".into(), dispatch, history, assignments);
+                onload_all("/api/assignments".into(), history, assignments);
                 || ()
             },
             (),
@@ -225,18 +204,12 @@ pub fn assignments() -> Html {
     let rows = assignments.iter().map(|a| {
         html_nested! {
             <Row>
-                <Cell heading="User" value={
-                    a.user.clone()
-                } />
-                <Cell heading="Key" value={
-                    a.key.clone()
-                } />
-                <Cell heading="Date Out" value={
-                    a.date_out.format("%Y-%m-%d").to_string()
-                } />
+                <Cell heading="User" value={a.user.clone()} />
+                <Cell heading="Key" value={a.key.clone()} />
+                <Cell heading="Date Out" value={format_date(a.date_out)} />
                 <Cell heading="Date In" value={
                     match a.date_in {
-                        Some(d) => d.format("%Y-%m-%d").to_string(),
+                        Some(d) => format_date(d),
                         None => "".to_string(),
                     }
                 } />

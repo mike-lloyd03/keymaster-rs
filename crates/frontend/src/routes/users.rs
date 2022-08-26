@@ -1,16 +1,16 @@
 use std::vec::Vec;
 
 use crate::components::form::{Button, ButtonType, CheckboxField, Form, TextField};
-use crate::components::notifier::notify;
+use crate::components::modal::Modal;
+use crate::components::notifier::notify_error;
 use crate::components::table::{Cell, Row, Table};
 use crate::error::Error;
-use crate::services::form_actions::{ondelete, onload_all, onsubmit};
+use crate::services::form_actions::{ondelete, onload_all, submit_form};
 use crate::services::handle_unauthorized;
 use crate::services::requests::get;
-use crate::types::{Notification, User};
+use crate::types::User;
 use yew::prelude::*;
 use yew_router::prelude::*;
-use yewdux::prelude::use_store;
 
 use super::Route;
 
@@ -42,15 +42,8 @@ pub fn new_user() -> Html {
             can_login: false,
             ..Default::default()
         };
-        let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();
-        onsubmit(
-            "/api/users".to_string(),
-            user,
-            dispatch,
-            history,
-            Route::Users,
-        )
+        submit_form("/api/users".to_string(), user, history, Route::Users)
     };
 
     html! {
@@ -80,7 +73,6 @@ pub fn new_user() -> Html {
                 value="Cancel"
                 button_type={ButtonType::Secondary}
                 onclick={oncancel}
-                // novalidate=true
             />
         </Form>
     }
@@ -100,6 +92,8 @@ pub fn edit_user(props: &EditUserProps) -> Html {
     let can_login = use_state(|| false);
     let admin = use_state(|| false);
 
+    let show_confirm_modal = use_state(|| false);
+
     {
         let id = id.clone();
         let username = username.clone();
@@ -107,7 +101,6 @@ pub fn edit_user(props: &EditUserProps) -> Html {
         let display_name = display_name.clone();
         let can_login = can_login.clone();
         let admin = admin.clone();
-        let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();
         let url = format!("/api/users/{}", &username);
         use_effect_with_deps(
@@ -122,8 +115,8 @@ pub fn edit_user(props: &EditUserProps) -> Html {
                             admin.set(u.admin);
                         }
                         Err(e) => match e {
-                            Error::Unauthorized => handle_unauthorized(history, dispatch),
-                            _ => notify(&dispatch, e.to_string(), "error".into()),
+                            Error::Unauthorized => handle_unauthorized(history),
+                            _ => notify_error(&e.to_string()),
                         },
                     }
                 });
@@ -142,17 +135,23 @@ pub fn edit_user(props: &EditUserProps) -> Html {
             can_login: *can_login,
             admin: *admin,
         };
-        let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();
         let path = format!("/api/users/{}", username);
-        onsubmit(path, user, dispatch, history, Route::Users)
+        submit_form(path, user, history, Route::Users)
     };
 
-    let ondelete = {
-        let (_, dispatch) = use_store::<Notification>();
+    let onclick_delete = {
+        let show_confirm_modal = show_confirm_modal.clone();
+        Callback::once(move |e: MouseEvent| {
+            e.prevent_default();
+            show_confirm_modal.set(true);
+        })
+    };
+
+    let delete_action = {
         let history = use_history().unwrap();
         let path = format!("/api/users/{}", username);
-        ondelete(path, dispatch, history, Route::Users)
+        ondelete(path, history, Route::Users)
     };
 
     let oncancel = {
@@ -180,7 +179,7 @@ pub fn edit_user(props: &EditUserProps) -> Html {
             <Button
                 value="Delete User"
                 button_type={ButtonType::Danger}
-                onclick={ondelete}
+                onclick={onclick_delete}
             />
             {" "}
             <Button
@@ -188,6 +187,12 @@ pub fn edit_user(props: &EditUserProps) -> Html {
                 button_type={ButtonType::Secondary}
                 onclick={oncancel}
             />
+        <Modal
+            title="Delete User"
+            msg="Are you sure you want to delete this user? All assignments for with this user is assigned will also be deleted."
+            confirm_action={delete_action}
+            show_modal={show_confirm_modal}
+        />
         </Form>
     }
 }
@@ -198,12 +203,11 @@ pub fn user_table() -> Html {
 
     // Get users on load
     {
-        let (_, dispatch) = use_store::<Notification>();
         let history = use_history().unwrap();
         let users = users.clone();
         use_effect_with_deps(
             move |_| {
-                onload_all("/api/users".into(), dispatch, history, users);
+                onload_all("/api/users".into(), history, users);
                 || ()
             },
             (),

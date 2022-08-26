@@ -1,12 +1,11 @@
 use crate::services::auth::login_user;
-use crate::types::{Credentials, Notification, UserInfo};
+use crate::types::Credentials;
 use crate::{
     components::form::{Button, ButtonType, Form, PasswordField, TextField},
     services::auth::logout_user,
 };
 use yew::prelude::*;
 use yew_router::prelude::*;
-use yewdux::prelude::*;
 
 use super::Route;
 
@@ -20,13 +19,13 @@ pub fn login() -> Html {
             username: (*username).clone(),
             password: (*password).clone(),
         };
-        let (_, notify_dispatch) = use_store::<Notification>();
-        let (_, user_dispatch) = use_store::<UserInfo>();
         let history = use_history().unwrap();
-        Callback::once(move |e: FocusEvent| {
+        Callback::from(move |e: FocusEvent| {
+            let creds = creds.clone();
+            let history = history.clone();
             e.prevent_default();
             wasm_bindgen_futures::spawn_local(async move {
-                if (login_user(creds, &user_dispatch, &notify_dispatch, &history).await).is_ok() {
+                if (login_user(creds, &history).await).is_ok() {
                     history.push(Route::Home)
                 }
             })
@@ -44,10 +43,8 @@ pub fn login() -> Html {
 
 #[function_component(Logout)]
 pub fn logout() -> Html {
-    let (_, user_dispatch) = use_store::<UserInfo>();
-
     wasm_bindgen_futures::spawn_local(async move {
-        logout_user(&user_dispatch).await;
+        logout_user().await;
     });
 
     html! {

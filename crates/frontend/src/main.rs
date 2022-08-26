@@ -8,7 +8,6 @@ mod routes;
 mod services;
 mod types;
 
-use components::modal::Modal;
 use components::notifier::Notifier;
 use nav::Nav;
 use routes::{switch, Route};

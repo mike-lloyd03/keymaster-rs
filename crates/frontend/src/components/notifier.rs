@@ -56,9 +56,20 @@ pub fn notifier() -> Html {
 }
 
 /// Sends a notification to the user.
-pub fn notify(dispatch: &Dispatch<Notification>, msg: String, lvl: String) {
+pub fn notify(msg: &str, lvl: String) {
+    let dispatch = Dispatch::<Notification>::new();
     dispatch.reduce_mut(|s| {
-        s.msg = Some(msg);
+        s.msg = Some(msg.into());
         s.lvl = Some(lvl);
     });
+}
+
+/// Sends an info notification to the user.
+pub fn notify_info(msg: &str) {
+    notify(msg, "info".to_string());
+}
+
+/// Sends an error notification to the user.
+pub fn notify_error(msg: &str) {
+    notify(msg, "error".to_string());
 }
