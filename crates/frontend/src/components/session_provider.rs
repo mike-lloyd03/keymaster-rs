@@ -13,8 +13,6 @@ pub struct SessionProviderProps {
 pub fn session_provider(props: &SessionProviderProps) -> Html {
     let (state, dispatch) = use_store::<SessionInfo>();
 
-    log::info!("Mounting SessionProvider");
-
     use_effect_with_deps(
         move |_| {
             wasm_bindgen_futures::spawn_local(async move {
@@ -24,6 +22,7 @@ pub fn session_provider(props: &SessionProviderProps) -> Html {
                     s.username = ui.username;
                     s.is_auth = ui.is_auth;
                     s.is_admin = ui.is_admin;
+                    s.fetched = true;
                 });
             });
             || ()
@@ -34,4 +33,20 @@ pub fn session_provider(props: &SessionProviderProps) -> Html {
     html!(
         { for props.children.iter() }
     )
+}
+
+#[function_component(SessionMonitor)]
+pub fn session_monitor() -> Html {
+    let (state, _) = use_store::<SessionInfo>();
+
+    let classes = classes!("position-static", "bg-white");
+
+    html! {
+        <div class={classes}>
+            <p>{format!("username: {}", state.username.clone().unwrap_or_default())}</p>
+            <p>{format!("is_auth: {}", state.is_auth.clone())}</p>
+            <p>{format!("is_admin: {}", state.is_admin.clone())}</p>
+            <p>{format!("fetched: {}", state.fetched.clone())}</p>
+        </div>
+    }
 }

@@ -65,30 +65,32 @@ pub struct ChildrenProps {
 pub fn check_auth(props: &ChildrenProps) -> Html {
     let (session, _) = use_store::<SessionInfo>();
 
-    log::info!("Mounting CheckAuth");
-
-    if session.is_auth {
-        match props.admin {
-            Some(true) => {
-                if session.is_admin {
-                    html! {
-                        {for props.children.iter()}
-                    }
-                } else {
-                    notify_error("You must be an administrator to access this page.");
-                    html! {
-                        <Redirect<Route> to={Route::Home}/>
+    if session.fetched {
+        if session.is_auth {
+            match props.admin {
+                Some(true) => {
+                    if session.is_admin {
+                        html! {
+                            {for props.children.iter()}
+                        }
+                    } else {
+                        notify_error("You must be an administrator to access this page.");
+                        html! {
+                            <Redirect<Route> to={Route::Home}/>
+                        }
                     }
                 }
+                _ => html! {
+                    {for props.children.iter()}
+                },
             }
-            _ => html! {
-                {for props.children.iter()}
-            },
+        } else {
+            // notify_error("You must login to access this page.");
+            html! {
+                <Login />
+            }
         }
     } else {
-        // notify_error("You must login to access this page.");
-        html! {
-            <Login />
-        }
+        html! {}
     }
 }

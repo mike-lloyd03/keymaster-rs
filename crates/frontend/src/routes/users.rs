@@ -100,6 +100,7 @@ pub fn edit_user(props: &EditUserProps) -> Html {
 
     let show_modal = use_state(|| false);
 
+    // Get user on load
     {
         let id = id.clone();
         let username = username.clone();

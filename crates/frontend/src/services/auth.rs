@@ -27,7 +27,7 @@ pub fn set_session_info(ui: SessionInfo) {
         s.username = ui.username;
         s.is_auth = ui.is_auth;
         s.is_admin = ui.is_admin;
-        s.loading = false;
+        s.fetched = true;
     });
 }
 
@@ -37,7 +37,7 @@ pub async fn clear_session_info() {
         s.username = None;
         s.is_auth = false;
         s.is_admin = false;
-        s.loading = false;
+        s.fetched = false;
     });
 }
 

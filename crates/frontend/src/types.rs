@@ -57,7 +57,7 @@ pub struct SessionInfo {
     pub is_auth: bool,
     pub is_admin: bool,
     #[serde(skip)]
-    pub loading: bool,
+    pub fetched: bool,
 }
 
 #[derive(Clone, Default, PartialEq, Eq, Store)]

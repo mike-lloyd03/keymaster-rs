@@ -1,82 +1,103 @@
-use crate::components::notifier::notify_info;
 use crate::components::table::{Cell, Row, Table};
 use crate::routes::Route;
+use crate::types::Assignment;
 use crate::{routes::auth::CheckAuth, services::form_actions::onload_all};
+use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use yew::prelude::*;
-use yew_router::prelude::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 struct HomeQuery {
     sort: String,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct SortedAssignments {
-    index: String,
-    values: String,
-}
-
 #[function_component(Home)]
 pub fn home() -> Html {
-    let history = use_history().unwrap();
-    let assignments = use_state(Vec::<SortedAssignments>::new);
-    let query = history.location().query::<HomeQuery>();
-
-    let sort_by = match query {
-        Ok(q) if q.sort == "by_key".to_string() => "by_key",
-        _ => "by_user",
-    };
-
-    notify_info(sort_by);
+    let assignments = use_state(Vec::<Assignment>::new);
+    let sorted_assignments = use_state(Vec::<SortedAssignment>::new);
+    let headers = use_state(|| ("User", "Keys Assigned"));
 
     // Get assignments on load
     {
         let assignments = assignments.clone();
-        let url = format!("/api/assignments?sort={}", sort_by);
         use_effect_with_deps(
             move |_| {
-                onload_all(url, assignments);
+                onload_all("/api/assignments".into(), assignments.clone());
                 || ()
             },
             (),
         );
     }
 
-    let rows = assignments.iter().map(|a| {
-        html_nested! {
-            <Row>
-                <Cell heading="Index" value={a.index.clone()} />
-                <Cell heading="Values" value={a.values.clone()} />
-            </Row>
-        }
-    });
+    {
+        let assignments_clone = assignments.clone();
+        let assignments = assignments.clone();
+        let sorted_assignments = sorted_assignments.clone();
+        use_effect_with_deps(
+            move |_| {
+                sorted_assignments.set(sort_by_user((*assignments).clone()));
+                || ()
+            },
+            assignments_clone,
+        );
+    }
 
-    log::info!("Mounting Home");
+    let on_sort_by_user = {
+        let headers = headers.clone();
+        let assignments = assignments.clone();
+        let sorted_assignments = sorted_assignments.clone();
+        Callback::from(move |_: MouseEvent| {
+            sorted_assignments.set(sort_by_user((*assignments).clone()));
+            headers.set(("User", "Keys Assigned"))
+        })
+    };
+
+    let on_sort_by_key = {
+        let headers = headers.clone();
+        let assignments = assignments.clone();
+        let sorted_assignments = sorted_assignments.clone();
+        Callback::from(move |_: MouseEvent| {
+            sorted_assignments.set(sort_by_key((*assignments).clone()));
+            headers.set(("Key", "Users Assigned"))
+        })
+    };
+
+    let rows = {
+        let headers = headers.clone();
+        let index_header = (*headers).clone().0;
+        let values_header = (*headers).clone().1;
+        sorted_assignments.iter().map(|a| {
+            html_nested! {
+                <Row>
+                    <Cell heading={index_header.to_string()} value={a.index.clone()} />
+                    <Cell heading={values_header.to_string()} value={a.values.clone()} />
+                    </Row>
+            }
+        })
+    };
+
     html! {
         <CheckAuth>
             <div class="container text-light my-3">
                 <div class="row justify-content-center">
                     <div class="container py-2">
                         {"Sort:"}
-                        <Link<Route, HomeQuery>
-                            to={Route::Home}
-                            query={Some(HomeQuery { sort: "by_key".into() })}
-                            classes={classes!("btn", "btn-primary")}
+                        <button
+                            onclick={on_sort_by_key}
+                            class={classes!("btn", "btn-primary")}
                         >
                             {"By Key"}
-                        </Link<Route, HomeQuery>>
-                        <Link<Route, HomeQuery>
-                            to={Route::Home}
-                            query={Some(HomeQuery { sort: "by_user".into() })}
-                            classes={classes!("btn", "btn-primary")}
+                        </button>
+                        <button
+                            onclick={on_sort_by_user}
+                            class={classes!("btn", "btn-primary")}
                         >
                             {"By User"}
-                        </Link<Route, HomeQuery>>
+                        </button>
                     </div>
                     <Table title="Key Inventory Tracker">
-                    { for rows }
+                        {for rows}
                     </Table>
                 </div>
             </div>
@@ -118,4 +139,48 @@ pub fn home() -> Html {
         //     </div>
         // </CheckAuth>
     }
+}
+
+#[derive(Ord, PartialEq, PartialOrd, Eq)]
+struct SortedAssignment {
+    index: String,
+    values: String,
+}
+
+// impl Ord for SortedAssignment {
+//     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+//         todo!()
+//     }
+// }
+
+fn sort_by_user(assignments: Vec<Assignment>) -> Vec<SortedAssignment> {
+    let mut map = HashMap::new();
+    for a in assignments {
+        map.entry(a.user)
+            .and_modify(|v| *v = format!("{}, {}", v, a.key))
+            .or_insert(a.key);
+    }
+    map_to_sort(map)
+}
+
+fn sort_by_key(assignments: Vec<Assignment>) -> Vec<SortedAssignment> {
+    let mut map = HashMap::new();
+    for a in assignments {
+        map.entry(a.key)
+            .and_modify(|v| *v = format!("{}, {}", v, a.user))
+            .or_insert(a.user);
+    }
+    map_to_sort(map)
+}
+
+fn map_to_sort(map: HashMap<String, String>) -> Vec<SortedAssignment> {
+    let mut s: Vec<SortedAssignment> = map
+        .iter()
+        .map(|(k, v)| SortedAssignment {
+            index: k.to_string(),
+            values: v.to_string(),
+        })
+        .collect();
+    s.sort();
+    s
 }
