@@ -1,3 +1,4 @@
+use crate::models::SortOption;
 use actix_session::Session;
 use actix_web::{
     delete,
@@ -21,6 +22,11 @@ struct UpdateBody {
     key: Option<String>,
     date_out: Option<NaiveDate>,
     date_in: Option<NaiveDate>,
+}
+
+#[derive(Deserialize, Clone)]
+struct SortQuery {
+    sort: Option<SortOption>,
 }
 
 #[get("/assignments/{assignment_id}")]
@@ -49,59 +55,28 @@ async fn get(
 async fn get_all(
     pool: web::Data<PgPool>,
     session: Session,
+    query: web::Query<SortQuery>,
 ) -> Result<impl Responder, actix_web::Error> {
     validate_session(&session)?;
 
-    match Assignment::get_all(&pool).await {
-        Ok(a) => Ok(HttpResponse::Ok().json(a)),
-        Err(e) => {
-            error!("Failed to get assignments. {}", e);
-            Err(ErrorInternalServerError("Failed to get assignments."))
+    if let Some(sort) = query.sort {
+        match Assignment::get_all_sort(&pool, sort).await {
+            Ok(a) => Ok(HttpResponse::Ok().json(a)),
+            Err(e) => {
+                error!("Failed to get assignments. {}", e);
+                Err(ErrorInternalServerError("Failed to get assignments."))
+            }
+        }
+    } else {
+        match Assignment::get_all(&pool).await {
+            Ok(a) => Ok(HttpResponse::Ok().json(a)),
+            Err(e) => {
+                error!("Failed to get assignments. {}", e);
+                Err(ErrorInternalServerError("Failed to get assignments."))
+            }
         }
     }
 }
-
-// #[post("/assignments")]
-// async fn create(
-//     assignment: web::Either<web::Json<Assignment>, web::Form<Assignment>>,
-//     pool: web::Data<PgPool>,
-//     session: Session,
-// ) -> Result<impl Responder, actix_web::Error> {
-//     validate_admin(&session, &pool).await?;
-
-//     let assignment = unpack(assignment);
-
-//     match assignment.create(&pool).await {
-//         Ok(_) => Ok(HttpResponse::Ok().json(format!(
-//             "Key '{}' assigned to '{}'",
-//             assignment.key, assignment.user
-//         ))),
-//         Err(e) => match e.to_string() {
-//             x if x.contains("duplicate key") => Err(ErrorBadRequest(format!(
-//                 "Key '{}' already assigned to {}",
-//                 assignment.key, assignment.user
-//             ))),
-//             x if x.contains("violates foreign key") => match x {
-//                 y if y.contains("assignments_key_fkey") => Err(ErrorBadRequest(format!(
-//                     "Key '{}' does not exist.",
-//                     assignment.key
-//                 ))),
-//                 y if y.contains("assignments_user_fkey") => Err(ErrorBadRequest(format!(
-//                     "User '{}' does not exist.",
-//                     assignment.user
-//                 ))),
-//                 _ => {
-//                     error!("Foreign key error. {}", e);
-//                     Err(ErrorInternalServerError("Failed to create assignment."))
-//                 }
-//             },
-//             _ => {
-//                 error!("Failed to create assignment. {}", e);
-//                 Err(ErrorInternalServerError("Failed to create assignment."))
-//             }
-//         },
-//     }
-// }
 
 /// Accepts an array of Assignment objects as either a form or json body
 #[post("/assignments")]

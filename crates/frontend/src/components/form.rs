@@ -117,6 +117,25 @@ pub fn delete_button(props: &DeleteButtonProps) -> Html {
     }
 }
 
+#[derive(Properties, PartialEq)]
+pub struct SortButtonProps {
+    pub value: String,
+    pub route: Route,
+}
+
+#[function_component(SortButton)]
+pub fn sort_button(props: &SortButtonProps) -> Html {
+    let oncancel = {
+        let history = use_history().unwrap();
+        let route = props.route.clone();
+        Callback::once(move |_: MouseEvent| history.push(route))
+    };
+
+    html! {
+        <Button value="Cancel" button_type={ButtonType::Secondary} onclick={oncancel} />
+    }
+}
+
 #[derive(PartialEq, Clone)]
 pub enum InputType {
     Text,

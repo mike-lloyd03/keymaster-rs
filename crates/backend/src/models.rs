@@ -8,7 +8,7 @@ mod assignment;
 mod key;
 mod user;
 
-pub use assignment::Assignment;
+pub use assignment::{Assignment, SortOption};
 pub use key::Key;
 pub use user::{initialize_admin, Credentials, User};
 

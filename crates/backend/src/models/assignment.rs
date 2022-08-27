@@ -15,6 +15,19 @@ pub struct Assignment {
     pub date_in: Option<NaiveDate>,
 }
 
+#[derive(PartialEq, Copy, Clone, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SortOption {
+    ByUser,
+    ByKey,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SortedResponse {
+    index: String,
+    values: String,
+}
+
 impl Assignment {
     pub fn id(&self) -> i64 {
         self.id
@@ -62,6 +75,44 @@ impl Assignment {
         )
         .fetch_all(pool)
         .await
+    }
+
+    pub async fn get_all_sort(
+        pool: &PgPool,
+        sort_by: SortOption,
+    ) -> Result<Vec<SortedResponse>, sqlx::Error> {
+        match sort_by {
+            SortOption::ByUser => {
+                query_as!(
+                    SortedResponse,
+                    r#"
+                SELECT
+                    "user" as "index!",
+                    string_agg(key, ', ') as "values!"
+                FROM assignments
+                GROUP BY "user"
+                ORDER BY "user"
+                "#
+                )
+                .fetch_all(pool)
+                .await
+            }
+            SortOption::ByKey => {
+                query_as!(
+                    SortedResponse,
+                    r#"
+                SELECT
+                    key as "index!",
+                    string_agg("user", ', ') as "values!"
+                FROM assignments
+                GROUP BY key
+                ORDER BY key
+                "#
+                )
+                .fetch_all(pool)
+                .await
+            }
+        }
     }
 
     pub async fn update(&mut self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
