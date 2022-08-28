@@ -9,6 +9,7 @@ use crate::components::table::{Cell, Row, Table};
 use crate::routes::auth::CheckAuth;
 use crate::services::form_actions::{ondelete, onload_all, submit_form};
 use crate::services::requests::get;
+use crate::services::to_option;
 use crate::types::User;
 
 use yew::prelude::*;
@@ -31,16 +32,8 @@ pub fn new_user() -> Html {
     let onsubmit = {
         let user = User {
             username: (*username).clone(),
-            email: if email.is_empty() {
-                None
-            } else {
-                Some((*email).clone())
-            },
-            display_name: if display_name.is_empty() {
-                None
-            } else {
-                Some((*display_name).clone())
-            },
+            email: to_option((*email).clone()),
+            display_name: to_option((*display_name).clone()),
             can_login: false,
             ..Default::default()
         };
@@ -129,10 +122,10 @@ pub fn edit_user(props: &EditUserProps) -> Html {
 
     let onsubmit = {
         let user = User {
-            id: (*id),
+            id: *id,
             username: username.clone(),
-            email: Some((*email).clone()),
-            display_name: Some((*display_name).clone()),
+            email: to_option((*email).clone()),
+            display_name: to_option((*display_name).clone()),
             can_login: *can_login,
             admin: *admin,
         };

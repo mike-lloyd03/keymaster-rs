@@ -182,7 +182,7 @@ async fn update(
     };
 
     match assignment.update(&pool).await {
-        Ok(_) => Ok(HttpResponse::Ok().json(format!("Updated assignment '{}.", assignment.id()))),
+        Ok(_) => Ok(HttpResponse::Ok().json(format!("Updated assignment {}.", assignment.id()))),
         Err(e) => {
             error!("Failed to update assignment. {}", e);
             Err(ErrorInternalServerError("Failed to update assignment."))

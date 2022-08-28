@@ -25,3 +25,11 @@ pub fn get_display_name(users: &Vec<User>, username: String) -> String {
         .next()
         .unwrap_or(username)
 }
+
+/// Converts the given string to an option. Returns None if the string is empty.
+pub fn to_option(s: String) -> Option<String> {
+    match s.is_empty() {
+        true => None,
+        false => Some(s),
+    }
+}

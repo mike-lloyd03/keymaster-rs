@@ -9,6 +9,7 @@ use crate::components::table::{Cell, Row, Table};
 use crate::routes::auth::CheckAuth;
 use crate::services::form_actions::{ondelete, onload_all, submit_form};
 use crate::services::requests::get;
+use crate::services::to_option;
 use crate::types::Key;
 
 use yew::prelude::*;
@@ -24,7 +25,7 @@ pub fn new_key() -> Html {
     let onsubmit = {
         let key = Key {
             name: (*name).clone(),
-            description: Some((*description).clone()),
+            description: to_option((*description).clone()),
             active: true,
         };
         let history = use_history().unwrap();
@@ -90,7 +91,7 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
     let onsubmit = {
         let key = Key {
             name: key_name.clone(),
-            description: Some((*description).clone()),
+            description: to_option((*description).clone()),
             active: *active,
         };
         let history = use_history().unwrap();
