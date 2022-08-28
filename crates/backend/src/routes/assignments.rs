@@ -5,7 +5,6 @@ use actix_web::{
     error::{ErrorBadRequest, ErrorInternalServerError, ErrorNotFound},
     get, post, web, HttpResponse, Responder,
 };
-use chrono::NaiveDate;
 use log::{error, info};
 use serde::Deserialize;
 use sqlx::PgPool;
@@ -15,14 +14,6 @@ use crate::{
     models::Assignment,
     routes::{unpack, validate_admin, validate_session},
 };
-
-#[derive(Deserialize, Clone)]
-struct UpdateBody {
-    user: Option<String>,
-    key: Option<String>,
-    date_out: Option<NaiveDate>,
-    date_in: Option<NaiveDate>,
-}
 
 #[derive(Deserialize, Clone)]
 struct SortQuery {
@@ -141,7 +132,7 @@ async fn create(
 #[post("/assignments/{assignment_id}")]
 async fn update(
     assignment_id: web::Path<i64>,
-    body: web::Either<web::Json<UpdateBody>, web::Form<UpdateBody>>,
+    body: web::Either<web::Json<Assignment>, web::Form<Assignment>>,
     pool: web::Data<PgPool>,
     session: Session,
 ) -> Result<impl Responder, actix_web::Error> {
@@ -158,28 +149,10 @@ async fn update(
             return Err(ErrorNotFound("Assignment not found."));
         }
     };
-
-    if let Some(u) = &body.user {
-        assignment.user = u.to_string()
-    };
-
-    if let Some(k) = &body.key {
-        assignment.key = k.to_string()
-    };
-
-    if let Some(d) = body.date_out {
-        assignment.date_out = d
-    };
-
-    // If the front end wants to unset the date_in variable, it will send the default date of
-    // 1970-01-01. This should be understood as null.
-    if let Some(d) = body.date_in {
-        if d == NaiveDate::default() {
-            assignment.date_in = None
-        } else {
-            assignment.date_in = Some(d)
-        }
-    };
+    assignment.user = body.user;
+    assignment.key = body.key;
+    assignment.date_out = body.date_out;
+    assignment.date_in = body.date_in;
 
     match assignment.update(&pool).await {
         Ok(_) => Ok(HttpResponse::Ok().json(format!("Updated assignment {}.", assignment.id()))),

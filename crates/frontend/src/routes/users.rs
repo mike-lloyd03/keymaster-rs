@@ -53,7 +53,8 @@ pub fn new_user() -> Html {
                 <TextField
                     label="Email"
                     state={email}
-                    pattern=r#"[^@]+@[\w\d]+\.[\w\.]{2,}"#
+                    // https://owasp.org/www-community/OWASP_Validation_Regex_Repository
+                    pattern=r#"[a-zA-Z0-9_+&*-]+(?:\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,15}"#
                 />
                 <TextField
                     label="Display Name"

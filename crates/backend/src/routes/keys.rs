@@ -9,12 +9,6 @@ use crate::models::Key;
 use crate::routes::{unpack, validate_admin, validate_session};
 
 #[derive(Deserialize, Clone)]
-struct UpdateBody {
-    description: Option<String>,
-    active: Option<bool>,
-}
-
-#[derive(Deserialize, Clone)]
 struct GetAllFilter {
     active: Option<bool>,
 }
@@ -91,7 +85,7 @@ async fn create(
 #[post("/keys/{key_name}")]
 async fn update(
     key_name: web::Path<String>,
-    body: web::Either<web::Json<UpdateBody>, web::Form<UpdateBody>>,
+    body: web::Either<web::Json<Key>, web::Form<Key>>,
     pool: web::Data<PgPool>,
     session: Session,
 ) -> Result<impl Responder, actix_web::Error> {
@@ -108,13 +102,8 @@ async fn update(
         }
     };
 
-    if let Some(d) = &body.description {
-        key.description = Some(d.to_string())
-    };
-
-    if let Some(a) = body.active {
-        key.active = a
-    };
+    key.description = body.description;
+    key.active = body.active;
 
     match key.update(&pool).await {
         Ok(_) => Ok(HttpResponse::Ok().json(format!("Updated key '{}'", key.name))),

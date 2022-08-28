@@ -1,9 +1,16 @@
 use std::env;
 
 use anyhow::Result;
+use lazy_static::lazy_static;
 use orion::pwhash;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
+use validator::{Validate, ValidationErrors};
+
+lazy_static! {
+    static ref USERNAME: Regex = Regex::new(r#"[\w\d]{3,}"#).unwrap();
+}
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
 pub struct Credentials {
@@ -11,12 +18,14 @@ pub struct Credentials {
     pub password: String,
 }
 
-#[derive(Debug, Default, PartialEq, Eq, Clone, FromRow, Serialize, Deserialize)]
+#[derive(Debug, Default, PartialEq, Eq, Clone, FromRow, Serialize, Deserialize, Validate)]
 pub struct User {
     #[serde(skip_deserializing)]
     pub id: i64,
+    #[validate(regex = "USERNAME")]
     pub username: String,
     pub display_name: Option<String>,
+    #[validate(email)]
     pub email: Option<String>,
     #[serde(skip)]
     password_hash: Option<String>,
@@ -142,6 +151,13 @@ impl User {
                 .fetch_one(pool)
                 .await?;
         Ok(count)
+    }
+
+    pub fn validate_fields(&self) -> Result<(), ValidationErrors> {
+        match self.validate() {
+            Ok(()) => Ok(()),
+            Err(e) => Err(e),
+        }
     }
 }
 

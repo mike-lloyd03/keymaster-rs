@@ -23,3 +23,6 @@ log = "0.4.17"
 env_logger = "0.9.0"
 chrono = { version = "0.4.20", features = ["serde"] }
 pwgen = "0.1.2"
+validator = { version = "0.16.0", features = ["derive"] }
+lazy_static = "1.4.0"
+regex = "1.6.0"

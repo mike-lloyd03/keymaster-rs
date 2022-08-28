@@ -139,7 +139,11 @@ pub fn edit_assignment(props: &EditAssignmentProps) -> Html {
             user: (*user).clone(),
             key: (*key).clone(),
             date_out: parse_date((*date_out).clone()),
-            date_in: Some(parse_date((*date_in).clone())),
+            date_in: if (*date_in).clone().is_empty() {
+                None
+            } else {
+                Some(parse_date((*date_in).clone()))
+            },
             ..Default::default()
         };
         let history = use_history().unwrap();

@@ -9,14 +9,6 @@ use crate::{
     routes::{unpack, validate_admin, validate_session},
 };
 
-#[derive(Deserialize, Clone)]
-struct UpdateBody {
-    display_name: Option<String>,
-    email: Option<String>,
-    can_login: Option<bool>,
-    admin: Option<bool>,
-}
-
 #[derive(Deserialize)]
 struct SetPasswdPayload {
     new_password: String,
@@ -71,6 +63,9 @@ async fn create(
     validate_admin(&session, &pool).await?;
 
     let user = unpack(user);
+    if let Err(e) = user.validate_fields() {
+        return Err(error::ErrorBadRequest(e));
+    }
 
     match user.create(&pool).await {
         Ok(_) => Ok(HttpResponse::Ok().json(format!("Created user '{}'", user.username))),
@@ -91,7 +86,7 @@ async fn create(
 async fn update(
     session: Session,
     username: web::Path<String>,
-    body: web::Either<web::Json<UpdateBody>, web::Form<UpdateBody>>,
+    body: web::Either<web::Json<User>, web::Form<User>>,
     pool: web::Data<PgPool>,
 ) -> Result<impl Responder, actix_web::Error> {
     validate_admin(&session, &pool).await?;
@@ -107,21 +102,10 @@ async fn update(
         }
     };
 
-    if let Some(d) = &body.display_name {
-        user.display_name = Some(d.to_string())
-    };
-
-    if let Some(e) = &body.email {
-        user.email = Some(e.to_string())
-    };
-
-    if let Some(c) = body.can_login {
-        user.can_login = c
-    };
-
-    if let Some(c) = body.admin {
-        user.admin = c
-    };
+    user.display_name = body.display_name;
+    user.email = body.email;
+    user.can_login = body.can_login;
+    user.admin = body.admin;
 
     match user.update(&pool).await {
         Ok(_) => Ok(HttpResponse::Ok().json(format!("Updated user '{}'", user.username))),
