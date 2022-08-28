@@ -6,10 +6,8 @@ use crate::components::form::{
 use crate::components::modal::Modal;
 use crate::components::notifier::notify_error;
 use crate::components::table::{Cell, Row, Table};
-use crate::error::Error;
 use crate::routes::auth::CheckAuth;
 use crate::services::form_actions::{ondelete, onload_all, submit_form};
-use crate::services::handle_unauthorized;
 use crate::services::requests::get;
 use crate::types::Key;
 
@@ -71,7 +69,6 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
         let key_name = key_name.clone();
         let description = description.clone();
         let active = active.clone();
-        let history = use_history().unwrap();
         let url = format!("/api/keys/{}", &key_name);
         use_effect_with_deps(
             move |_| {
@@ -81,10 +78,7 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
                             description.set(k.description.unwrap_or_default());
                             active.set(k.active);
                         }
-                        Err(e) => match e {
-                            Error::Unauthorized => handle_unauthorized(history),
-                            _ => notify_error(&e.to_string()),
-                        },
+                        Err(e) => notify_error(&e.to_string()),
                     }
                 });
                 || ()

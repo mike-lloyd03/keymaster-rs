@@ -7,19 +7,7 @@ use crate::{
 use yew_router::prelude::*;
 use yewdux::prelude::*;
 
-use super::requests::{get, post};
-
-// pub fn get_session_info() {
-//     let dispatch = Dispatch::<SessionInfo>::new();
-//     wasm_bindgen_futures::spawn_local(async move {
-//         let ui: SessionInfo = get("/api/session".into()).await.unwrap();
-//         dispatch.reduce_mut(|s| {
-//             s.username = ui.username;
-//             s.is_auth = ui.is_auth;
-//             s.is_admin = ui.is_admin;
-//         });
-//     });
-// }
+use super::requests::post;
 
 pub fn set_session_info(ui: SessionInfo) {
     let dispatch = Dispatch::<SessionInfo>::new();

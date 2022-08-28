@@ -1,7 +1,6 @@
 use crate::services::requests::get;
 use crate::types::SessionInfo;
 use yew::prelude::*;
-use yew_hooks::use_effect_once;
 use yewdux::prelude::*;
 
 #[derive(Properties, PartialEq)]
@@ -11,7 +10,7 @@ pub struct SessionProviderProps {
 
 #[function_component(SessionProvider)]
 pub fn session_provider(props: &SessionProviderProps) -> Html {
-    let (state, dispatch) = use_store::<SessionInfo>();
+    let (_, dispatch) = use_store::<SessionInfo>();
 
     use_effect_with_deps(
         move |_| {

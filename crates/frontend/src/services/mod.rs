@@ -3,9 +3,8 @@ pub mod form_actions;
 pub mod requests;
 
 use chrono::NaiveDate;
-use yew_router::prelude::{AnyHistory, History};
 
-use crate::{components::notifier::notify_error, routes::Route};
+use crate::types::User;
 
 static DATE_FMT: &'static str = "%Y-%m-%d";
 
@@ -17,7 +16,12 @@ pub fn format_date(date: NaiveDate) -> String {
     date.format(DATE_FMT).to_string()
 }
 
-pub fn handle_unauthorized(history: AnyHistory) {
-    history.push(Route::Login);
-    notify_error("You must log in to access this page");
+/// Returns the given user's display name. If it isn't found, it will return the user's username.
+pub fn get_display_name(users: &Vec<User>, username: String) -> String {
+    users
+        .iter()
+        .filter(|u| u.username == username.clone())
+        .map(|u| u.display_name.clone().unwrap_or(username.clone()))
+        .next()
+        .unwrap_or(username)
 }

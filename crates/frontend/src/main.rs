@@ -9,7 +9,7 @@ mod services;
 mod types;
 
 use components::notifier::Notifier;
-use components::session_provider::{SessionMonitor, SessionProvider};
+use components::session_provider::SessionProvider;
 use nav::Nav;
 use routes::{switch, Route};
 

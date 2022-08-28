@@ -7,12 +7,11 @@ use crate::components::form::{
 use crate::components::modal::Modal;
 use crate::components::notifier::notify_error;
 use crate::components::table::{Cell, Row, Table};
-use crate::error::Error;
 use crate::routes::auth::CheckAuth;
 use crate::services::form_actions::{get_options, ondelete, onload_all, submit_form};
 use crate::services::requests::get;
-use crate::services::{format_date, handle_unauthorized, parse_date};
-use crate::types::Assignment;
+use crate::services::{format_date, get_display_name, parse_date};
+use crate::types::{Assignment, User};
 
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -112,7 +111,6 @@ pub fn edit_assignment(props: &EditAssignmentProps) -> Html {
         let key = key.clone();
         let date_out = date_out.clone();
         let date_in = date_in.clone();
-        let history = use_history().unwrap();
         let url = format!("/api/assignments/{}", &props.id.clone());
         use_effect_with_deps(
             move |_| {
@@ -127,10 +125,7 @@ pub fn edit_assignment(props: &EditAssignmentProps) -> Html {
                                 None => "".into(),
                             });
                         }
-                        Err(e) => match e {
-                            Error::Unauthorized => handle_unauthorized(history),
-                            _ => notify_error(&e.to_string()),
-                        },
+                        Err(e) => notify_error(&e.to_string()),
                     }
                 });
                 || ()
@@ -190,13 +185,16 @@ pub fn edit_assignment(props: &EditAssignmentProps) -> Html {
 #[function_component(Assignments)]
 pub fn assignments() -> Html {
     let assignments = use_state(Vec::<Assignment>::new);
+    let all_users = use_state(Vec::<User>::new);
 
     // Get assignments on load
     {
         let assignments = assignments.clone();
+        let all_users = all_users.clone();
         use_effect_with_deps(
             move |_| {
                 onload_all("/api/assignments".into(), assignments);
+                onload_all("/api/users".into(), all_users);
                 || ()
             },
             (),
@@ -206,7 +204,7 @@ pub fn assignments() -> Html {
     let rows = assignments.iter().map(|a| {
         html_nested! {
             <Row>
-                <Cell heading="User" value={a.user.clone()} />
+                <Cell heading="User" value={get_display_name(&all_users, a.user.clone())} />
                 <Cell heading="Key" value={a.key.clone()} />
                 <Cell heading="Date Out" value={format_date(a.date_out)} />
                 <Cell heading="Date In" value={

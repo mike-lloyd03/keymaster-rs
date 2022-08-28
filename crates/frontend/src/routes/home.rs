@@ -1,6 +1,6 @@
 use crate::components::table::{Cell, Row, Table};
-use crate::routes::Route;
-use crate::types::Assignment;
+use crate::services::get_display_name;
+use crate::types::{Assignment, User};
 use crate::{routes::auth::CheckAuth, services::form_actions::onload_all};
 use std::collections::HashMap;
 
@@ -17,13 +17,16 @@ pub fn home() -> Html {
     let assignments = use_state(Vec::<Assignment>::new);
     let sorted_assignments = use_state(Vec::<SortedAssignment>::new);
     let headers = use_state(|| ("User", "Keys Assigned"));
+    let all_users = use_state(Vec::<User>::new);
 
     // Get assignments on load
     {
         let assignments = assignments.clone();
+        let all_users = all_users.clone();
         use_effect_with_deps(
             move |_| {
                 onload_all("/api/assignments".into(), assignments.clone());
+                onload_all("/api/users".into(), all_users);
                 || ()
             },
             (),
@@ -34,9 +37,10 @@ pub fn home() -> Html {
         let assignments_clone = assignments.clone();
         let assignments = assignments.clone();
         let sorted_assignments = sorted_assignments.clone();
+        let all_users = all_users.clone();
         use_effect_with_deps(
             move |_| {
-                sorted_assignments.set(sort_by_user((*assignments).clone()));
+                sorted_assignments.set(agg_by_user(&*assignments, &*all_users));
                 || ()
             },
             assignments_clone,
@@ -47,8 +51,9 @@ pub fn home() -> Html {
         let headers = headers.clone();
         let assignments = assignments.clone();
         let sorted_assignments = sorted_assignments.clone();
+        let all_users = all_users.clone();
         Callback::from(move |_: MouseEvent| {
-            sorted_assignments.set(sort_by_user((*assignments).clone()));
+            sorted_assignments.set(agg_by_user(&*assignments, &*all_users));
             headers.set(("User", "Keys Assigned"))
         })
     };
@@ -57,8 +62,9 @@ pub fn home() -> Html {
         let headers = headers.clone();
         let assignments = assignments.clone();
         let sorted_assignments = sorted_assignments.clone();
+        let all_users = all_users.clone();
         Callback::from(move |_: MouseEvent| {
-            sorted_assignments.set(sort_by_key((*assignments).clone()));
+            sorted_assignments.set(agg_by_key(&*assignments, &*all_users));
             headers.set(("Key", "Users Assigned"))
         })
     };
@@ -102,42 +108,6 @@ pub fn home() -> Html {
                 </div>
             </div>
         </CheckAuth>
-        // <CheckAuth>
-        //     <div class="container text-light my-3">
-        //         <div class="" style="text-align: center">
-        //             <h4>{"Key Inventory Tracker"}</h4>
-        //         <div class="container py-2">
-        //         {"Sort:"}
-        //         <a class="btn btn-primary" href="/index?sort=by_user" role="button">{"By User"}</a>
-        //         <a class="btn btn-primary" href="/index?sort=by_key" role="button">{"By Key"}</a>
-        //         </div>
-        //             <div class="">
-        //                 <table class="table table-striped table-hover table-bordered table-dark">
-        //                     <thead class="table-dark">
-        //                         <tr>
-        //                             <th>{"User"}</th>
-        //                             <th>{"Assigned Keys"}</th>
-        //                         </tr>
-        //                     </thead>
-        //                     <tbody>
-        //                         <tr>
-        //                             <td>{"Aaron Sum"}</td>
-        //                             <td>{"Finance Key, KeyM4"}</td>
-        //                         </tr>
-        //                         <tr>
-        //                             <td>{"Alec Parker"}</td>
-        //                             <td>{"Gate Key, Key0, Key02, KeyM4"}</td>
-        //                         </tr>
-        //                         <tr>
-        //                             <td>{"Bob Degraff"}</td>
-        //                             <td>{"KeyM4"}</td>
-        //                         </tr>
-        //                     </tbody>
-        //                 </table>
-        //             </div>
-        //         </div>
-        //     </div>
-        // </CheckAuth>
     }
 }
 
@@ -147,32 +117,31 @@ struct SortedAssignment {
     values: String,
 }
 
-// impl Ord for SortedAssignment {
-//     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-//         todo!()
-//     }
-// }
-
-fn sort_by_user(assignments: Vec<Assignment>) -> Vec<SortedAssignment> {
+/// Aggregates the assignment list by user
+fn agg_by_user(assignments: &Vec<Assignment>, users: &Vec<User>) -> Vec<SortedAssignment> {
     let mut map = HashMap::new();
+    let assignments = assignments.clone();
     for a in assignments {
-        map.entry(a.user)
+        map.entry(get_display_name(&users, a.user))
             .and_modify(|v| *v = format!("{}, {}", v, a.key))
             .or_insert(a.key);
     }
     map_to_sort(map)
 }
 
-fn sort_by_key(assignments: Vec<Assignment>) -> Vec<SortedAssignment> {
+/// Aggregates the assignment list by key
+fn agg_by_key(assignments: &Vec<Assignment>, users: &Vec<User>) -> Vec<SortedAssignment> {
     let mut map = HashMap::new();
+    let assignments = assignments.clone();
     for a in assignments {
         map.entry(a.key)
-            .and_modify(|v| *v = format!("{}, {}", v, a.user))
-            .or_insert(a.user);
+            .and_modify(|v| *v = format!("{}, {}", v, get_display_name(users, a.user.clone())))
+            .or_insert(get_display_name(users, a.user));
     }
     map_to_sort(map)
 }
 
+/// Converts a hashmap into a vector of SortedAssignment
 fn map_to_sort(map: HashMap<String, String>) -> Vec<SortedAssignment> {
     let mut s: Vec<SortedAssignment> = map
         .iter()

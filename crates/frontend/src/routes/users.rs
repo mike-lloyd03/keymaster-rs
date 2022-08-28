@@ -6,10 +6,8 @@ use crate::components::form::{
 use crate::components::modal::Modal;
 use crate::components::notifier::notify_error;
 use crate::components::table::{Cell, Row, Table};
-use crate::error::Error;
 use crate::routes::auth::CheckAuth;
 use crate::services::form_actions::{ondelete, onload_all, submit_form};
-use crate::services::handle_unauthorized;
 use crate::services::requests::get;
 use crate::types::User;
 
@@ -108,7 +106,6 @@ pub fn edit_user(props: &EditUserProps) -> Html {
         let display_name = display_name.clone();
         let can_login = can_login.clone();
         let admin = admin.clone();
-        let history = use_history().unwrap();
         let url = format!("/api/users/{}", &username);
         use_effect_with_deps(
             move |_| {
@@ -121,10 +118,7 @@ pub fn edit_user(props: &EditUserProps) -> Html {
                             can_login.set(u.can_login);
                             admin.set(u.admin);
                         }
-                        Err(e) => match e {
-                            Error::Unauthorized => handle_unauthorized(history),
-                            _ => notify_error(&e.to_string()),
-                        },
+                        Err(e) => notify_error(&e.to_string()),
                     }
                 });
                 || ()
