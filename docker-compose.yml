@@ -1,0 +1,18 @@
+version: "3"
+
+services:
+  app:
+    image: keymaster:latest
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: http://postgres:postgres@postgres:5432
+    ports:
+      - 8080:8080
+
+  postgres:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postgres

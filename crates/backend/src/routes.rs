@@ -29,7 +29,9 @@ async fn login(
 
     match User::authenticate(&pool, creds).await {
         Ok(user) => {
-            session.insert("username", user.username).unwrap();
+            session
+                .insert("username", user.username)
+                .expect("Unable to insert new session");
             let si = get_session_info(session, pool).await;
             HttpResponse::Ok().json(si)
         }
@@ -163,7 +165,7 @@ mod routes_tests {
         // User can log in
         let creds = crate::models::Credentials {
             username: "user2".to_string(),
-            password: "pass2".to_string(),
+            password: "abc123".to_string(),
         };
         let req = actix_test::TestRequest::post()
             .uri("/login")

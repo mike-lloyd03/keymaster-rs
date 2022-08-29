@@ -11,7 +11,7 @@ VALUES (
     'user2',
     'User Two',
     'user2@email.com',
-    'pass2',
+    '$argon2i$v=19$m=65536,t=3,p=1$6JGByse/9Ous9DCnkgfFnA$lrixZa334c0rLb0k8SWK67q6TtSWoYjwXje67aKK0cU',
     't',
     'f'
 ),

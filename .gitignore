@@ -2,3 +2,4 @@ target/
 dist/
 .env
 app.db
+*.dump

@@ -158,7 +158,7 @@ async fn delete(
     }
 }
 
-#[post("/users/{username}/set_password")]
+#[post("/users/{username}/set-password")]
 async fn set_password(
     session: Session,
     username: web::Path<String>,

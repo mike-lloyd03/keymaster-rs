@@ -2,14 +2,14 @@ use std::env;
 
 use anyhow::Result;
 use lazy_static::lazy_static;
-use orion::pwhash;
+use orion::pwhash::{self, hash_password_verify, Password, PasswordHash};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
 use validator::{Validate, ValidationErrors};
 
 lazy_static! {
-    static ref USERNAME: Regex = Regex::new(r#"[\w\d]{3,}"#).unwrap();
+    static ref USERNAME: Regex = Regex::new(r#"[\w\d]{3,}"#).expect("failed creating regex");
 }
 
 #[derive(Debug, Default, Serialize, Deserialize, Clone)]
@@ -86,7 +86,8 @@ impl User {
         pool: &PgPool,
         password: &str,
     ) -> Result<PgQueryResult, sqlx::Error> {
-        let pw = pwhash::Password::from_slice(password.as_bytes()).unwrap();
+        let pw = Password::from_slice(password.as_bytes())
+            .map_err(|e| sqlx::Error::Decode(Box::new(e)))?;
         let hash = pwhash::hash_password(&pw, 3, 1 << 16).unwrap();
         self.password_hash = Some(hash.unprotected_as_encoded().to_string());
 
@@ -102,10 +103,13 @@ impl User {
     pub fn validate_password(&self, input_password: &str) -> bool {
         match &self.password_hash {
             Some(h) => {
-                let hash = pwhash::PasswordHash::from_encoded(h).unwrap();
+                let hash = match PasswordHash::from_encoded(h) {
+                    Err(_) => return false,
+                    Ok(p) => p,
+                };
                 let input_password =
-                    pwhash::Password::from_slice(input_password.as_bytes()).unwrap();
-                pwhash::hash_password_verify(&hash, &input_password).is_ok()
+                    Password::from_slice(input_password.as_bytes()).unwrap_or_default();
+                hash_password_verify(&hash, &input_password).is_ok()
             }
             None => false,
         }
@@ -179,7 +183,7 @@ pub async fn initialize_admin(pool: &PgPool) -> Result<(), sqlx::Error> {
     };
 
     let mut admin = User {
-        username: admin_username,
+        username: admin_username.clone(),
         display_name: None,
         can_login: true,
         admin: true,
@@ -188,7 +192,8 @@ pub async fn initialize_admin(pool: &PgPool) -> Result<(), sqlx::Error> {
     admin.create(pool).await?;
     admin.set_password(pool, &admin_pass).await?;
     println!(
-        "Admin user created. username: 'admin', password: '{}'",
+        "Admin user created. username: '{}', password: '{}'",
+        &admin_username,
         if pw_from_env {
             "<FROM ENVIRONMENT>"
         } else {

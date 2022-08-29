@@ -1,0 +1,6 @@
+Dockerfile
+.dockerignore
+target
+README.md
+.env
+*.dump

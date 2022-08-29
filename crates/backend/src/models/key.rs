@@ -98,7 +98,7 @@ mod key_tests {
         let key = Key::get(&pool, "key1").await?;
 
         assert_eq!("key1", key.name);
-        assert_eq!("this is a key", key.description.unwrap());
+        assert_eq!(Some("this is a key".into()), key.description);
         assert!(key.active);
 
         Ok(())
@@ -124,7 +124,7 @@ mod key_tests {
 
         let updated_key = Key::get(&pool, "key1").await?;
 
-        assert_eq!(new_desc, updated_key.description.unwrap());
+        assert_eq!(Some(new_desc.into()), updated_key.description);
 
         Ok(())
     }
