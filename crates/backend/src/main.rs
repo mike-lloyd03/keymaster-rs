@@ -8,6 +8,7 @@ use actix_web::{
     web::{scope, Data},
     App, HttpServer,
 };
+use actix_web_lab::web::spa;
 use log::info;
 
 mod models;
@@ -73,8 +74,15 @@ async fn main() -> std::io::Result<()> {
                     .service(routes::logout)
                     .service(routes::session_info),
             )
+            .service(
+                spa()
+                    .index_file("./dist/index.html")
+                    .static_resources_mount("/")
+                    .static_resources_location("./dist")
+                    .finish(),
+            )
     })
-    .bind(("127.0.0.1", 8081))?
+    .bind(("0.0.0.0", 8080))?
     .run()
     .await
 }

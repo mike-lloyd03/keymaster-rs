@@ -6,12 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sqlx = { version = "0.6.1", features = [
-  "migrate",
-  "postgres",
-  "runtime-actix-rustls",
-  "chrono",
-] }
+sqlx = { version = "0.6.1", features = ["migrate", "postgres", "runtime-actix-rustls", "chrono", "offline"] }
 sqlx-rt = { version = "0.6.1", features = ["runtime-actix-rustls"] }
 anyhow = "1.0.58"
 dotenvy = "0.15.1"
@@ -26,3 +21,4 @@ pwgen = "0.1.2"
 validator = { version = "0.16.0", features = ["derive"] }
 lazy_static = "1.4.0"
 regex = "1.6.0"
+actix-web-lab = "0.17.0"
