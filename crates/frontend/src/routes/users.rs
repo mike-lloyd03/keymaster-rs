@@ -7,7 +7,7 @@ use crate::components::table::{Cell, Row, Table};
 use crate::services::form_actions::{ondelete, onload_all, submit_form};
 use crate::services::requests::get;
 use crate::services::to_option;
-use crate::types::User;
+use crate::types::{SetPasswdPayload, User};
 
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -141,7 +141,7 @@ pub fn edit_user(props: &EditUserProps) -> Html {
 
     html! {
         <CheckAuth admin=true>
-            <Form title="Edit User" subtitle={props.username.clone()} action={format!("users/{}", props.username.clone())} {onsubmit} >
+            <Form title="Edit User" subtitle={props.username.clone()} {onsubmit} >
                 <TextField
                     label="Email"
                     state={email}
@@ -162,6 +162,13 @@ pub fn edit_user(props: &EditUserProps) -> Html {
                     route={Route::Users}
                     show_modal={show_modal.clone()}
                 />
+                {" "}
+                <Link<Route>
+                    to={Route::SetPassword { username: props.username.clone()}}
+                    classes={classes!("btn", "btn-secondary")}
+                >
+                    {"Set Password"}
+                </Link<Route>>
                 {" "}
                 <CancelButton route={Route::Users} />
             <Modal
@@ -216,6 +223,51 @@ pub fn user_table() -> Html {
                     </Table>
                 </div>
             </div>
+        </CheckAuth>
+    }
+}
+
+#[function_component(SetPassword)]
+pub fn set_password(props: &EditUserProps) -> Html {
+    let password = use_state(String::new);
+    let password2 = use_state(String::new);
+
+    let onsubmit = {
+        if (*password).clone() == (*password2).clone() {
+            let new_password = SetPasswdPayload {
+                new_password: (*password).clone(),
+            };
+            let history = use_history().unwrap();
+            let path = format!("/api/users/{}/set-password", props.username);
+            submit_form(path, new_password, history, Route::Users)
+        } else {
+            Callback::from(move |e: FocusEvent| {
+                e.prevent_default();
+                notify_error("Passwords do not match");
+            })
+        }
+    };
+
+    html! {
+        <CheckAuth admin=true>
+            <Form title="Set Password" subtitle={props.username.clone()} {onsubmit} >
+                <PasswordField
+                    label="Password"
+                    state={password}
+                    required=true
+                />
+                <PasswordField
+                    label="Re-Enter Password"
+                    state={password2}
+                    required=true
+                />
+                <Button
+                    value="Set Password"
+                    button_type={ButtonType::Primary}
+                />
+                {" "}
+                <CancelButton route={Route::Users} />
+            </Form>
         </CheckAuth>
     }
 }

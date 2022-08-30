@@ -107,7 +107,6 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
         <CheckAuth admin=true>
             <Form title="Edit Key"
                 subtitle={props.key_name.clone()}
-                action={format!("keys/{}", props.key_name.clone())}
                 {onsubmit}
             >
                 <TextField label="Description" state={description} />

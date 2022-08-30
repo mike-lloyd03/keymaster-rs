@@ -49,6 +49,7 @@ pub fn nav() -> Html {
                                 html!{
                                     <>
                                         <NavDropdown label={user.username.clone().unwrap_or_default()}>
+                                            <NavDropdownItem label="Set Password" route={Route::SetPassword { username: user.username.clone().unwrap_or_default() }} />
                                             <NavDropdownItem label="Logout" route={Route::Logout} />
                                         </NavDropdown>
                                     </>

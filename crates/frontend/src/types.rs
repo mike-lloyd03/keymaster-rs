@@ -65,3 +65,8 @@ pub struct Notification {
     pub msg: Option<String>,
     pub lvl: Option<String>,
 }
+
+#[derive(Clone, Serialize)]
+pub struct SetPasswdPayload {
+    pub new_password: String,
+}

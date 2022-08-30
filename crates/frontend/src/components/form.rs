@@ -10,8 +10,6 @@ use crate::routes::Route;
 pub struct FormProps {
     pub title: String,
     pub subtitle: Option<String>,
-    pub action: Option<String>,
-    pub method: Option<String>,
     pub onsubmit: Option<Callback<FocusEvent>>,
     pub children: Children,
 }
