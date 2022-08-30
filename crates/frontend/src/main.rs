@@ -3,14 +3,13 @@ use yew_router::prelude::*;
 
 mod components;
 mod error;
-mod nav;
 mod routes;
 mod services;
 mod types;
 
+use components::nav::Nav;
 use components::notifier::Notifier;
 use components::session_provider::SessionProvider;
-use nav::Nav;
 use routes::{switch, Route};
 
 #[function_component(App)]

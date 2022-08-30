@@ -1,13 +1,9 @@
 use std::vec::Vec;
 
-use crate::components::form::{
-    Button, ButtonType, CancelButton, DateField, DeleteButton, Form, MultiSelectField,
-    MultiSelectOption, TextField,
-};
+use crate::components::form::*;
 use crate::components::modal::Modal;
 use crate::components::notifier::notify_error;
 use crate::components::table::{Cell, Row, Table};
-use crate::routes::auth::CheckAuth;
 use crate::services::form_actions::{get_options, ondelete, onload_all, submit_form};
 use crate::services::requests::get;
 use crate::services::{format_date, get_display_name, parse_date};
@@ -16,6 +12,7 @@ use crate::types::{Assignment, User};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
+use super::auth::CheckAuth;
 use super::Route;
 
 #[function_component(NewAssignment)]

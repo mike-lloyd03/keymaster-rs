@@ -1,12 +1,9 @@
 use std::vec::Vec;
 
-use crate::components::form::{
-    Button, ButtonType, CancelButton, CheckboxField, DeleteButton, Form, TextField,
-};
+use crate::components::form::*;
 use crate::components::modal::Modal;
 use crate::components::notifier::notify_error;
 use crate::components::table::{Cell, Row, Table};
-use crate::routes::auth::CheckAuth;
 use crate::services::form_actions::{ondelete, onload_all, submit_form};
 use crate::services::requests::get;
 use crate::services::to_option;
@@ -15,6 +12,7 @@ use crate::types::Key;
 use yew::prelude::*;
 use yew_router::hooks::use_history;
 
+use super::auth::CheckAuth;
 use super::Route;
 
 #[function_component(NewKey)]
