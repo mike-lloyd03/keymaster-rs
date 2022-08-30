@@ -58,3 +58,16 @@ body {
     opacity: 0;
   }
 }
+
+.user-dropdown {
+  position: absolute;
+  transform: translate(0px, 50px);
+  top: 0px;
+  left: 0px;
+}
+
+@media (min-width: 992px) {
+  .user-dropdown {
+    transform: translate(-70px, 50px);
+  }
+}

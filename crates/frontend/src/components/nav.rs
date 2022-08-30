@@ -2,6 +2,7 @@ use crate::routes::Route;
 
 use crate::types::SessionInfo;
 use yew::prelude::*;
+use yew_hooks::use_click_away;
 use yew_router::prelude::Link;
 use yewdux::prelude::*;
 
@@ -47,16 +48,9 @@ pub fn nav() -> Html {
                             if user.is_auth {
                                 html!{
                                     <>
-                                        <span class="navbar-text">
-                                            {user.username.clone().unwrap_or_default()}
-                                        </span>
-                                        <div class="nav-item">
-                                            <Link<Route> to={Route::Logout}
-                                                classes={classes!("nav-link")}
-                                            >
-                                                { "Logout" }
-                                            </Link<Route>>
-                                        </div>
+                                        <NavDropdown label={user.username.clone().unwrap_or_default()}>
+                                            <NavDropdownItem label="Logout" route={Route::Logout} />
+                                        </NavDropdown>
                                     </>
                                 }
                             } else {
@@ -70,5 +64,88 @@ pub fn nav() -> Html {
                 </div>
             </div>
         </nav>
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct NavDropdownProps {
+    label: String,
+    children: ChildrenWithProps<NavDropdownItem>,
+}
+
+#[function_component(NavDropdown)]
+pub fn nav_dropdown(props: &NavDropdownProps) -> Html {
+    let show = use_state(|| false);
+    let node = use_node_ref();
+
+    let item_classes_hidden = classes!("nav-item", "dropdown");
+    let item_classes_shown = classes!("nav-item", "dropdown", "show");
+    let menu_classes_hidden = classes!("dropdown-menu", "bg-dark", "text-light", "user-dropdown");
+    let menu_classes_shown = classes!(
+        "dropdown-menu",
+        "bg-dark",
+        "text-light",
+        "user-dropdown",
+        "show"
+    );
+
+    let onclick = {
+        let show = show.clone();
+        Callback::from(move |e: MouseEvent| {
+            e.prevent_default();
+            show.set(!*show);
+        })
+    };
+
+    {
+        let show = show.clone();
+        use_click_away(node.clone(), move |_: Event| {
+            show.set(false);
+        });
+    }
+
+    html! {
+        <li
+            class={
+                match *show {
+                    true => item_classes_shown,
+                    false => item_classes_hidden,
+                }
+            }
+            ref={node}
+        >
+            <div
+                class="nav-link dropdown-toggle"
+                role="button"
+                data-toggle="dropdown"
+                {onclick}
+            >
+                {props.label.clone()}
+            </div>
+            <div
+                class={
+                    match *show {
+                        true => menu_classes_shown,
+                        false => menu_classes_hidden,
+                    }
+                }
+            >
+            { for props.children.clone() }
+            </div>
+        </li>
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct NavDropdownItemProps {
+    label: String,
+    route: Route,
+}
+
+#[function_component(NavDropdownItem)]
+pub fn nav_dropdown_item(props: &NavDropdownItemProps) -> Html {
+    let classes = classes!("dropdown-item", "bg-dark", "text-muted",);
+    html! {
+        <Link<Route> {classes} to={props.route.clone()}>{props.label.clone()}</Link<Route>>
     }
 }

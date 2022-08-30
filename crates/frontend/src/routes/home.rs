@@ -14,10 +14,14 @@ struct HomeQuery {
 
 #[function_component(Home)]
 pub fn home() -> Html {
+    let btn_selected = classes!("btn", "btn-primary");
+    let btn_unselected = classes!("btn", "btn-outline-secondary");
     let assignments = use_state(Vec::<Assignment>::new);
     let sorted_assignments = use_state(Vec::<SortedAssignment>::new);
     let headers = use_state(|| ("User", "Keys Assigned"));
     let all_users = use_state(Vec::<User>::new);
+    let by_user_btn_class = use_state(|| btn_selected.clone());
+    let by_key_btn_class = use_state(|| btn_unselected.clone());
 
     // Get assignments on load
     {
@@ -52,9 +56,15 @@ pub fn home() -> Html {
         let assignments = assignments.clone();
         let sorted_assignments = sorted_assignments.clone();
         let all_users = all_users.clone();
+        let by_user_btn_class = by_user_btn_class.clone();
+        let by_key_btn_class = by_key_btn_class.clone();
+        let btn_selected = btn_selected.clone();
+        let btn_unselected = btn_unselected.clone();
         Callback::from(move |_: MouseEvent| {
             sorted_assignments.set(agg_by_user(&*assignments, &*all_users));
-            headers.set(("User", "Keys Assigned"))
+            headers.set(("User", "Keys Assigned"));
+            by_user_btn_class.set(btn_selected.clone());
+            by_key_btn_class.set(btn_unselected.clone());
         })
     };
 
@@ -63,9 +73,15 @@ pub fn home() -> Html {
         let assignments = assignments.clone();
         let sorted_assignments = sorted_assignments.clone();
         let all_users = all_users.clone();
+        let by_user_btn_class = by_user_btn_class.clone();
+        let by_key_btn_class = by_key_btn_class.clone();
+        let btn_selected = btn_selected.clone();
+        let btn_unselected = btn_unselected.clone();
         Callback::from(move |_: MouseEvent| {
             sorted_assignments.set(agg_by_key(&*assignments, &*all_users));
-            headers.set(("Key", "Users Assigned"))
+            headers.set(("Key", "Users Assigned"));
+            by_user_btn_class.set(btn_unselected.clone());
+            by_key_btn_class.set(btn_selected.clone());
         })
     };
 
@@ -89,18 +105,20 @@ pub fn home() -> Html {
                 <div class="row justify-content-center">
                     <div class="container py-2">
                         {"Sort:"}
-                        <button
-                            onclick={on_sort_by_key}
-                            class={classes!("btn", "btn-primary")}
-                        >
-                            {"By Key"}
-                        </button>
-                        <button
-                            onclick={on_sort_by_user}
-                            class={classes!("btn", "btn-primary")}
-                        >
-                            {"By User"}
-                        </button>
+                        <div class="btn-group" role="group">
+                            <button
+                                onclick={on_sort_by_key}
+                                class={(*by_key_btn_class).clone()}
+                            >
+                                {"By Key"}
+                            </button>
+                            <button
+                                onclick={on_sort_by_user}
+                                class={(*by_user_btn_class).clone()}
+                            >
+                                {"By User"}
+                            </button>
+                        </div>
                     </div>
                     <Table title="Key Inventory Tracker">
                         {for rows}
