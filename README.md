@@ -3,9 +3,9 @@
 
 Thing for keeping track of who has what keys.
 
-This is a Rust rewrite of [KeyMaster](https://github.com/mike-lloyd03/keymaster) which I wrote in Python a few years ago. The purpose of this project is to gain more experience developing in Rust as well as learning some core Rust crates.
+This is a Rust rewrite of [KeyMaster](https://github.com/mike-lloyd03/keymaster) which I wrote in Python a few years ago. The purpose of this project is to gain more experience developing in Rust as well as learning about web assembly and remembering everything I forgot about web dev.
 
-## Current Plan
+## The Plan
 ### Backend
 Develop a REST API which connects to a Postgres database for managing all the CRUD operations.
 
@@ -16,32 +16,39 @@ Crates:
 - `orion` For password hashing and validation
 
 ### Frontend
-Develop a responsive _BLAZINGLY FAST_ front end using modern technologies like web-assembly.
+Develop a responsive, _BLAZINGLY FAST_ front end using modern technologies like web-assembly.
 
 Crates:
 - `yew` It's like React but on Rust steroids and compiles to wasm
+- `yewdux` Awesome global state library akin to Redux
 
 
 ## Progress so Far
-### Backend
-The backend is nearly done. The following features are implemented:
+It's basically done. The app works and it works pretty good. There's a few quirks here and there that need to be cleaned up but I'll get around to it.
 
-- Actix powered web server which handles routes for CRUD ops on `Users`, `Keys`, and key `Assignments`
-- Cookie-based session management
-- Password hashing via Argon2
-- Automatic admin user generation if the user does not already exist.
-- All `POST` and `PUT` routes require admin privileges. All other routes require authentication.
-- Tests for all model methods
+## Deployment
+Clone the repo and do the following:
 
-To do:
-- Write integration tests for each of the endpoints
+```
+docker build . --tag keymaster:latest
+```
 
-### Frontend
-The very barebones of the pages exist and are copies of the Jinja templates I had in place for the Python version of this.
+Tweak the included `docker-compose.yml` file as you see fit. The program will initialize an admin user on startup if one doesn't already exist in the database. The admin password will be randomly generated and will be printed to the logs. Alternatively, you can set the following environment variables to configure them before running.
 
-- Learn `yew`
-- Convert Jinja templates to yew components
-- Figure out how to employ the backend's session management in the front end
+```
+KEYMASTER_ADMIN_USER
+KEYMASTER_ADMIN_PASS
+```
 
+This will have no effect after the admin user is initialized so you can delete them from your config after the database is up.
 
-We'll get there.
+Once all that is done:
+
+```
+docker compose up -d
+```
+
+Navigate to `localhost:8080` (or whatever port you mapped) and have a look.
+
+Todo:
+- The UI is a bit dated. Port it over to tailwind.

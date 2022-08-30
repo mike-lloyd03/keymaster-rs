@@ -6,8 +6,12 @@ services:
     restart: always
     depends_on:
       - postgres
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
     environment:
-      DATABASE_URL: http://postgres:postgres@postgres:5432
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres
+      KEYMASTER_ADMIN_USER: ${KEYMASTER_ADMIN_USER}
+      KEYMASTER_ADMIN_PASS: ${KEYMASTER_ADMIN_PASS}
     ports:
       - 8080:8080
 
@@ -15,4 +19,4 @@ services:
     image: postgres:latest
     restart: always
     environment:
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
