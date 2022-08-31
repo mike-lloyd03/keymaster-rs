@@ -74,15 +74,15 @@ async fn main() -> std::io::Result<()> {
                     .service(routes::logout)
                     .service(routes::session_info),
             )
-            .service(
-                spa()
-                    .index_file("./dist/index.html")
-                    .static_resources_mount("/")
-                    .static_resources_location("./dist")
-                    .finish(),
-            )
+        // .service(
+        //     spa()
+        //         .index_file("./dist/index.html")
+        //         .static_resources_mount("/")
+        //         .static_resources_location("./dist")
+        //         .finish(),
+        // )
     })
-    .bind(("0.0.0.0", 8080))?
+    .bind(("0.0.0.0", 8081))?
     .run()
     .await
 }
