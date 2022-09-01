@@ -169,12 +169,15 @@ pub fn key_table() -> Html {
 
     html! {
         <CheckAuth>
-            <div class="container text-light my-3">
-                <div class="row justify-content-center">
-                    <Table title="Keys" button_label="Add Key" button_route={Route::AddKey}>
-                    { for rows }
-                    </Table>
-                </div>
+            <div class="container my-5 mx-auto">
+                <Table
+                    title="Keys"
+                    headings={vec!["Key", "Description", "Status", ""]}
+                    button_label="Add Key"
+                    button_route={Route::AddKey}
+                >
+                { for rows }
+                </Table>
             </div>
         </CheckAuth>
     }

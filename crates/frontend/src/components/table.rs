@@ -12,12 +12,7 @@ pub struct CellProps {
 
 #[function_component(Cell)]
 pub fn cell(props: &CellProps) -> Html {
-    let button_enabled_classes = classes!(
-        "font-medium",
-        "text-blue-600",
-        "dark:text-blue-500",
-        "hover:underline"
-    );
+    let button_enabled_classes = classes!("font-medium", TEXT_BLUE, "hover:underline");
     let cl_edit_btn = if current_user().is_admin {
         button_enabled_classes
     } else {
@@ -48,15 +43,28 @@ pub struct RowProps {
 #[function_component(Row)]
 pub fn row(props: &RowProps) -> Html {
     let tr_classes = classes!(
-        "bg-white",
-        "border-b",
-        "dark:bg-gray-800",
-        "dark:border-gray-700",
-        "hover:bg-gray-50",
-        "dark:hover:bg-gray-600"
+        "border-y",
+        BG_SEC_DARK,
+        "border-gray-700",
+        "hover:bg-gray-700",
+        "hover:border-gray-800"
     );
     html! {
         <tr class={tr_classes}>{ for props.children.iter() }</tr>
+    }
+}
+#[derive(Properties, PartialEq)]
+pub struct TableCaptionProps {
+    pub title: String,
+}
+
+#[function_component(TableCaption)]
+pub fn table_caption(props: &TableCaptionProps) -> Html {
+    html! {
+        <caption class="p-5 text-lg font-semibold text-left text-gray-900 bg-white dark:text-white dark:bg-gray-800">
+        {props.title.clone()}
+            // <p class="mt-1 text-sm font-normal text-gray-500 dark:text-gray-400">Browse a list of Flowbite products designed to help you work and play, stay organized, get answers, keep in touch, grow your business, and more.</p>
+        </caption>
     }
 }
 
@@ -65,25 +73,16 @@ pub struct TableProps {
     pub title: String,
     pub button_label: Option<String>,
     pub button_route: Option<Route>,
+    pub headings: Option<Vec<&'static str>>,
     pub children: ChildrenWithProps<Row>,
 }
 
 #[function_component(Table)]
 pub fn table(props: &TableProps) -> Html {
-    let headings: Vec<String> = match props.children.iter().next() {
-        Some(c) => c
-            .props
-            .children
-            .iter()
-            .map(|cell| cell.props.heading.clone())
-            .collect(),
-        None => vec!["".to_string()],
-    };
-
     let cl_action_btn = classes!(BTN, BTN_PRIMARY);
 
-    let cl_table_bg = classes!(
-        BG_DARK,
+    let cl_table_container = classes!(
+        BG_PRIME_DARK,
         TEXT_DARK,
         "rounded-xl",
         "relative",
@@ -93,38 +92,61 @@ pub fn table(props: &TableProps) -> Html {
         "py-1",
     );
 
-    let cl_table = classes!("w-full", "text-sm", "text-left", "text-gray-400",);
+    let cl_title = classes!("p-5", "text-lg", "font-semibold", "text-left", "text-white",);
+
+    let cl_table = classes!("w-full", "text-sm", "text-center", TEXT_GRAY,);
+
+    let cl_table_headings = classes!(
+        "text-xs",
+        "uppercase",
+        "bg-gray-700",
+        "text-gray-400"
+    );
 
     html! {
 
-        <div class={cl_table_bg}>
-            <h2>{ props.title.clone() }</h2>
-            {
-                match props.button_label.clone() {
-                    Some(label) => {
-                        let route = props.button_route.clone().unwrap_or(Route::Home);
-                        html! {
-                            <div class="">
-                                <Link<Route> classes={cl_action_btn} to={route}>
-                                {label}
-                            </Link<Route>>
-                                </div>
+        <div class={cl_table_container}>
+            // Header section
+            <div class="grid grid-flow-col auto-cols-auto items-center">
+                <div class={cl_title}>
+                    {props.title.clone()}
+                </div>
+                {
+                    match props.button_label.clone() {
+                        Some(label) => {
+                            let route = props.button_route.clone().unwrap_or(Route::Home);
+                            html! {
+                                <div class="text-right"> <Link<Route> classes={cl_action_btn} to={route}>
+                                    {label}
+                                </Link<Route>> </div>
+                            }
                         }
+                        None => html!{},
                     }
-                    None => html!{},
                 }
-            }
-        <table class={cl_table}>
-            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-            <tr>
-            { for headings.iter().map(|heading| html!{<TableHeading label={heading.clone()} />}) }
-        </tr>
-            </thead>
-            <tbody>
-                { for props.children.iter()}
-            </tbody>
-            </table>
             </div>
+
+                // Table Section
+            <div class="overflow-x-auto">
+                <table class={cl_table}>
+                    <thead class={cl_table_headings}>
+                        <tr>
+                            {
+                                match props.headings.clone() {
+                                    Some(h) => h.iter().map(|h|
+                                                            html!{<TableHeading label={h.clone()} />
+                                                            }).collect(),
+                                    None => html!{},
+                                }
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        { for props.children.iter()}
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
     }
 }
