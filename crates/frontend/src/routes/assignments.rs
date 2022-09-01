@@ -211,7 +211,7 @@ pub fn assignments() -> Html {
                 <Cell heading="Date In" value={
                     match a.date_in {
                         Some(d) => format_date(d),
-                        None => "".to_string(),
+                        None => "-".to_string(),
                     }
                 } />
                 <Cell heading="" edit_route={Route::EditAssignment {id: a.id.clone()}} />
@@ -221,12 +221,10 @@ pub fn assignments() -> Html {
 
     html! {
         <CheckAuth>
-            <div class="container text-light my-3">
-                <div class="row justify-content-center">
-                    <Table title="Assignments" button_label="Assign Key" button_route={Route::AssignKey}>
+            <div class="container my-5 mx-auto">
+                <Table title="Assignments" button_label="Assign Key" button_route={Route::AssignKey}>
                     { for rows }
-                    </Table>
-                </div>
+                </Table>
             </div>
         </CheckAuth>
     }

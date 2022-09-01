@@ -1,3 +1,4 @@
+use crate::theme::*;
 use crate::{routes::Route, services::auth::current_user};
 use yew::prelude::*;
 use yew_router::prelude::Link;
@@ -11,24 +12,30 @@ pub struct CellProps {
 
 #[function_component(Cell)]
 pub fn cell(props: &CellProps) -> Html {
-    let button_enabled_classes = classes!("btn", "btn-outline-primary");
-    let button_disabled_classes = classes!("btn", "btn-outline-secondary", "disabled");
-    let classes = if current_user().is_admin {
+    let button_enabled_classes = classes!(
+        "font-medium",
+        "text-blue-600",
+        "dark:text-blue-500",
+        "hover:underline"
+    );
+    let cl_edit_btn = if current_user().is_admin {
         button_enabled_classes
     } else {
-        button_disabled_classes
+        classes!(button_enabled_classes, "disabled")
     };
+
+    let td_classes = classes!("py-4", "px-6");
 
     match props.edit_route.clone() {
         Some(route) => html! {
-            <td>
-                <Link<Route> classes={classes} to={route}>
+            <td class={td_classes}>
+                <Link<Route> classes={cl_edit_btn} to={route}>
                     {"Edit"}
                 </Link<Route>>
             </td>
         },
         None => html! {
-            <td>{ props.value.clone().unwrap_or_default() }</td>
+            <td class={td_classes}>{ props.value.clone().unwrap_or_default() }</td>
         },
     }
 }
@@ -40,8 +47,16 @@ pub struct RowProps {
 
 #[function_component(Row)]
 pub fn row(props: &RowProps) -> Html {
+    let tr_classes = classes!(
+        "bg-white",
+        "border-b",
+        "dark:bg-gray-800",
+        "dark:border-gray-700",
+        "hover:bg-gray-50",
+        "dark:hover:bg-gray-600"
+    );
     html! {
-        <tr>{ for props.children.iter() }</tr>
+        <tr class={tr_classes}>{ for props.children.iter() }</tr>
     }
 }
 
@@ -65,34 +80,64 @@ pub fn table(props: &TableProps) -> Html {
         None => vec!["".to_string()],
     };
 
+    let cl_action_btn = classes!(BTN, BTN_PRIMARY);
+
+    let cl_table_bg = classes!(
+        BG_DARK,
+        TEXT_DARK,
+        "rounded-xl",
+        "relative",
+        "overflow-x-auto",
+        "shadow-md",
+        "text-center",
+        "py-1",
+    );
+
+    let cl_table = classes!("w-full", "text-sm", "text-left", "text-gray-400",);
+
     html! {
-        <div style="text-align: center">
+
+        <div class={cl_table_bg}>
             <h2>{ props.title.clone() }</h2>
             {
                 match props.button_label.clone() {
                     Some(label) => {
                         let route = props.button_route.clone().unwrap_or(Route::Home);
                         html! {
-                            <div class="container py-2">
-                                <Link<Route> classes={classes!("btn", "btn-primary")} to={route}>
+                            <div class="">
+                                <Link<Route> classes={cl_action_btn} to={route}>
                                 {label}
                             </Link<Route>>
-                            </div>
+                                </div>
                         }
                     }
                     None => html!{},
                 }
             }
-            <table class="table table-striped table-hover table-bordered table-dark">
-                <thead class="table-dark">
-                    <tr>
-                        { for headings.iter().map(|heading| html!{<th>{ heading.clone() }</th>}) }
-                    </tr>
-                </thead>
-                <tbody>
-                    { for props.children.iter()}
-                </tbody>
+        <table class={cl_table}>
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+            <tr>
+            { for headings.iter().map(|heading| html!{<TableHeading label={heading.clone()} />}) }
+        </tr>
+            </thead>
+            <tbody>
+                { for props.children.iter()}
+            </tbody>
             </table>
-        </div>
+            </div>
+
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct TableHeadingProps {
+    pub label: String,
+}
+
+#[function_component(TableHeading)]
+pub fn table_heading(props: &TableHeadingProps) -> Html {
+    let th_classes = classes!("py-3", "px-6");
+    html! {
+        <th class={th_classes}>{props.label.clone()}</th>
     }
 }

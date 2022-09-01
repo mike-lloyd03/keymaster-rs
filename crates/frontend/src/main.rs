@@ -5,6 +5,7 @@ mod components;
 mod error;
 mod routes;
 mod services;
+mod theme;
 mod types;
 
 use components::nav::Nav;
