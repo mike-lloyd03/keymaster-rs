@@ -5,6 +5,7 @@ use yew::prelude::*;
 use yew_router::prelude::{use_history, History};
 
 use crate::routes::Route;
+use crate::theme::*;
 
 #[derive(Properties, PartialEq)]
 pub struct FormProps {
@@ -16,13 +17,31 @@ pub struct FormProps {
 
 #[function_component(Form)]
 pub fn form(props: &FormProps) -> Html {
+    let cl_form_container = classes!(
+        "p-4",
+        "w-full",
+        "max-w-md",
+        "mx-auto",
+        "rounded-lg",
+        "border",
+        "shadow-md",
+        "sm:p-6",
+        "md:p-8",
+        "bg-gray-800",
+        "border-gray-700"
+    );
+
     html! {
-        <div class="container text-light my-3" style="max-width: 600px;">
-            <div class="row justify-content-center">
-                <h1>{ props.title.clone() }</h1>
+    <div class={cl_form_container}>
+                <h5 class="text-xl font-medium text-white">
+                    { props.title.clone() }
+                </h5>
                 {
                     match props.subtitle.clone() {
-                        Some(s) => html!{<h4>{ s.to_string() }</h4>},
+                        Some(s) => html!{
+                            <h6 class="text-lg font-medium my-3 text-gray-300">
+                                {s.to_string()}
+                            </h6>},
                         None => html!{},
                     }
                 }
@@ -30,7 +49,7 @@ pub fn form(props: &FormProps) -> Html {
                     action="#"
                     method="post"
                     id="form"
-                    class="form"
+                    class="space-y-6"
                     role="form"
                     onsubmit={ props.onsubmit.clone() }
                 >
@@ -39,8 +58,7 @@ pub fn form(props: &FormProps) -> Html {
                     }
                 </form>
             </div>
-        </div>
-    }
+        }
 }
 
 #[derive(PartialEq, Clone)]
@@ -63,9 +81,9 @@ pub fn button(props: &ButtonProps) -> Html {
         <input
             class={
                 match &props.button_type.clone().unwrap_or(ButtonType::Primary) {
-                    ButtonType::Primary => "btn btn-primary",
-                    ButtonType::Secondary => "btn btn-secondary",
-                    ButtonType::Danger => "btn btn-danger",
+                    ButtonType::Primary => classes!(BTN, BTN_PRIMARY),
+                    ButtonType::Secondary => classes!(BTN, BTN_SECONDARY),
+                    ButtonType::Danger => classes!(BTN, BTN_DANGER),
                 }
             }
             type="submit"
@@ -76,12 +94,13 @@ pub fn button(props: &ButtonProps) -> Html {
 }
 
 #[derive(Properties, PartialEq)]
-pub struct CancelButtonProps {
+pub struct RouteButtonProps {
+    pub value: String,
     pub route: Route,
 }
 
-#[function_component(CancelButton)]
-pub fn cancel_button(props: &CancelButtonProps) -> Html {
+#[function_component(RouteButton)]
+pub fn route_button(props: &RouteButtonProps) -> Html {
     let oncancel = {
         let history = use_history().unwrap();
         let route = props.route.clone();
@@ -89,7 +108,7 @@ pub fn cancel_button(props: &CancelButtonProps) -> Html {
     };
 
     html! {
-        <Button value="Cancel" button_type={ButtonType::Secondary} onclick={oncancel} />
+        <Button value={props.value.clone()} button_type={ButtonType::Secondary} onclick={oncancel} />
     }
 }
 
@@ -134,6 +153,21 @@ pub fn sort_button(props: &SortButtonProps) -> Html {
     }
 }
 
+#[derive(Properties, PartialEq)]
+pub struct LabelProps {
+    pub value: String,
+    pub for_input: String,
+}
+
+#[function_component(Label)]
+pub fn label(props: &LabelProps) -> Html {
+    let cl_label = classes!("block", "mb-2", "text-sm", "font-medium", "text-gray-300");
+
+    html! {
+        <label class={cl_label} for={props.for_input.clone()}>{props.value.clone()}</label>
+    }
+}
+
 #[derive(PartialEq, Clone)]
 pub enum InputType {
     Text,
@@ -168,6 +202,21 @@ pub struct InputProps {
 pub fn input_field(props: &InputProps) -> Html {
     let label_snake = snake_case(props.label.clone());
 
+    let cl_input = classes!(
+        "border",
+        "text-sm",
+        "rounded-lg",
+        "focus:ring-blue-500",
+        "focus:border-blue-500",
+        "block",
+        "w-full",
+        "p-2.5",
+        "bg-gray-600",
+        "border-gray-500",
+        "placeholder-gray-400",
+        "text-white"
+    );
+
     let oninput = {
         let state = props.state.clone();
         Callback::from(move |e: InputEvent| {
@@ -178,9 +227,9 @@ pub fn input_field(props: &InputProps) -> Html {
 
     html! {
         <div class="form-group ">
-            <label class="control-label" for={ label_snake.clone() }>{ props.label.clone() }</label>
+            <Label value={props.label.clone()} for_input={label_snake.clone()} />
             <input
-                class="form-control"
+                class={cl_input}
                 name={ label_snake.clone() }
                 type={ props.input_type.clone().unwrap().to_string() }
                 value={(&*props.state).clone()}
@@ -257,17 +306,33 @@ pub fn checkbox_field(props: &CheckboxProps) -> Html {
         })
     };
 
+    // let cl_input = classes!(
+    //     "w-4",
+    //     "h-4",
+    //     "rounded",
+    //     "border",
+    //     "bg-gray-700",
+    //     "border-gray-600",
+    //     "focus:ring-blue-600",
+    //     "ring-offset-gray-800",
+    //     "checked:bg-blue-700",
+    //     "checked:border-blue-700",
+    //     "cursor-pointer"
+    // );
+
     html! {
-        <div class="checkbox">
-            <label>
+        <div class="flex items-start">
+            <div class="flex items-center h-5">
                 <input
-                    name={ snake_case(label.clone()) }
+                    // style="appearance: none;"
+                    name={snake_case(label.clone())}
                     type="checkbox"
                     checked={*(props.state)}
+                    // class={cl_input}
                     {onchange}
                 />
-                { format!(" {}", label) }
-            </label>
+            </div>
+            <Label value={format!(" {}", label)} for_input={snake_case(label.clone())} />
         </div>
     }
 }
@@ -278,6 +343,14 @@ pub struct MultiSelectFieldProps {
     pub state: UseStateHandle<Vec<String>>,
     pub children: ChildrenWithProps<MultiSelectOption>,
 }
+
+// <label for="countries" class="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-400">Select your country</label>
+// <select id="countries" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+//   <option>United States</option>
+//   <option>Canada</option>
+//   <option>France</option>
+//   <option>Germany</option>
+// </select>
 
 #[function_component(MultiSelectField)]
 pub fn multi_select_field(props: &MultiSelectFieldProps) -> Html {
@@ -298,11 +371,26 @@ pub fn multi_select_field(props: &MultiSelectFieldProps) -> Html {
         })
     };
 
+    let cl_input = classes!(
+        "border",
+        "text-sm",
+        "rounded-lg",
+        "block",
+        "w-full",
+        "p-2.5",
+        "bg-gray-700",
+        "border-gray-600",
+        "placeholder-gray-400",
+        "text-white",
+        "focus:ring-blue-500",
+        "focus:border-blue-500"
+    );
+
     html! {
         <div class="form-group  required">
-            <label class="control-label" for={ label_sn.clone() }>{ props.label.clone() }</label>
+            <Label for_input={label_sn.clone()} value={ props.label.clone() } />
             <select
-                class="form-control"
+                class={cl_input}
                 id={ label_sn.clone() }
                 multiple=true
                 name={ label_sn.clone() }

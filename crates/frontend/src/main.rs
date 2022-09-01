@@ -17,7 +17,6 @@ use routes::{switch, Route};
 fn app() -> Html {
     html! {
         <SessionProvider>
-            // <SessionMonitor />
             <BrowserRouter>
                 <Nav />
                 <Switch<Route> render={Switch::render(switch)} />

@@ -73,18 +73,20 @@ pub fn new_assignment() -> Html {
 
     html! {
         <CheckAuth admin=true>
-            <Form title="Assign Key" {onsubmit}>
-                <MultiSelectField label="User" state={selected_users}>
-                    { for user_options.clone() }
-                </MultiSelectField>
-                <MultiSelectField label="Key" state={selected_keys}>
-                    { for key_options }
-                </MultiSelectField>
-                <DateField label="Date Out" required=true state={date_out} />
-                <Button value="Assign Key" button_type={ButtonType::Primary} />
-                {" "}
-                <CancelButton route={Route::Assignments} />
-            </Form>
+            <div class="container my-5 mx-auto">
+                <Form title="Assign Key" {onsubmit}>
+                    <MultiSelectField label="User" state={selected_users}>
+                        { for user_options.clone() }
+                    </MultiSelectField>
+                    <MultiSelectField label="Key" state={selected_keys}>
+                        { for key_options }
+                    </MultiSelectField>
+                    <DateField label="Date Out" required=true state={date_out} />
+                    <Button value="Assign Key" button_type={ButtonType::Primary} />
+                    {" "}
+                    <RouteButton value="Cancel" route={Route::Assignments} />
+                </Form>
+            </div>
         </CheckAuth>
     }
 }
@@ -156,30 +158,32 @@ pub fn edit_assignment(props: &EditAssignmentProps) -> Html {
 
     html! {
         <CheckAuth admin=true>
-            <Form title="Edit Assignment" {onsubmit}>
-                <TextField label="User" state={user}/>
-                <TextField label="Key" state={key}/>
-                <DateField label="Date Out" state={date_out}/>
-                <DateField label="Date In" state={date_in}/>
-                <Button
-                    value="Update Key"
-                    button_type={ButtonType::Primary}
+            <div class="container my-5 mx-auto">
+                <Form title="Edit Assignment" {onsubmit}>
+                    <TextField label="User" state={user}/>
+                    <TextField label="Key" state={key}/>
+                    <DateField label="Date Out" state={date_out}/>
+                    <DateField label="Date In" state={date_in}/>
+                    <Button
+                        value="Update Key"
+                        button_type={ButtonType::Primary}
+                    />
+                    {" "}
+                    <DeleteButton
+                        value="Delete Assignment"
+                        route={Route::Assignments}
+                        show_modal={show_modal.clone()}
+                    />
+                    {" "}
+                    <RouteButton value="Cancel" route={Route::Assignments}/>
+                </Form>
+                <Modal
+                    title="Delete Assignment"
+                    msg="Are you sure you want to delete this assignment?"
+                    confirm_action={delete_action}
+                    {show_modal}
                 />
-                {" "}
-                <DeleteButton
-                    value="Delete Assignment"
-                    route={Route::Assignments}
-                    show_modal={show_modal.clone()}
-                />
-                {" "}
-                <CancelButton route={Route::Assignments}/>
-            </Form>
-            <Modal
-                title="Delete Assignment"
-                msg="Are you sure you want to delete this assignment?"
-                confirm_action={delete_action}
-                {show_modal}
-            />
+            </div>
         </CheckAuth>
     }
 }

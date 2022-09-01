@@ -32,21 +32,23 @@ pub fn new_key() -> Html {
 
     html! {
         <CheckAuth admin=true>
-            <Form title="New Key" {onsubmit}>
-                <TextField
-                    label="Key Name"
-                    required=true
-                    state={name}
-                    pattern=r#"[\w\d]{3,}"#
-                />
-                <TextField label="Description" state={description} />
-                <Button
-                value="Add Key"
-                button_type={ButtonType::Primary}
-                />
-                {" "}
-                <CancelButton route={Route::Keys} />
-            </Form>
+            <div class="container my-5 mx-auto">
+                <Form title="New Key" {onsubmit}>
+                    <TextField
+                        label="Key Name"
+                        required=true
+                        state={name}
+                        pattern=r#"[\w\d]{3,}"#
+                    />
+                    <TextField label="Description" state={description} />
+                    <Button
+                    value="Add Key"
+                    button_type={ButtonType::Primary}
+                    />
+                    {" "}
+                    <RouteButton value="Cancel" route={Route::Keys} />
+                </Form>
+            </div>
         </CheckAuth>
     }
 }
@@ -105,31 +107,33 @@ pub fn edit_key(props: &EditKeyProps) -> Html {
 
     html! {
         <CheckAuth admin=true>
-            <Form title="Edit Key"
-                subtitle={props.key_name.clone()}
-                {onsubmit}
-            >
-                <TextField label="Description" state={description} />
-                <CheckboxField label="Active" state={active} />
-                <Button
-                    value="Update Key"
-                    button_type={ButtonType::Primary}
+            <div class="container my-5 mx-auto">
+                <Form title="Edit Key"
+                    subtitle={props.key_name.clone()}
+                    {onsubmit}
+                >
+                    <TextField label="Description" state={description} />
+                    <CheckboxField label="Active" state={active} />
+                    <Button
+                        value="Update Key"
+                        button_type={ButtonType::Primary}
+                    />
+                    {" "}
+                    <DeleteButton
+                        value="Delete Key"
+                        route={Route::Keys}
+                        show_modal={show_modal.clone()}
+                    />
+                    {" "}
+                    <RouteButton value="Cancel" route={Route::Keys} />
+                </Form>
+                <Modal
+                    title="Delete Key"
+                    msg="Are you sure you want to delete this key? All assignments which use this key will also be deleted."
+                    confirm_action={delete_action}
+                    {show_modal}
                 />
-                {" "}
-                <DeleteButton
-                    value="Delete Key"
-                    route={Route::Keys}
-                    show_modal={show_modal.clone()}
-                />
-                {" "}
-                <CancelButton route={Route::Keys} />
-            </Form>
-            <Modal
-                title="Delete Key"
-                msg="Are you sure you want to delete this key? All assignments which use this key will also be deleted."
-                confirm_action={delete_action}
-                {show_modal}
-            />
+            </div>
         </CheckAuth>
     }
 }

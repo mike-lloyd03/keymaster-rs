@@ -41,35 +41,37 @@ pub fn new_user() -> Html {
 
     html! {
         <CheckAuth admin=true>
-            <Form title="New User" {onsubmit}>
-                <TextField
-                    label="Username"
-                    required=true
-                    state={username}
-                    pattern=r#"[\w\d]{3,}"#
-                />
-                <TextField
-                    label="Email"
-                    state={email}
-                    // https://owasp.org/www-community/OWASP_Validation_Regex_Repository
-                    pattern=r#"[a-zA-Z0-9_+&*-]+(?:\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,15}"#
-                />
-                <TextField
-                    label="Display Name"
-                    state={display_name}
-                />
-                <CheckboxField label="Can Login?" state={can_login} />
-                <Button
-                    value="Add User"
-                    button_type={ButtonType::Primary}
-                />
-                {" "}
-                <Button
-                    value="Cancel"
-                    button_type={ButtonType::Secondary}
-                    onclick={oncancel}
-                />
-            </Form>
+            <div class="container my-5 mx-auto">
+                <Form title="New User" {onsubmit}>
+                    <TextField
+                        label="Username"
+                        required=true
+                        state={username}
+                        pattern=r#"[\w\d]{3,}"#
+                    />
+                    <TextField
+                        label="Email"
+                        state={email}
+                        // https://owasp.org/www-community/OWASP_Validation_Regex_Repository
+                        pattern=r#"[a-zA-Z0-9_+&*-]+(?:\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,15}"#
+                    />
+                    <TextField
+                        label="Display Name"
+                        state={display_name}
+                    />
+                    <CheckboxField label="Can Login?" state={can_login} />
+                    <Button
+                        value="Add User"
+                        button_type={ButtonType::Primary}
+                    />
+                    {" "}
+                    <Button
+                        value="Cancel"
+                        button_type={ButtonType::Secondary}
+                        onclick={oncancel}
+                    />
+                </Form>
+            </div>
         </CheckAuth>
     }
 }
@@ -141,43 +143,40 @@ pub fn edit_user(props: &EditUserProps) -> Html {
 
     html! {
         <CheckAuth admin=true>
-            <Form title="Edit User" subtitle={props.username.clone()} {onsubmit} >
-                <TextField
-                    label="Email"
-                    state={email}
-                    pattern=r#"[^@]+@[\w\d]+\.[\w\.]{2,}"#
+            <div class="container my-5 mx-auto">
+                <Form title="Edit User" subtitle={props.username.clone()} {onsubmit} >
+                    <TextField
+                        label="Email"
+                        state={email}
+                        pattern=r#"[^@]+@[\w\d]+\.[\w\.]{2,}"#
+                    />
+                    <TextField
+                        label="Display Name"
+                        state={display_name}
+                    />
+                    <CheckboxField label="Can Login?" state={can_login} />
+                    <Button
+                        value="Update User"
+                        button_type={ButtonType::Primary}
+                    />
+                    {" "}
+                    <DeleteButton
+                        value="Delete User"
+                        route={Route::Users}
+                        show_modal={show_modal.clone()}
+                    />
+                    {" "}
+                    <RouteButton value="Set Password" route={Route::SetPassword { username: props.username.clone() }} />
+                    {" "}
+                    <RouteButton value="Cancel" route={Route::Users} />
+                <Modal
+                    title="Delete User"
+                    msg="Are you sure you want to delete this user? All assignments for with this user is assigned will also be deleted."
+                    confirm_action={delete_action}
+                    {show_modal}
                 />
-                <TextField
-                    label="Display Name"
-                    state={display_name}
-                />
-                <CheckboxField label="Can Login?" state={can_login} />
-                <Button
-                    value="Update User"
-                    button_type={ButtonType::Primary}
-                />
-                {" "}
-                <DeleteButton
-                    value="Delete User"
-                    route={Route::Users}
-                    show_modal={show_modal.clone()}
-                />
-                {" "}
-                <Link<Route>
-                    to={Route::SetPassword { username: props.username.clone()}}
-                    classes={classes!("btn", "btn-secondary")}
-                >
-                    {"Set Password"}
-                </Link<Route>>
-                {" "}
-                <CancelButton route={Route::Users} />
-            <Modal
-                title="Delete User"
-                msg="Are you sure you want to delete this user? All assignments for with this user is assigned will also be deleted."
-                confirm_action={delete_action}
-                {show_modal}
-            />
-            </Form>
+                </Form>
+            </div>
         </CheckAuth>
     }
 }
@@ -253,24 +252,26 @@ pub fn set_password(props: &EditUserProps) -> Html {
 
     html! {
         <CheckAuth admin=true>
-            <Form title="Set Password" subtitle={props.username.clone()} {onsubmit} >
-                <PasswordField
-                    label="Password"
-                    state={password}
-                    required=true
-                />
-                <PasswordField
-                    label="Re-Enter Password"
-                    state={password2}
-                    required=true
-                />
-                <Button
-                    value="Set Password"
-                    button_type={ButtonType::Primary}
-                />
-                {" "}
-                <CancelButton route={Route::Users} />
-            </Form>
+            <div class="container my-5 mx-auto">
+                <Form title="Set Password" subtitle={props.username.clone()} {onsubmit} >
+                    <PasswordField
+                        label="Password"
+                        state={password}
+                        required=true
+                    />
+                    <PasswordField
+                        label="Re-Enter Password"
+                        state={password2}
+                        required=true
+                    />
+                    <Button
+                        value="Set Password"
+                        button_type={ButtonType::Primary}
+                    />
+                    {" "}
+                    <RouteButton value="Cancel" route={Route::Users} />
+                </Form>
+            </div>
         </CheckAuth>
     }
 }
