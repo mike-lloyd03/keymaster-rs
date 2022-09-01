@@ -16,7 +16,7 @@ pub fn cell(props: &CellProps) -> Html {
     let cl_edit_btn = if current_user().is_admin {
         button_enabled_classes
     } else {
-        classes!(button_enabled_classes, "disabled")
+        classes!(button_enabled_classes, "bg-gray-300", "text-gray-500")
     };
 
     let td_classes = classes!("py-4", "px-6");
@@ -94,14 +94,9 @@ pub fn table(props: &TableProps) -> Html {
 
     let cl_title = classes!("p-5", "text-lg", "font-semibold", "text-left", "text-white",);
 
-    let cl_table = classes!("w-full", "text-sm", "text-center", TEXT_GRAY,);
+    let cl_table = classes!("w-full", "text-sm", "text-left", TEXT_GRAY,);
 
-    let cl_table_headings = classes!(
-        "text-xs",
-        "uppercase",
-        "bg-gray-700",
-        "text-gray-400"
-    );
+    let cl_table_headings = classes!("text-xs", "uppercase", "bg-gray-700", "text-gray-400");
 
     html! {
 
@@ -116,9 +111,11 @@ pub fn table(props: &TableProps) -> Html {
                         Some(label) => {
                             let route = props.button_route.clone().unwrap_or(Route::Home);
                             html! {
-                                <div class="text-right"> <Link<Route> classes={cl_action_btn} to={route}>
-                                    {label}
-                                </Link<Route>> </div>
+                                <div class="text-right">
+                                    <Link<Route> classes={cl_action_btn} to={route}>
+                                        {label}
+                                    </Link<Route>>
+                                </div>
                             }
                         }
                         None => html!{},

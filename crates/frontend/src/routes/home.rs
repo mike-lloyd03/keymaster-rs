@@ -101,29 +101,27 @@ pub fn home() -> Html {
 
     html! {
         <CheckAuth>
-            <div class="container text-light my-3">
-                <div class="row justify-content-center">
-                    <div class="container py-2">
-                        {"Sort:"}
-                        <div class="btn-group" role="group">
-                            <button
-                                onclick={on_sort_by_key}
-                                class={(*by_key_btn_class).clone()}
-                            >
-                                {"By Key"}
-                            </button>
-                            <button
-                                onclick={on_sort_by_user}
-                                class={(*by_user_btn_class).clone()}
-                            >
-                                {"By User"}
-                            </button>
-                        </div>
+            <div class="container my-5 mx-auto">
+                <div class="container py-2">
+                    {"Sort:"}
+                    <div class="btn-group" role="group">
+                        <button
+                            onclick={on_sort_by_key}
+                            class={(*by_key_btn_class).clone()}
+                        >
+                            {"By Key"}
+                        </button>
+                        <button
+                            onclick={on_sort_by_user}
+                            class={(*by_user_btn_class).clone()}
+                        >
+                            {"By User"}
+                        </button>
                     </div>
-                    <Table title="Key Inventory Tracker">
-                        {for rows}
-                    </Table>
                 </div>
+                <Table title="Key Inventory Tracker" headings={vec![(*headers).0, (*headers).1]}>
+                    {for rows}
+                </Table>
             </div>
         </CheckAuth>
     }

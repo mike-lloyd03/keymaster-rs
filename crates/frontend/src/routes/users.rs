@@ -208,7 +208,7 @@ pub fn user_table() -> Html {
         html_nested! {
             <Row>
                 <Cell heading="User" value={username} />
-                <Cell heading="Email" value={email} />
+                <Cell heading="Email" value={email.unwrap_or_else(||"-".into())} />
                 <Cell heading="" edit_route={Route::EditUser {username: user.username.clone()}} />
             </Row>
         }
@@ -216,12 +216,15 @@ pub fn user_table() -> Html {
 
     html! {
         <CheckAuth>
-            <div class="container text-light my-3">
-                <div class="row justify-content-center">
-                    <Table title="Users" button_label="Add User" button_route={Route::AddUser}>
+            <div class="container my-5 mx-auto">
+                <Table
+                    title="Users"
+                    headings={vec!["User", "Email", ""]}
+                    button_label="Add User"
+                    button_route={Route::AddUser}
+                >
                     { for rows }
-                    </Table>
-                </div>
+                </Table>
             </div>
         </CheckAuth>
     }

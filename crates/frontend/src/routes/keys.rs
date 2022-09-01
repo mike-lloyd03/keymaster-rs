@@ -152,7 +152,16 @@ pub fn key_table() -> Html {
 
     // Create table rows
     let rows = keys.iter().map(|key| {
-        let description = key.description.clone().unwrap_or_default();
+        let description = match key.description.clone() {
+            Some(d) => {
+                if d.is_empty() {
+                    "-".to_string()
+                } else {
+                    d
+                }
+            }
+            None => "-".to_string(),
+        };
         let active = match key.active {
             true => "Active",
             false => "Inactive",
@@ -176,7 +185,7 @@ pub fn key_table() -> Html {
                     button_label="Add Key"
                     button_route={Route::AddKey}
                 >
-                { for rows }
+                    { for rows }
                 </Table>
             </div>
         </CheckAuth>
