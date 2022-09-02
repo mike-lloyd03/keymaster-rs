@@ -8,7 +8,8 @@ mod services;
 mod theme;
 mod types;
 
-use components::nav::Nav;
+// use components::nav::Nav;
+use components::nav2::Navbar;
 use components::notifier::Notifier;
 use components::session_provider::SessionProvider;
 use routes::{switch, Route};
@@ -18,7 +19,7 @@ fn app() -> Html {
     html! {
         <SessionProvider>
             <BrowserRouter>
-                <Nav />
+                <Navbar />
                 <Switch<Route> render={Switch::render(switch)} />
                 <Notifier />
             </BrowserRouter>
