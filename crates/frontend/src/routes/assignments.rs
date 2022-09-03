@@ -3,7 +3,7 @@ use std::vec::Vec;
 use crate::components::form::*;
 use crate::components::modal::Modal;
 use crate::components::notifier::notify_error;
-use crate::components::table::{Cell, Row, Table, TableCaption};
+use crate::components::table::{Cell, Row, TableCard};
 use crate::services::form_actions::{get_options, ondelete, onload_all, submit_form};
 use crate::services::requests::get;
 use crate::services::{format_date, get_display_name, parse_date};
@@ -225,15 +225,15 @@ pub fn assignments() -> Html {
 
     html! {
         <CheckAuth>
-            <div class="container my-5 mx-auto">
-                <Table
+            <div class="container my-5 mx-auto max-w-4xl">
+                <TableCard
                     title="Assignments"
                     headings={vec!["User", "Key", "Date Out", "Date In", ""]}
                     button_label="Assign Key"
                     button_route={Route::AssignKey}
                 >
                     { for rows }
-                </Table>
+                </TableCard>
             </div>
         </CheckAuth>
     }

@@ -34,11 +34,13 @@ pub fn login() -> Html {
     };
 
     html! {
-        <Form title="Login" {onsubmit}>
-            <TextField label="Username" required=true state={username}/>
-            <PasswordField label="Password" state={password}/>
-            <Button value="Login" button_type={ButtonType::Primary} />
-        </Form>
+        <div class="container my-5 mx-auto">
+            <Form title="Login" {onsubmit}>
+                <TextField label="Username" required=true state={username}/>
+                <PasswordField label="Password" state={password}/>
+                <Button value="Login" button_type={ButtonType::Primary} />
+            </Form>
+        </div>
     }
 }
 

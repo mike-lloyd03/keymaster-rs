@@ -3,7 +3,7 @@ use std::vec::Vec;
 use crate::components::form::*;
 use crate::components::modal::Modal;
 use crate::components::notifier::notify_error;
-use crate::components::table::{Cell, Row, Table};
+use crate::components::table::{Cell, Row, TableCard};
 use crate::services::form_actions::{ondelete, onload_all, submit_form};
 use crate::services::requests::get;
 use crate::services::to_option;
@@ -182,15 +182,15 @@ pub fn key_table() -> Html {
 
     html! {
         <CheckAuth>
-            <div class="container my-5 mx-auto">
-                <Table
+            <div class="container my-5 mx-auto max-w-4xl">
+                <TableCard
                     title="Keys"
                     headings={vec!["Key", "Description", "Status", ""]}
                     button_label="Add Key"
                     button_route={Route::AddKey}
                 >
                     { for rows }
-                </Table>
+                </TableCard>
             </div>
         </CheckAuth>
     }

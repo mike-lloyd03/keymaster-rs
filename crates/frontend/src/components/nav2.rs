@@ -1,6 +1,7 @@
-use crate::routes::Route;
+use crate::{routes::Route, types::SessionInfo};
 use yew::prelude::*;
 use yew_router::prelude::*;
+use yewdux::prelude::use_store;
 
 #[derive(Properties, PartialEq)]
 pub struct NavProps {
@@ -9,6 +10,7 @@ pub struct NavProps {
 
 #[function_component(Navbar)]
 pub fn navbar() -> Html {
+    let (user, _) = use_store::<SessionInfo>();
     let show_mobile_menu = use_state(|| false);
 
     let onclick = {
@@ -21,15 +23,38 @@ pub fn navbar() -> Html {
         <MobileMenuButton {onclick} />
         <Logo label="KeyMaster" />
         <NavLinks show={show_mobile_menu}>
-            <NavLink label="Assign Key" route={Route::AssignKey}/>
-            <NavLink label="Assignments" route={Route::Assignments}/>
-            <NavLink label="Keys" route={Route::Keys}/>
-            <NavLink label="Users" route={Route::Users}/>
-            <div class="grow hidden md:block"></div>
-            <NavDropdown label={"mike"}>
-                <NavDropdownLink label="Set Password" route={Route::SetPassword { username: "mike".into()} } />
-                <NavDropdownLink label="Logout" route={Route::Logout} />
-            </NavDropdown>
+        {
+            if user.is_auth {
+                html!{
+                    <>
+                    {
+                        if user.is_admin {
+                            html!{
+                                <NavLink label="Assign Key" route={Route::AssignKey}/>
+                            }
+                        } else {html!{}}
+                    }
+                        <NavLink label="Assignments" route={Route::Assignments}/>
+                        <NavLink label="Keys" route={Route::Keys}/>
+                        <NavLink label="Users" route={Route::Users}/>
+
+                        <div class="grow hidden md:block"></div>
+
+                        <NavDropdown label={user.username.clone().unwrap_or_default()}>
+                            <NavDropdownLink label="Set Password" route={Route::SetPassword { username: user.username.clone().unwrap_or_default()} } />
+                            <NavDropdownLink label="Logout" route={Route::Logout} />
+                        </NavDropdown>
+                    </>
+                }
+            } else {
+                html!{
+                    <>
+                        <div class="grow hidden md:block"></div>
+                        <NavLink label="Login" route={Route::Login}/>
+                    </>
+                }
+            }
+        }
         </NavLinks>
     </Nav>
     }

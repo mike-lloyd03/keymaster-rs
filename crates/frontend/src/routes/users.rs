@@ -3,7 +3,7 @@ use std::vec::Vec;
 use crate::components::form::*;
 use crate::components::modal::Modal;
 use crate::components::notifier::notify_error;
-use crate::components::table::{Cell, Row, Table};
+use crate::components::table::{Cell, Row, TableCard};
 use crate::services::form_actions::{ondelete, onload_all, submit_form};
 use crate::services::requests::get;
 use crate::services::to_option;
@@ -215,15 +215,15 @@ pub fn user_table() -> Html {
 
     html! {
         <CheckAuth>
-            <div class="container my-5 mx-auto">
-                <Table
+            <div class="container my-5 mx-auto max-w-3xl">
+                <TableCard
                     title="Users"
                     headings={vec!["User", "Email", ""]}
                     button_label="Add User"
                     button_route={Route::AddUser}
                 >
                     { for rows }
-                </Table>
+                </TableCard>
             </div>
         </CheckAuth>
     }

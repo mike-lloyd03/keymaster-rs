@@ -1,4 +1,4 @@
-use crate::components::table::{Cell, Row, Table};
+use crate::components::table::{Cell, Row, TableCard};
 use crate::services::get_display_name;
 use crate::types::{Assignment, User};
 use crate::{routes::auth::CheckAuth, services::form_actions::onload_all};
@@ -101,7 +101,7 @@ pub fn home() -> Html {
 
     html! {
         <CheckAuth>
-            <div class="container my-5 mx-auto">
+            <div class="container my-5 mx-auto max-w-4xl">
                 <div class="container py-2">
                     {"Sort:"}
                     <div class="btn-group" role="group">
@@ -119,9 +119,9 @@ pub fn home() -> Html {
                         </button>
                     </div>
                 </div>
-                <Table title="Key Inventory Tracker" headings={vec![(*headers).0, (*headers).1]}>
+                <TableCard title="Key Inventory Tracker" headings={vec![(*headers).0, (*headers).1]}>
                     {for rows}
-                </Table>
+                </TableCard>
             </div>
         </CheckAuth>
     }
