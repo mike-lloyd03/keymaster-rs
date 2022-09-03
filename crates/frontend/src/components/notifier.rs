@@ -4,6 +4,11 @@ use yewdux::prelude::*;
 
 use crate::types::Notification;
 
+static ALERT: &'static str = "p-4 text-sm rounded-lg";
+static INFO_ALERT: &'static str = "bg-blue-200 text-blue-800";
+static WARN_ALERT: &'static str = "bg-yellow-200 text-yellow-800";
+static ERR_ALERT: &'static str = "bg-red-200 text-red-800";
+
 #[function_component(Notifier)]
 pub fn notifier() -> Html {
     let (state, dispatch) = use_store::<Notification>();
@@ -30,14 +35,14 @@ pub fn notifier() -> Html {
 
     match msg {
         Some(message) if !message.is_empty() => {
-            let mut classes = classes!("alert", "alert-float");
+            let mut classes = classes!(ALERT);
             match lvl {
                 Some(l) => match l.as_str() {
-                    "warn" => classes.push("alert-warning"),
-                    "error" => classes.push("alert-danger"),
-                    _ => classes.push("alert-info"),
+                    "warn" => classes.push(WARN_ALERT),
+                    "error" => classes.push(ERR_ALERT),
+                    _ => classes.push(INFO_ALERT),
                 },
-                None => classes.push("alert-info"),
+                None => classes.push(INFO_ALERT),
             };
 
             html! {

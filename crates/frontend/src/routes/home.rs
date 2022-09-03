@@ -1,5 +1,6 @@
-use crate::components::table::{Cell, Row, TableCard};
+use crate::components::table::{Cell, Row, Table, TableHeader};
 use crate::services::get_display_name;
+use crate::theme::*;
 use crate::types::{Assignment, User};
 use crate::{routes::auth::CheckAuth, services::form_actions::onload_all};
 use std::collections::HashMap;
@@ -16,12 +17,46 @@ struct HomeQuery {
 pub fn home() -> Html {
     let btn_selected = classes!("btn", "btn-primary");
     let btn_unselected = classes!("btn", "btn-outline-secondary");
+    let cl_button_unselected = classes!(
+        "py-2",
+        "px-4",
+        "text-sm",
+        "font-medium",
+        "border",
+        "focus:z-10",
+        "focus:ring-2",
+        "bg-gray-700",
+        "border-gray-600",
+        "text-white",
+        "hover:text-white",
+        "hover:bg-gray-600",
+        "focus:ring-blue-500",
+        "focus:text-white"
+    );
+    let cl_button_selected = classes!(
+        cl_button_unselected.clone(),
+        "bg-blue-600",
+        "hover:bg-blue-700",
+        "border-blue-700",
+    );
+
     let assignments = use_state(Vec::<Assignment>::new);
     let sorted_assignments = use_state(Vec::<SortedAssignment>::new);
     let headers = use_state(|| ("User", "Keys Assigned"));
     let all_users = use_state(Vec::<User>::new);
-    let by_user_btn_class = use_state(|| btn_selected.clone());
-    let by_key_btn_class = use_state(|| btn_unselected.clone());
+    let by_user_btn_class = use_state(|| cl_button_selected.clone());
+    let by_key_btn_class = use_state(|| cl_button_unselected.clone());
+
+    let cl_table_container = classes!(
+        BG_PRIME_DARK,
+        TEXT_DARK,
+        "rounded-xl",
+        "relative",
+        "overflow-x-auto",
+        "shadow-md",
+        "text-center",
+        "py-1",
+    );
 
     // Get assignments on load
     {
@@ -58,13 +93,13 @@ pub fn home() -> Html {
         let all_users = all_users.clone();
         let by_user_btn_class = by_user_btn_class.clone();
         let by_key_btn_class = by_key_btn_class.clone();
-        let btn_selected = btn_selected.clone();
-        let btn_unselected = btn_unselected.clone();
+        let cl_button_selected = cl_button_selected.clone();
+        let cl_button_unselected = cl_button_unselected.clone();
         Callback::from(move |_: MouseEvent| {
             sorted_assignments.set(agg_by_user(&*assignments, &*all_users));
             headers.set(("User", "Keys Assigned"));
-            by_user_btn_class.set(btn_selected.clone());
-            by_key_btn_class.set(btn_unselected.clone());
+            by_user_btn_class.set(cl_button_selected.clone());
+            by_key_btn_class.set(cl_button_unselected.clone());
         })
     };
 
@@ -75,13 +110,13 @@ pub fn home() -> Html {
         let all_users = all_users.clone();
         let by_user_btn_class = by_user_btn_class.clone();
         let by_key_btn_class = by_key_btn_class.clone();
-        let btn_selected = btn_selected.clone();
-        let btn_unselected = btn_unselected.clone();
+        let cl_button_selected = cl_button_selected.clone();
+        let cl_button_unselected = cl_button_unselected.clone();
         Callback::from(move |_: MouseEvent| {
             sorted_assignments.set(agg_by_key(&*assignments, &*all_users));
             headers.set(("Key", "Users Assigned"));
-            by_user_btn_class.set(btn_unselected.clone());
-            by_key_btn_class.set(btn_selected.clone());
+            by_user_btn_class.set(cl_button_unselected.clone());
+            by_key_btn_class.set(cl_button_selected.clone());
         })
     };
 
@@ -102,26 +137,32 @@ pub fn home() -> Html {
     html! {
         <CheckAuth>
             <div class="container my-5 mx-auto max-w-4xl">
-                <div class="container py-2">
-                    {"Sort:"}
-                    <div class="btn-group" role="group">
-                        <button
-                            onclick={on_sort_by_key}
-                            class={(*by_key_btn_class).clone()}
-                        >
-                            {"By Key"}
-                        </button>
-                        <button
-                            onclick={on_sort_by_user}
-                            class={(*by_user_btn_class).clone()}
-                        >
-                            {"By User"}
-                        </button>
-                    </div>
+                <div class={cl_table_container}>
+                    <TableHeader title="Key Inventory Tracker">
+
+                        <div class="container py-2">
+                            {"Sort: "}
+                            <div class="inline-flex rounded-md shadow-sm" role="group">
+                                <button
+                                    class={classes!((*by_key_btn_class).clone(), "rounded-l-lg")}
+                                    onclick={on_sort_by_key}
+                                >
+                                    {"By Key"}
+                                </button>
+                                <button
+                                    class={classes!((*by_user_btn_class).clone(), "rounded-r-lg")}
+                                    onclick={on_sort_by_user}
+                                >
+                                    {"By User"}
+                                </button>
+                            </div>
+                        </div>
+                    </TableHeader>
+
+                    <Table headings={vec![(*headers).0, (*headers).1]}>
+                        { for rows}
+                    </Table>
                 </div>
-                <TableCard title="Key Inventory Tracker" headings={vec![(*headers).0, (*headers).1]}>
-                    {for rows}
-                </TableCard>
             </div>
         </CheckAuth>
     }
