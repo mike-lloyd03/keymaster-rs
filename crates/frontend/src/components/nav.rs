@@ -1,4 +1,8 @@
-use crate::{routes::Route, types::SessionInfo};
+use crate::{
+    routes::Route,
+    services::requests::get,
+    types::{SessionInfo, User},
+};
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::use_store;
@@ -320,9 +324,36 @@ pub struct UserMenuProps {
 
 #[function_component(UserMenu)]
 pub fn user_menu(props: &UserMenuProps) -> Html {
+    let display_name = use_state(String::new);
+
+    {
+        let username = props.user.username.clone();
+        let display_name = display_name.clone();
+        if props.user.is_auth {
+            log::info!("Fetching user display name");
+            use_effect_with_deps(
+                move |_| {
+                    if let Some(username) = username {
+                        let url = format!("/api/users/{}", username);
+                        wasm_bindgen_futures::spawn_local(async move {
+                            match get::<User>(url).await {
+                                Ok(u) => {
+                                    display_name.set(u.display_name.unwrap_or(username));
+                                }
+                                Err(_) => (),
+                            }
+                        });
+                    }
+                    || ()
+                },
+                (),
+            );
+        }
+    }
+
     if props.user.is_auth {
         html! {
-            <NavDropdown label={props.user.username.clone().unwrap_or_default()}>
+            <NavDropdown label={(*display_name).clone()}>
                 <NavDropdownLink label="Set Password" route={Route::SetPassword { username: props.user.username.clone().unwrap_or_default()} } />
                 <NavDropdownLink label="Logout" route={Route::Logout} />
             </NavDropdown>
