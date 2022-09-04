@@ -21,7 +21,7 @@ pub fn navbar() -> Html {
     html! {
     <Nav>
         <MobileMenuButton {onclick} />
-        <Logo label="KeyMaster" />
+        <Logo />
         <NavLinks show={show_mobile_menu}>
             {
                 if user.is_auth {
@@ -70,13 +70,8 @@ pub fn nav(props: &NavProps) -> Html {
     }
 }
 
-#[derive(Properties, PartialEq)]
-pub struct LogoProps {
-    label: String,
-}
-
 #[function_component(Logo)]
-pub fn logo(props: &LogoProps) -> Html {
+pub fn logo() -> Html {
     let classes = classes!(
         "text-blue-500",
         "hover:text-white",
@@ -90,7 +85,7 @@ pub fn logo(props: &LogoProps) -> Html {
     );
 
     html! {
-        <Link<Route> to={Route::Home} {classes}>{ props.label.clone() }</Link<Route>>
+        <Link<Route> to={Route::Home} {classes}>{ "KeyMaster" }</Link<Route>>
     }
 }
 

@@ -32,7 +32,7 @@ pub fn new_user() -> Html {
             username: (*username).clone(),
             email: to_option((*email).clone()),
             display_name: to_option((*display_name).clone()),
-            can_login: false,
+            can_login: (*can_login).clone(),
             ..Default::default()
         };
         let history = use_history().unwrap();

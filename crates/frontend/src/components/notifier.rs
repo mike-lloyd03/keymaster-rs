@@ -46,7 +46,7 @@ pub fn notifier() -> Html {
             };
 
             html! {
-                <div class="fixed bottom-2 left-2 fade-in">
+                <div class="container fixed bottom-2 left-2 fade-in">
                     <div
                         class={classes}
                         onclick={dismiss}
