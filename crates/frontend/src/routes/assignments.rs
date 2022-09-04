@@ -22,13 +22,16 @@ pub fn new_assignment() -> Html {
     let date_out = use_state(String::new);
     let selected_users = use_state(Vec::<String>::new);
     let selected_keys = use_state(Vec::<String>::new);
+    let all_users = use_state(Vec::<User>::new);
 
     {
         let users = available_users.clone();
         let keys = available_keys.clone();
+        let all_users = all_users.clone();
         use_effect_with_deps(
             move |_| {
                 get_options(users, keys);
+                onload_all("/api/users".into(), all_users);
                 || ()
             },
             (),
@@ -61,7 +64,7 @@ pub fn new_assignment() -> Html {
 
     let user_options = available_users.iter().map(|user| {
         html_nested! {
-            <MultiSelectOption value={ user.clone() } label={ user.clone() } />
+            <MultiSelectOption label={ get_display_name(&(*all_users), user.clone()) } value={ user.clone() } />
         }
     });
 
