@@ -23,38 +23,28 @@ pub fn navbar() -> Html {
         <MobileMenuButton {onclick} />
         <Logo label="KeyMaster" />
         <NavLinks show={show_mobile_menu}>
-        {
-            if user.is_auth {
-                html!{
-                    <>
-                    {
-                        if user.is_admin {
-                            html!{
-                                <NavLink label="Assign Key" route={Route::AssignKey}/>
-                            }
-                        } else {html!{}}
+            {
+                if user.is_auth {
+                    html!{
+                        <>
+                        {
+                            if user.is_admin {
+                                html!{
+                                    <NavLink label="Assign Key" route={Route::AssignKey}/>
+                                }
+                            } else {html!{}}
+                        }
+                            <NavLink label="Assignments" route={Route::Assignments}/>
+                            <NavLink label="Keys" route={Route::Keys}/>
+                            <NavLink label="Users" route={Route::Users}/>
+                        </>
                     }
-                        <NavLink label="Assignments" route={Route::Assignments}/>
-                        <NavLink label="Keys" route={Route::Keys}/>
-                        <NavLink label="Users" route={Route::Users}/>
-
-                        <div class="grow hidden md:block"></div>
-
-                        <NavDropdown label={user.username.clone().unwrap_or_default()}>
-                            <NavDropdownLink label="Set Password" route={Route::SetPassword { username: user.username.clone().unwrap_or_default()} } />
-                            <NavDropdownLink label="Logout" route={Route::Logout} />
-                        </NavDropdown>
-                    </>
-                }
-            } else {
-                html!{
-                    <>
-                        <div class="grow hidden md:block"></div>
-                        <NavLink label="Login" route={Route::Login}/>
-                    </>
+                } else {
+                    html!{}
                 }
             }
-        }
+            <div class="grow"></div>
+            <UserMenu user={(*user).clone()} />
         </NavLinks>
     </Nav>
     }
@@ -325,5 +315,26 @@ pub fn nav_dropdown_link(props: &NavLinkProps) -> Html {
       <li>
             <Link<Route> to={props.route.clone()} {classes}>{props.label.clone()}</Link<Route>>
       </li>
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct UserMenuProps {
+    pub user: SessionInfo,
+}
+
+#[function_component(UserMenu)]
+pub fn user_menu(props: &UserMenuProps) -> Html {
+    if props.user.is_auth {
+        html! {
+            <NavDropdown label={props.user.username.clone().unwrap_or_default()}>
+                <NavDropdownLink label="Set Password" route={Route::SetPassword { username: props.user.username.clone().unwrap_or_default()} } />
+                <NavDropdownLink label="Logout" route={Route::Logout} />
+            </NavDropdown>
+        }
+    } else {
+        html! {
+            <NavLink label="Login" route={Route::Login}/>
+        }
     }
 }
