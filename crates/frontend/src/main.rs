@@ -9,7 +9,7 @@ mod theme;
 mod types;
 
 // use components::nav::Nav;
-use components::nav2::Navbar;
+use components::nav::Navbar;
 use components::notifier::Notifier;
 use components::session_provider::SessionProvider;
 use routes::{switch, Route};
