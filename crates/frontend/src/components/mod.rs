@@ -1,3 +1,4 @@
+pub mod details_card;
 pub mod form;
 pub mod modal;
 pub mod nav;

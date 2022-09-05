@@ -4,6 +4,7 @@ use web_sys::{HtmlInputElement, HtmlSelectElement};
 use yew::prelude::*;
 use yew_router::prelude::{use_history, History};
 
+use crate::components::notifier::notify_warn;
 use crate::routes::Route;
 use crate::theme::*;
 
@@ -193,6 +194,7 @@ pub struct InputProps {
     pub name: Option<String>,
     pub value: Option<String>,
     pub oninput: Option<Callback<InputEvent>>,
+    pub oninvalid: Option<Callback<Event>>,
     pub required: Option<bool>,
     pub pattern: Option<String>,
     pub checked: Option<bool>,
@@ -236,6 +238,7 @@ pub fn input_field(props: &InputProps) -> Html {
                 required={props.required.unwrap_or_default()}
                 pattern={props.pattern.clone()}
                 {oninput}
+                oninvalid={props.oninvalid.clone()}
             />
         </div>
 
@@ -275,6 +278,10 @@ pub fn date_field(props: &InputProps) -> Html {
 
 #[function_component(PasswordField)]
 pub fn password_field(props: &InputProps) -> Html {
+    let oninvalid = Callback::from(move |_: Event| {
+        notify_warn("The password must be at least 8 characters long");
+    });
+
     html! {
         <InputField
             input_type={InputType::Password}
@@ -284,6 +291,8 @@ pub fn password_field(props: &InputProps) -> Html {
             value={props.value.clone()}
             oninput={props.oninput.clone()}
             required={props.required}
+            pattern="(.){8,}"
+            {oninvalid}
         />
     }
 }

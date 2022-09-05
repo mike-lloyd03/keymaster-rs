@@ -330,7 +330,6 @@ pub fn user_menu(props: &UserMenuProps) -> Html {
         let username = props.user.username.clone();
         let display_name = display_name.clone();
         if props.user.is_auth {
-            log::info!("Fetching user display name");
             use_effect_with_deps(
                 move |_| {
                     if let Some(username) = username {
@@ -354,7 +353,14 @@ pub fn user_menu(props: &UserMenuProps) -> Html {
     if props.user.is_auth {
         html! {
             <NavDropdown label={(*display_name).clone()}>
-                <NavDropdownLink label="Set Password" route={Route::SetPassword { username: props.user.username.clone().unwrap_or_default()} } />
+                <NavDropdownLink
+                    label="Set Password"
+                    route={
+                        Route::SetPassword {
+                            username: props.user.username.clone().unwrap_or_default()
+                        }
+                    }
+            />
                 <NavDropdownLink label="Logout" route={Route::Logout} />
             </NavDropdown>
         }

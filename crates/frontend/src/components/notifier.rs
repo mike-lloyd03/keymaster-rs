@@ -4,7 +4,7 @@ use yewdux::prelude::*;
 
 use crate::types::Notification;
 
-static ALERT: &'static str = "p-4 text-sm rounded-lg";
+static ALERT: &'static str = "p-4 text-sm rounded-lg fade-in";
 static INFO_ALERT: &'static str = "bg-blue-200 text-blue-800";
 static WARN_ALERT: &'static str = "bg-yellow-200 text-yellow-800";
 static ERR_ALERT: &'static str = "bg-red-200 text-red-800";
@@ -46,7 +46,7 @@ pub fn notifier() -> Html {
             };
 
             html! {
-                <div class="container fixed bottom-2 left-2 fade-in">
+                <div class="fixed bottom-2 left-2 ">
                     <div
                         class={classes}
                         onclick={dismiss}
@@ -72,6 +72,11 @@ pub fn notify(msg: &str, lvl: String) {
 /// Sends an info notification to the user.
 pub fn notify_info(msg: &str) {
     notify(msg, "info".to_string());
+}
+///
+/// Sends a warning notification to the user.
+pub fn notify_warn(msg: &str) {
+    notify(msg, "warn".to_string());
 }
 
 /// Sends an error notification to the user.

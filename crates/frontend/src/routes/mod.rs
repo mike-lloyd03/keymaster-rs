@@ -35,6 +35,8 @@ pub enum Route {
     AddUser,
     #[at("/edit-user/:username")]
     EditUser { username: String },
+    #[at("/users/:username")]
+    UserDetails { username: String },
     #[at("/edit-user/:username/set-password")]
     SetPassword { username: String },
     #[not_found]
@@ -57,6 +59,9 @@ pub fn switch(routes: &Route) -> Html {
         Route::Users => html! { <users::UserTable /> },
         Route::AddUser => html! { <users::NewUser />},
         Route::EditUser { username } => html! { <users::EditUser username={username.clone()}/>},
+        Route::UserDetails { username } => {
+            html! { <users::UserDetails username={username.clone()}/>}
+        }
         Route::SetPassword { username } => {
             html! { <users::SetPassword username={username.clone()}/>}
         }

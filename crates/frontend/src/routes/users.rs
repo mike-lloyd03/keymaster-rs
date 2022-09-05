@@ -1,5 +1,6 @@
 use std::vec::Vec;
 
+use crate::components::details_card::*;
 use crate::components::form::*;
 use crate::components::modal::Modal;
 use crate::components::notifier::notify_error;
@@ -77,12 +78,12 @@ pub fn new_user() -> Html {
 }
 
 #[derive(PartialEq, Eq, Properties)]
-pub struct EditUserProps {
+pub struct UserProps {
     pub username: String,
 }
 
 #[function_component(EditUser)]
-pub fn edit_user(props: &EditUserProps) -> Html {
+pub fn edit_user(props: &UserProps) -> Html {
     let id = use_state(|| 0);
     let username = props.username.clone();
     let email = use_state(String::new);
@@ -230,7 +231,7 @@ pub fn user_table() -> Html {
 }
 
 #[function_component(SetPassword)]
-pub fn set_password(props: &EditUserProps) -> Html {
+pub fn set_password(props: &UserProps) -> Html {
     let password = use_state(String::new);
     let password2 = use_state(String::new);
 
@@ -273,5 +274,52 @@ pub fn set_password(props: &EditUserProps) -> Html {
                 </Form>
             </div>
         </CheckAuth>
+    }
+}
+
+#[function_component(UserDetails)]
+pub fn user_details(props: &UserProps) -> Html {
+    let user = use_state(|| User::default());
+    let assigned_keys = use_state(Vec::new);
+
+    {
+        let user = user.clone();
+        let assigned_keys = assigned_keys.clone();
+        let user_url = format!("/api/users/{}", &props.username);
+        let user_keys_url = format!("/api/users/{}/keys", &props.username);
+        use_effect_with_deps(
+            move |_| {
+                wasm_bindgen_futures::spawn_local(async move {
+                    match get::<User>(user_url).await {
+                        Ok(u) => {
+                            user.set(u);
+                        }
+                        Err(e) => notify_error(&e.to_string()),
+                    };
+                    match get::<Vec<String>>(user_keys_url).await {
+                        Ok(k) => {
+                            assigned_keys.set(k);
+                        }
+                        Err(e) => notify_error(&e.to_string()),
+                    };
+                });
+                || ()
+            },
+            (),
+        );
+    }
+
+    let user = (*user).clone();
+    html! {
+        <DetailsCard title={user.display_name.unwrap_or(user.username)}>
+            <DetailsHeader>
+                <DetailsHeaderItem content={format!("Email: {}", user.email.unwrap_or("-".into()))} />
+                <DetailsHeaderItem content={format!("Can login: {}", user.can_login)} />
+                <DetailsHeaderItem content={format!("Admin: {}", user.admin)} />
+            </DetailsHeader>
+            <DetailsList label="Keys Assigned">
+                <DetailsListItem label="test" />
+            </DetailsList>
+        </DetailsCard>
     }
 }
