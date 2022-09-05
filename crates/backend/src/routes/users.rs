@@ -3,14 +3,16 @@ use actix_web::{delete, error, get, post, web, HttpResponse, Responder};
 use log::error;
 use serde::Deserialize;
 use sqlx::PgPool;
+use validator::Validate;
 
 use crate::{
-    models::User,
+    models::{Assignment, User},
     routes::{unpack, validate_admin, validate_session},
 };
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 struct SetPasswdPayload {
+    #[validate(length(min = 8))]
     new_password: String,
 }
 
@@ -63,7 +65,7 @@ async fn create(
     validate_admin(&session, &pool).await?;
 
     let user = unpack(user);
-    if let Err(e) = user.validate_fields() {
+    if let Err(e) = user.validate() {
         return Err(error::ErrorBadRequest(e));
     }
 
@@ -167,6 +169,12 @@ async fn set_password(
 ) -> Result<impl Responder, actix_web::Error> {
     validate_admin(&session, &pool).await?;
 
+    if payload.validate().is_err() {
+        return Err(error::ErrorBadRequest(
+            "Password must be at least 8 characters long",
+        ));
+    }
+
     match User::get(&pool, &username.into_inner()).await {
         Ok(mut u) => match u.set_password(&pool, &payload.new_password).await {
             Ok(_) => {
@@ -180,6 +188,30 @@ async fn set_password(
             }
         },
         Err(_) => Err(error::ErrorNotFound("User not found")),
+    }
+}
+
+#[get("/users/{username}/keys")]
+async fn get_keys(
+    session: Session,
+    username: web::Path<String>,
+    pool: web::Data<PgPool>,
+) -> Result<impl Responder, actix_web::Error> {
+    validate_session(&session)?;
+
+    let username = &username.into_inner();
+    match Assignment::get_user_keys(&pool, username).await {
+        Ok(k) => Ok(HttpResponse::Ok().json(k)),
+        Err(e) => match e.to_string() {
+            x if x.contains("no rows returned") => {
+                error!("User '{}' not found.", username);
+                Err(error::ErrorNotFound("User not found"))
+            }
+            _ => {
+                error!("Failed to get user '{}'. {}", username, e);
+                Err(error::ErrorInternalServerError("Failed to get user."))
+            }
+        },
     }
 }
 

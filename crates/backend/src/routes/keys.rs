@@ -5,7 +5,7 @@ use log::error;
 use serde::Deserialize;
 use sqlx::PgPool;
 
-use crate::models::Key;
+use crate::models::{Assignment, Key};
 use crate::routes::{unpack, validate_admin, validate_session};
 
 #[derive(Deserialize, Clone)]
@@ -131,5 +131,26 @@ async fn delete(
             }
         },
         Err(_) => Err(ErrorNotFound("Key not found.")),
+    }
+}
+
+#[get("/keys/{key_name}/users")]
+async fn get_users(
+    key_name: web::Path<String>,
+    pool: web::Data<PgPool>,
+    session: Session,
+) -> Result<impl Responder, actix_web::Error> {
+    validate_session(&session)?;
+
+    let key_name = key_name.into_inner();
+    match Assignment::get_key_users(&pool, &key_name).await {
+        Ok(k) => Ok(HttpResponse::Ok().json(k)),
+        Err(e) => match e.to_string() {
+            x if x.contains("no rows returned") => Err(ErrorNotFound("Key not found")),
+            _ => {
+                error!("Failed to get key '{}'. {}", key_name, e);
+                Err(ErrorInternalServerError("Failed to get key."))
+            }
+        },
     }
 }

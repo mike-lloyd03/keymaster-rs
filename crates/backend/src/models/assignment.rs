@@ -147,6 +147,38 @@ impl Assignment {
         .execute(pool)
         .await
     }
+
+    pub async fn get_user_keys(pool: &PgPool, username: &str) -> Result<Vec<String>, sqlx::Error> {
+        let res = query!(
+            r#"SELECT
+                key
+                FROM assignments
+                WHERE "user" = $1
+                AND date_in is null
+                ORDER BY key"#,
+            username
+        )
+        .fetch_all(pool)
+        .await?;
+
+        Ok(res.iter().map(|r| r.key.clone()).collect())
+    }
+
+    pub async fn get_key_users(pool: &PgPool, key_name: &str) -> Result<Vec<String>, sqlx::Error> {
+        let res = query!(
+            r#"SELECT
+                "user"
+                FROM assignments
+                WHERE key = $1
+                AND date_in is null
+                ORDER BY "user""#,
+            key_name
+        )
+        .fetch_all(pool)
+        .await?;
+
+        Ok(res.iter().map(|r| r.user.clone()).collect())
+    }
 }
 
 #[cfg(test)]

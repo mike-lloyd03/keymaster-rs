@@ -6,7 +6,7 @@ use orion::pwhash::{self, hash_password_verify, Password, PasswordHash};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
-use validator::{Validate, ValidationErrors};
+use validator::Validate;
 
 lazy_static! {
     static ref USERNAME: Regex = Regex::new(r#"[\w\d]{3,}"#).expect("failed creating regex");
@@ -155,13 +155,6 @@ impl User {
                 .fetch_one(pool)
                 .await?;
         Ok(count)
-    }
-
-    pub fn validate_fields(&self) -> Result<(), ValidationErrors> {
-        match self.validate() {
-            Ok(()) => Ok(()),
-            Err(e) => Err(e),
-        }
     }
 }
 
