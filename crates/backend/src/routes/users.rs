@@ -191,8 +191,8 @@ async fn set_password(
     }
 }
 
-#[get("/users/{username}/keys")]
-async fn get_keys(
+#[get("/users/{username}/assignments")]
+async fn get_assignments(
     session: Session,
     username: web::Path<String>,
     pool: web::Data<PgPool>,
@@ -200,7 +200,7 @@ async fn get_keys(
     validate_session(&session)?;
 
     let username = &username.into_inner();
-    match Assignment::get_user_keys(&pool, username).await {
+    match Assignment::get_assignments_by_user(&pool, username).await {
         Ok(k) => Ok(HttpResponse::Ok().json(k)),
         Err(e) => match e.to_string() {
             x if x.contains("no rows returned") => {

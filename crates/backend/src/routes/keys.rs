@@ -134,8 +134,8 @@ async fn delete(
     }
 }
 
-#[get("/keys/{key_name}/users")]
-async fn get_users(
+#[get("/keys/{key_name}/assignments")]
+async fn get_assignments(
     key_name: web::Path<String>,
     pool: web::Data<PgPool>,
     session: Session,
@@ -143,7 +143,7 @@ async fn get_users(
     validate_session(&session)?;
 
     let key_name = key_name.into_inner();
-    match Assignment::get_key_users(&pool, &key_name).await {
+    match Assignment::get_assignments_by_key(&pool, &key_name).await {
         Ok(k) => Ok(HttpResponse::Ok().json(k)),
         Err(e) => match e.to_string() {
             x if x.contains("no rows returned") => Err(ErrorNotFound("Key not found")),

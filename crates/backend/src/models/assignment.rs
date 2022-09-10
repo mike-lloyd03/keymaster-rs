@@ -1,7 +1,7 @@
 use anyhow::Result;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
-use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
+use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool, Postgres, QueryBuilder};
 
 #[derive(Debug, Clone, PartialEq, FromRow, Serialize, Deserialize)]
 pub struct Assignment {
@@ -15,17 +15,12 @@ pub struct Assignment {
     pub date_in: Option<NaiveDate>,
 }
 
-#[derive(PartialEq, Copy, Clone, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum SortOption {
-    ByUser,
-    ByKey,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct SortedResponse {
-    index: String,
-    values: String,
+#[derive(Default, Deserialize, Clone)]
+pub struct AssignmentQuery {
+    pub id: Option<i64>,
+    pub user: Option<String>,
+    pub key: Option<String>,
+    pub sort: Option<String>,
 }
 
 impl Assignment {
@@ -61,58 +56,66 @@ impl Assignment {
         .await
     }
 
-    pub async fn get_all(pool: &PgPool) -> Result<Vec<Self>, sqlx::Error> {
-        query_as!(
-            Self,
+    pub async fn get_all(pool: &PgPool, filter: AssignmentQuery) -> Result<Vec<Self>, sqlx::Error> {
+        let valid_columns = vec!["id", "user", "key", "date_out", "date_in"];
+
+        let mut query: QueryBuilder<Postgres> = QueryBuilder::new(
             r#"SELECT
                 id,
                 "user",
                 key,
                 date_out,
-                date_in as "date_in?"
+                date_in
             FROM assignments
-            ORDER BY date_out"#,
-        )
-        .fetch_all(pool)
-        .await
-    }
+            "#,
+        );
 
-    pub async fn get_all_sort(
-        pool: &PgPool,
-        sort_by: SortOption,
-    ) -> Result<Vec<SortedResponse>, sqlx::Error> {
-        match sort_by {
-            SortOption::ByUser => {
-                query_as!(
-                    SortedResponse,
-                    r#"
-                SELECT
-                    "user" as "index!",
-                    string_agg(key, ', ') as "values!"
-                FROM assignments
-                GROUP BY "user"
-                ORDER BY "user"
-                "#
-                )
-                .fetch_all(pool)
-                .await
+        let mut where_clause = false;
+        if let Some(u) = filter.user {
+            if where_clause {
+                query.push("AND");
+            } else {
+                where_clause = true;
+                query.push("WHERE");
             }
-            SortOption::ByKey => {
-                query_as!(
-                    SortedResponse,
-                    r#"
-                SELECT
-                    key as "index!",
-                    string_agg("user", ', ') as "values!"
-                FROM assignments
-                GROUP BY key
-                ORDER BY key
-                "#
-                )
-                .fetch_all(pool)
-                .await
-            }
+            query.push(r#""user" ="#).push_bind(u);
         }
+
+        if let Some(k) = filter.key {
+            if where_clause {
+                query.push("AND");
+            } else {
+                where_clause = true;
+                query.push("WHERE");
+            }
+            query.push("key =").push_bind(k);
+        }
+
+        if let Some(id) = filter.id {
+            if where_clause {
+                query.push("AND");
+            } else {
+                query.push("WHERE");
+            }
+            query.push("id =").push_bind(id);
+        }
+
+        if let Some(s) = filter.sort {
+            if valid_columns.iter().any(|c| *c == s.as_str()) {
+                query.push(format!(r#"ORDER BY "{}""#, s));
+            }
+        };
+
+        log::warn!("{}", query.sql());
+        query.build_query_as::<Assignment>().fetch_all(pool).await
+        // log::warn!("{}", query.into_sql());
+        // Ok(vec![Assignment {
+        //     id: 12,
+        //     user: "".into(),
+        //     key: "".into(),
+        //     date_out: chrono::NaiveDate::default(),
+        //     date_in: None,
+        // }])
     }
 
     pub async fn update(&mut self, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
@@ -148,10 +151,14 @@ impl Assignment {
         .await
     }
 
-    pub async fn get_user_keys(pool: &PgPool, username: &str) -> Result<Vec<String>, sqlx::Error> {
-        let res = query!(
+    pub async fn get_assignments_by_user(
+        pool: &PgPool,
+        username: &str,
+    ) -> Result<Vec<Assignment>, sqlx::Error> {
+        query_as!(
+            Assignment,
             r#"SELECT
-                key
+                *
                 FROM assignments
                 WHERE "user" = $1
                 AND date_in is null
@@ -159,15 +166,17 @@ impl Assignment {
             username
         )
         .fetch_all(pool)
-        .await?;
-
-        Ok(res.iter().map(|r| r.key.clone()).collect())
+        .await
     }
 
-    pub async fn get_key_users(pool: &PgPool, key_name: &str) -> Result<Vec<String>, sqlx::Error> {
-        let res = query!(
+    pub async fn get_assignments_by_key(
+        pool: &PgPool,
+        key_name: &str,
+    ) -> Result<Vec<Assignment>, sqlx::Error> {
+        query_as!(
+            Assignment,
             r#"SELECT
-                "user"
+                *
                 FROM assignments
                 WHERE key = $1
                 AND date_in is null
@@ -175,9 +184,7 @@ impl Assignment {
             key_name
         )
         .fetch_all(pool)
-        .await?;
-
-        Ok(res.iter().map(|r| r.user.clone()).collect())
+        .await
     }
 }
 
@@ -225,7 +232,7 @@ mod assignment_tests {
         assgn1.delete(&pool).await?;
 
         let res = query("SELECT * FROM assignments WHERE id = $1")
-            .bind(assgn1.id)
+            .bind(1)
             .execute(&pool)
             .await?;
 

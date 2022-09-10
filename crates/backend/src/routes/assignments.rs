@@ -1,4 +1,3 @@
-use crate::models::SortOption;
 use actix_session::Session;
 use actix_web::{
     delete,
@@ -6,19 +5,13 @@ use actix_web::{
     get, post, web, HttpResponse, Responder,
 };
 use log::{error, info};
-use serde::Deserialize;
 use sqlx::PgPool;
 use std::fmt::Write;
 
 use crate::{
-    models::Assignment,
+    models::{Assignment, AssignmentQuery},
     routes::{unpack, validate_admin, validate_session},
 };
-
-#[derive(Deserialize, Clone)]
-struct SortQuery {
-    sort: Option<SortOption>,
-}
 
 #[get("/assignments/{assignment_id}")]
 async fn get(
@@ -46,25 +39,15 @@ async fn get(
 async fn get_all(
     pool: web::Data<PgPool>,
     session: Session,
-    query: web::Query<SortQuery>,
+    query: web::Query<AssignmentQuery>,
 ) -> Result<impl Responder, actix_web::Error> {
     validate_session(&session)?;
 
-    if let Some(sort) = query.sort {
-        match Assignment::get_all_sort(&pool, sort).await {
-            Ok(a) => Ok(HttpResponse::Ok().json(a)),
-            Err(e) => {
-                error!("Failed to get assignments. {}", e);
-                Err(ErrorInternalServerError("Failed to get assignments."))
-            }
-        }
-    } else {
-        match Assignment::get_all(&pool).await {
-            Ok(a) => Ok(HttpResponse::Ok().json(a)),
-            Err(e) => {
-                error!("Failed to get assignments. {}", e);
-                Err(ErrorInternalServerError("Failed to get assignments."))
-            }
+    match Assignment::get_all(&pool, query.into_inner()).await {
+        Ok(a) => Ok(HttpResponse::Ok().json(a)),
+        Err(e) => {
+            error!("Failed to get assignments. {}", e);
+            Err(ErrorInternalServerError("Failed to get assignments."))
         }
     }
 }
