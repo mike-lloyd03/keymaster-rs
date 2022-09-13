@@ -15,8 +15,6 @@ struct HomeQuery {
 
 #[function_component(Home)]
 pub fn home() -> Html {
-    let btn_selected = classes!("btn", "btn-primary");
-    let btn_unselected = classes!("btn", "btn-outline-secondary");
     let cl_button_unselected = classes!(
         "py-2",
         "px-4",
@@ -121,15 +119,12 @@ pub fn home() -> Html {
     };
 
     let rows = {
-        let headers = headers.clone();
-        let index_header = (*headers).clone().0;
-        let values_header = (*headers).clone().1;
         sorted_assignments.iter().map(|a| {
             html_nested! {
                 <Row>
-                    <Cell heading={index_header.to_string()} value={a.index.clone()} />
-                    <Cell heading={values_header.to_string()} value={a.values.clone()} />
-                    </Row>
+                    <Cell value={a.index.clone()} />
+                    <Cell value={a.values.clone()} />
+                </Row>
             }
         })
     };

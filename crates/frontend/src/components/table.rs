@@ -109,13 +109,44 @@ pub fn table(props: &TableProps) -> Html {
 
 #[derive(Properties, PartialEq)]
 pub struct CellProps {
-    pub heading: String,
     pub value: Option<String>,
-    pub edit_route: Option<Route>,
 }
 
 #[function_component(Cell)]
 pub fn cell(props: &CellProps) -> Html {
+    let td_classes = classes!("py-4", "px-6");
+
+    html! {
+        <td class={td_classes}>{ props.value.clone().unwrap_or_default() }</td>
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct CellLinkProps {
+    pub value: String,
+    pub route: Route,
+}
+
+#[function_component(CellLink)]
+pub fn cell_link(props: &CellLinkProps) -> Html {
+    let td_classes = classes!("py-4", "px-6");
+
+    html! {
+        <td class={td_classes}>
+            <Link<Route> classes={"hover:underline"} to={props.route.clone()}>
+                {props.value.clone()}
+            </Link<Route>>
+        </td>
+    }
+}
+
+#[derive(Properties, PartialEq)]
+pub struct CellEditProps {
+    pub route: Route,
+}
+
+#[function_component(CellEdit)]
+pub fn cell_edit(props: &CellEditProps) -> Html {
     let cl_button = classes!("font-medium", TEXT_BLUE, "hover:underline");
     let cl_edit_btn = if current_user().is_admin {
         cl_button
@@ -130,23 +161,18 @@ pub fn cell(props: &CellProps) -> Html {
 
     let td_classes = classes!("py-4", "px-6");
 
-    match props.edit_route.clone() {
-        Some(route) => html! {
-            <td class={td_classes}>
-                <Link<Route> classes={cl_edit_btn} to={route}>
-                    {"Edit"}
-                </Link<Route>>
-            </td>
-        },
-        None => html! {
-            <td class={td_classes}>{ props.value.clone().unwrap_or_default() }</td>
-        },
+    html! {
+        <td class={td_classes}>
+            <Link<Route> classes={cl_edit_btn} to={props.route.clone()}>
+                {"Edit"}
+            </Link<Route>>
+        </td>
     }
 }
 
 #[derive(Properties, PartialEq)]
 pub struct RowProps {
-    pub children: ChildrenWithProps<Cell>,
+    pub children: Children,
 }
 
 #[function_component(Row)]
@@ -178,8 +204,8 @@ pub fn table_heading(props: &TableHeadingProps) -> Html {
 
 #[derive(Properties, PartialEq)]
 pub struct ActionButtonProps {
-    label: String,
-    route: Route,
+    pub label: String,
+    pub route: Route,
 }
 
 #[function_component(ActionButton)]

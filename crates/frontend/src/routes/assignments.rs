@@ -1,9 +1,10 @@
 use std::vec::Vec;
 
+use crate::components::details_card::*;
 use crate::components::form::*;
 use crate::components::modal::Modal;
 use crate::components::notifier::notify_error;
-use crate::components::table::{Cell, Row, TableCard};
+use crate::components::table::*;
 use crate::services::form_actions::{get_options, ondelete, onload_all, submit_form};
 use crate::services::requests::get;
 use crate::services::{format_date, get_display_name, parse_date};
@@ -95,12 +96,12 @@ pub fn new_assignment() -> Html {
 }
 
 #[derive(PartialEq, Eq, Properties)]
-pub struct EditAssignmentProps {
+pub struct AssignmentProps {
     pub id: i64,
 }
 
 #[function_component(EditAssignment)]
-pub fn edit_assignment(props: &EditAssignmentProps) -> Html {
+pub fn edit_assignment(props: &AssignmentProps) -> Html {
     let user = use_state(String::new);
     let key = use_state(String::new);
     let date_out = use_state(String::new);
@@ -168,7 +169,7 @@ pub fn edit_assignment(props: &EditAssignmentProps) -> Html {
                     <DateField label="Date Out" state={date_out}/>
                     <DateField label="Date In" state={date_in}/>
                     <Button
-                        value="Update Key"
+                        value="Update Assignment"
                         button_type={ButtonType::Primary}
                     />
                     {" "}
@@ -212,16 +213,18 @@ pub fn assignments() -> Html {
     let rows = assignments.iter().map(|a| {
         html_nested! {
             <Row>
-                <Cell heading="User" value={get_display_name(&all_users, a.user.clone())} />
-                <Cell heading="Key" value={a.key.clone()} />
-                <Cell heading="Date Out" value={format_date(a.date_out)} />
-                <Cell heading="Date In" value={
+                <CellLink
+                    value={get_display_name(&all_users, a.user.clone())}
+                    route={Route::AssignmentDetails { id: a.id }}
+                />
+                <Cell value={a.key.clone()} />
+                <Cell value={format_date(a.date_out)} />
+                <Cell value={
                     match a.date_in {
                         Some(d) => format_date(d),
                         None => "-".to_string(),
                     }
                 } />
-                <Cell heading="" edit_route={Route::EditAssignment {id: a.id.clone()}} />
             </Row>
         }
     });
@@ -231,13 +234,62 @@ pub fn assignments() -> Html {
             <div class="container my-5 mx-auto max-w-4xl">
                 <TableCard
                     title="Assignments"
-                    headings={vec!["User", "Key", "Date Out", "Date In", ""]}
+                    headings={vec!["User", "Key", "Date Out", "Date In"]}
                     button_label="Assign Key"
                     button_route={Route::AssignKey}
                 >
                     { for rows }
                 </TableCard>
             </div>
+        </CheckAuth>
+    }
+}
+
+#[function_component(AssignmentDetails)]
+pub fn assignment_details(props: &AssignmentProps) -> Html {
+    let assignment = use_state(|| Assignment::default());
+
+    {
+        let assignment = assignment.clone();
+        let assignment_url = format!("/api/assignments/{}", &props.id);
+        use_effect_with_deps(
+            move |_| {
+                wasm_bindgen_futures::spawn_local(async move {
+                    match get::<Assignment>(assignment_url).await {
+                        Ok(a) => {
+                            assignment.set(a);
+                        }
+                        Err(e) => notify_error(&e.to_string()),
+                    };
+                });
+                || ()
+            },
+            (),
+        );
+    }
+
+    let assignment = (*assignment).clone();
+    html! {
+        <CheckAuth>
+            <DetailsCard
+                title={format!("Assignment {}", assignment.id)}
+                edit_route={Route::EditAssignment { id: assignment.id }}
+            >
+                <DetailsHeader>
+                    <DetailsHeaderItem content={format!("Key: {}", assignment.key)} />
+                    <DetailsHeaderItem content={format!("Assigned to: {}", assignment.user)} />
+                    <DetailsHeaderItem content={format!("Date assigned: {}", assignment.date_out)} />
+                    <DetailsHeaderItem
+                        content={
+                            match assignment.date_in {
+                                Some(d) => format!("Date returned: {}", d),
+                                None => "Date returned: -".into(),
+                            }
+                        }
+                    />
+                </DetailsHeader>
+                <DetailsFooter/>
+            </DetailsCard>
         </CheckAuth>
     }
 }

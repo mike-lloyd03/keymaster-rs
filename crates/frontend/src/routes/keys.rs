@@ -1,12 +1,14 @@
 use std::vec::Vec;
 
+use crate::components::details_card::*;
 use crate::components::form::*;
 use crate::components::modal::Modal;
 use crate::components::notifier::notify_error;
-use crate::components::table::{Cell, Row, TableCard};
+use crate::components::table::*;
 use crate::services::form_actions::{ondelete, onload_all, submit_form};
 use crate::services::requests::get;
 use crate::services::to_option;
+use crate::types::Assignment;
 use crate::types::Key;
 
 use yew::prelude::*;
@@ -54,12 +56,12 @@ pub fn new_key() -> Html {
 }
 
 #[derive(PartialEq, Eq, Properties)]
-pub struct EditKeyProps {
+pub struct KeyProps {
     pub key_name: String,
 }
 
 #[function_component(EditKey)]
-pub fn edit_key(props: &EditKeyProps) -> Html {
+pub fn edit_key(props: &KeyProps) -> Html {
     let key_name = props.key_name.clone();
     let description = use_state(String::new);
     let active = use_state(|| false);
@@ -172,10 +174,9 @@ pub fn key_table() -> Html {
         };
         html_nested! {
             <Row>
-                <Cell heading="Key" value={ key.name.clone() } />
-                <Cell heading="Description" value={description} />
-                <Cell heading="Status" value={active} />
-                <Cell heading="" edit_route={Route::EditKey {key_name: key.name.clone()}} />
+                <CellLink value={ key.name.clone() } route={Route::KeyDetails { key_name: key.name.clone() }}/>
+                <Cell value={description} />
+                <Cell value={active} />
             </Row>
         }
     });
@@ -185,13 +186,74 @@ pub fn key_table() -> Html {
             <div class="container my-5 mx-auto max-w-4xl">
                 <TableCard
                     title="Keys"
-                    headings={vec!["Key", "Description", "Status", ""]}
+                    headings={vec!["Key", "Description", "Status"]}
                     button_label="Add Key"
                     button_route={Route::AddKey}
                 >
                     { for rows }
                 </TableCard>
             </div>
+        </CheckAuth>
+    }
+}
+
+#[function_component(KeyDetails)]
+pub fn key_details(props: &KeyProps) -> Html {
+    let key = use_state(|| Key::default());
+    let assignments = use_state(Vec::new);
+
+    {
+        let key = key.clone();
+        let assignments = assignments.clone();
+        let key_url = format!("/api/keys/{}", &props.key_name);
+        let key_users_url = format!("/api/assignments?key={}", &props.key_name);
+        use_effect_with_deps(
+            move |_| {
+                wasm_bindgen_futures::spawn_local(async move {
+                    match get::<Key>(key_url).await {
+                        Ok(k) => {
+                            key.set(k);
+                        }
+                        Err(e) => notify_error(&e.to_string()),
+                    };
+                    match get::<Vec<Assignment>>(key_users_url).await {
+                        Ok(u) => {
+                            assignments.set(u);
+                        }
+                        Err(e) => notify_error(&e.to_string()),
+                    };
+                });
+                || ()
+            },
+            (),
+        );
+    }
+
+    let key = (*key).clone();
+    html! {
+        <CheckAuth>
+            <DetailsCard
+                title={key.name.clone()}
+                edit_route={Route::EditKey { key_name: key.name.clone() }}
+            >
+                <DetailsHeader>
+                    <DetailsHeaderItem content={format!("Description: {}", key.description.unwrap_or("-".into()))} />
+                    <DetailsHeaderItem content={format!("Active: {}", key.active)} />
+                </DetailsHeader>
+                <DetailsList label="Keys Assigned">
+                    { for (*assignments)
+                        .iter()
+                            .map(|a|
+                                html_nested!{
+                                    <DetailsListItem
+                                        label={a.clone().key}
+                                        route={Route::AssignmentDetails { id: a.clone().id } }
+                                    />
+                                })
+                    }
+                </DetailsList>
+                <DetailsFooter/>
+            </DetailsCard>
         </CheckAuth>
     }
 }

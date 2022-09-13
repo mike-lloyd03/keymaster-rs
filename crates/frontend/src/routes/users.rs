@@ -4,10 +4,11 @@ use crate::components::details_card::*;
 use crate::components::form::*;
 use crate::components::modal::Modal;
 use crate::components::notifier::notify_error;
-use crate::components::table::{Cell, Row, TableCard};
+use crate::components::table::{Cell, CellLink, Row, TableCard};
 use crate::services::form_actions::{ondelete, onload_all, submit_form};
 use crate::services::requests::get;
 use crate::services::to_option;
+use crate::types::Assignment;
 use crate::types::{SetPasswdPayload, User};
 
 use yew::prelude::*;
@@ -200,16 +201,16 @@ pub fn user_table() -> Html {
 
     // Create table rows
     let rows = users.iter().map(|user| {
-        let username = user
+        let display_name = user
             .display_name
             .clone()
             .unwrap_or_else(|| user.username.clone());
         let email = user.email.clone();
+
         html_nested! {
             <Row>
-                <Cell heading="User" value={username} />
-                <Cell heading="Email" value={email.unwrap_or_else(||"-".into())} />
-                <Cell heading="" edit_route={Route::EditUser {username: user.username.clone()}} />
+                <CellLink value={display_name} route={Route::UserDetails { username: user.username.clone() }}/>
+                <Cell value={email.unwrap_or_else(||"-".into())} />
             </Row>
         }
     });
@@ -219,7 +220,7 @@ pub fn user_table() -> Html {
             <div class="container my-5 mx-auto max-w-3xl">
                 <TableCard
                     title="Users"
-                    headings={vec!["User", "Email", ""]}
+                    headings={vec!["User", "Email"]}
                     button_label="Add User"
                     button_route={Route::AddUser}
                 >
@@ -280,13 +281,13 @@ pub fn set_password(props: &UserProps) -> Html {
 #[function_component(UserDetails)]
 pub fn user_details(props: &UserProps) -> Html {
     let user = use_state(|| User::default());
-    let assigned_keys = use_state(Vec::new);
+    let assignments = use_state(Vec::new);
 
     {
         let user = user.clone();
-        let assigned_keys = assigned_keys.clone();
+        let assignments = assignments.clone();
         let user_url = format!("/api/users/{}", &props.username);
-        let user_keys_url = format!("/api/users/{}/keys", &props.username);
+        let user_keys_url = format!("/api/assignments?user={}", &props.username);
         use_effect_with_deps(
             move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
@@ -296,9 +297,9 @@ pub fn user_details(props: &UserProps) -> Html {
                         }
                         Err(e) => notify_error(&e.to_string()),
                     };
-                    match get::<Vec<String>>(user_keys_url).await {
+                    match get::<Vec<Assignment>>(user_keys_url).await {
                         Ok(k) => {
-                            assigned_keys.set(k);
+                            assignments.set(k);
                         }
                         Err(e) => notify_error(&e.to_string()),
                     };
@@ -311,15 +312,30 @@ pub fn user_details(props: &UserProps) -> Html {
 
     let user = (*user).clone();
     html! {
-        <DetailsCard title={user.display_name.unwrap_or(user.username)}>
-            <DetailsHeader>
-                <DetailsHeaderItem content={format!("Email: {}", user.email.unwrap_or("-".into()))} />
-                <DetailsHeaderItem content={format!("Can login: {}", user.can_login)} />
-                <DetailsHeaderItem content={format!("Admin: {}", user.admin)} />
-            </DetailsHeader>
-            <DetailsList label="Keys Assigned">
-                <DetailsListItem label="test" />
-            </DetailsList>
-        </DetailsCard>
+        <CheckAuth>
+            <DetailsCard
+                title={user.display_name.unwrap_or(user.username.clone())}
+                edit_route={Route::EditUser { username: user.username.clone() }}
+            >
+                <DetailsHeader>
+                    <DetailsHeaderItem content={format!("Email: {}", user.email.unwrap_or("-".into()))} />
+                    <DetailsHeaderItem content={format!("Can login: {}", user.can_login)} />
+                    <DetailsHeaderItem content={format!("Admin: {}", user.admin)} />
+                </DetailsHeader>
+                <DetailsList label="Keys Assigned">
+                    { for (*assignments)
+                        .iter()
+                            .map(|a|
+                                html_nested!{
+                                    <DetailsListItem
+                                        label={a.clone().key}
+                                        route={Route::AssignmentDetails { id: a.clone().id } }
+                                    />
+                                })
+                    }
+                </DetailsList>
+                <DetailsFooter/>
+            </DetailsCard>
+        </CheckAuth>
     }
 }

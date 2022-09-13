@@ -1,5 +1,3 @@
-use yew::{classes, Classes};
-
 pub static TEXT_BLUE: &'static str = "text-blue-600";
 pub static TEXT_GRAY: &'static str = "text-gray-400";
 pub static TEXT_DARK: &'static str = "text-slate-200";
@@ -26,4 +24,91 @@ pub fn hover(class: &str) -> String {
     format!("hover:{}", class)
 }
 
-// btn = "text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300  dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800"
+//////////////////
+// Details Card
+//////////////////
+pub static DETAIL_CARD: &'static str = "
+    flex
+    items-center
+    justify-between
+    w-full
+    p-5
+    font-medium
+    text-left
+    border
+    border-b-0
+    rounded-t-xl
+    focus:ring-4
+    focus:ring-gray-800
+    border-gray-700
+    text-white
+    bg-gray-700
+    ";
+
+pub static DETAIL_HEADER: &'static str = "
+    p-5
+    font-light
+    border
+    border-b-0
+    border-gray-700
+    bg-gray-800
+    ";
+
+pub static DETAIL_HEADER_ITEM: &'static str = "
+    mb-2
+    text-gray-500
+    dark:text-gray-400
+    ";
+
+pub static DETAIL_LIST_CONTAINER: &'static str = "
+    font-light
+    border
+    border-gray-700
+    ";
+
+pub static DETAIL_LIST: &'static str = "
+    flex
+    items-center
+    justify-between
+    w-full
+    p-5
+    font-medium
+    text-left
+    border
+    border-b-0
+    focus:ring-4
+    focus:ring-gray-800
+    border-gray-700
+    text-white
+    bg-gray-700
+    ";
+
+pub static DETAIL_LIST_ITEM_ROW: &'static str = "
+    text-gray-500
+    hover:text-white
+    ";
+
+pub static DETAIL_LIST_ITEM_LINK: &'static str = "
+    p-2
+    inline-block
+    text-sm
+    truncate
+    font-light
+    flex
+    hover:bg-gray-700
+    bg-gray-800
+    border
+    border-x-0
+    border-gray-800
+    hover:border-gray-800
+    ";
+
+pub static DETAIL_FOOTER: &'static str = "
+    border
+    border-b-0
+    rounded-b-xl
+    border-gray-700
+    text-white
+    bg-gray-700
+    h-2
+    ";

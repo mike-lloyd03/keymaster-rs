@@ -7,6 +7,10 @@ mod home;
 mod keys;
 mod users;
 
+use assignments::*;
+use keys::*;
+use users::*;
+
 #[derive(Clone, Routable, PartialEq, Eq)]
 pub enum Route {
     #[at("/")]
@@ -23,12 +27,16 @@ pub enum Route {
     AddKey,
     #[at("/edit-key/:key_name")]
     EditKey { key_name: String },
+    #[at("/keys/:key_name")]
+    KeyDetails { key_name: String },
     #[at("/assignments")]
     Assignments,
     #[at("/assign-key")]
     AssignKey,
     #[at("/edit-assignment/:id")]
     EditAssignment { id: i64 },
+    #[at("/assignments/:id")]
+    AssignmentDetails { id: i64 },
     #[at("/users")]
     Users,
     #[at("/add-user")]
@@ -50,21 +58,29 @@ pub fn switch(routes: &Route) -> Html {
         Route::Home => html! { <home::Home />},
         Route::Login => html! { <auth::Login /> },
         Route::Logout => html! { <auth::Logout /> },
-        Route::Keys => html! { <keys::KeyTable /> },
-        Route::AddKey => html! { <keys::NewKey />},
-        Route::EditKey { key_name } => html! { <keys::EditKey key_name={ key_name.clone() }/>},
-        Route::Assignments => html! { <assignments::Assignments />},
-        Route::AssignKey => html! { <assignments::NewAssignment />},
-        Route::EditAssignment { id } => html! { <assignments::EditAssignment id={ id.clone() }/>},
-        Route::Users => html! { <users::UserTable /> },
-        Route::AddUser => html! { <users::NewUser />},
-        Route::EditUser { username } => html! { <users::EditUser username={username.clone()}/>},
+
+        Route::Keys => html! { <KeyTable /> },
+        Route::AddKey => html! { <NewKey />},
+        Route::EditKey { key_name } => html! { <EditKey key_name={ key_name.clone() }/>},
+        Route::KeyDetails { key_name } => html! { <KeyDetails key_name={ key_name.clone() }/>},
+
+        Route::Assignments => html! { <Assignments />},
+        Route::AssignKey => html! { <NewAssignment />},
+        Route::EditAssignment { id } => html! { <EditAssignment id={ id.clone() }/>},
+        Route::AssignmentDetails { id } => {
+            html! {<AssignmentDetails id={ id.clone() }/>}
+        }
+
+        Route::Users => html! { <UserTable /> },
+        Route::AddUser => html! { <NewUser />},
+        Route::EditUser { username } => html! { <EditUser username={username.clone()}/>},
         Route::UserDetails { username } => {
-            html! { <users::UserDetails username={username.clone()}/>}
+            html! { <UserDetails username={username.clone()}/>}
         }
         Route::SetPassword { username } => {
-            html! { <users::SetPassword username={username.clone()}/>}
+            html! { <SetPassword username={username.clone()}/>}
         }
+
         Route::NotFound => html! { <h1>{ "404" }</h1> },
     }
 }

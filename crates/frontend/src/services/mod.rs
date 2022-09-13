@@ -2,10 +2,7 @@ pub mod auth;
 pub mod form_actions;
 pub mod requests;
 
-use std::collections::HashMap;
-
 use chrono::NaiveDate;
-use yew::UseStateHandle;
 
 use crate::types::User;
 
