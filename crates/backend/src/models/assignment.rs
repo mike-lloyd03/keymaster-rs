@@ -73,29 +73,29 @@ impl Assignment {
         let mut where_clause = false;
         if let Some(u) = filter.user {
             if where_clause {
-                query.push("AND");
+                query.push("AND ");
             } else {
                 where_clause = true;
-                query.push("WHERE");
+                query.push("WHERE ");
             }
             query.push(r#""user" ="#).push_bind(u);
         }
 
         if let Some(k) = filter.key {
             if where_clause {
-                query.push("AND");
+                query.push("AND ");
             } else {
                 where_clause = true;
-                query.push("WHERE");
+                query.push("WHERE ");
             }
             query.push("key =").push_bind(k);
         }
 
         if let Some(id) = filter.id {
             if where_clause {
-                query.push("AND");
+                query.push("AND ");
             } else {
-                query.push("WHERE");
+                query.push("WHERE ");
             }
             query.push("id =").push_bind(id);
         }
