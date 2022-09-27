@@ -56,10 +56,14 @@ pub fn ondelete(path: String, history: AnyHistory, next_route: Route) -> Callbac
     })
 }
 
-pub fn onload_all<T: DeserializeOwned + 'static>(url: String, types: UseStateHandle<Vec<T>>) {
+/// Gets the resources from the specified path and writes them into a state object
+pub fn onload<T>(url: String, item: UseStateHandle<T>)
+where
+    T: DeserializeOwned + 'static,
+{
     wasm_bindgen_futures::spawn_local(async move {
-        match get::<Vec<T>>(url).await {
-            Ok(t) => types.set(t),
+        match get::<T>(url).await {
+            Ok(t) => item.set(t),
             Err(e) => match e {
                 _ => notify_error(&e.to_string()),
             },

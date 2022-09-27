@@ -5,9 +5,10 @@ use crate::components::form::*;
 use crate::components::modal::Modal;
 use crate::components::notifier::notify_error;
 use crate::components::table::*;
-use crate::services::form_actions::{get_options, ondelete, onload_all, submit_form};
+use crate::services::form_actions::{get_options, ondelete, onload, submit_form};
 use crate::services::requests::get;
 use crate::services::{format_date, get_display_name, parse_date};
+use crate::theme::FORM_SUBTITLE;
 use crate::types::{Assignment, User};
 
 use yew::prelude::*;
@@ -32,7 +33,7 @@ pub fn new_assignment() -> Html {
         use_effect_with_deps(
             move |_| {
                 get_options(users, keys);
-                onload_all("/api/users".into(), all_users);
+                onload("/api/users".into(), all_users);
                 || ()
             },
             (),
@@ -108,12 +109,14 @@ pub fn edit_assignment(props: &AssignmentProps) -> Html {
     let date_in = use_state(String::new);
 
     let show_modal = use_state(|| false);
+    let users = use_state(Vec::<User>::new);
 
     {
         let user = user.clone();
         let key = key.clone();
         let date_out = date_out.clone();
         let date_in = date_in.clone();
+        let users = users.clone();
         let url = format!("/api/assignments/{}", &props.id.clone());
         use_effect_with_deps(
             move |_| {
@@ -131,6 +134,7 @@ pub fn edit_assignment(props: &AssignmentProps) -> Html {
                         Err(e) => notify_error(&e.to_string()),
                     }
                 });
+                onload("/api/users".into(), users);
                 || ()
             },
             (),
@@ -164,8 +168,12 @@ pub fn edit_assignment(props: &AssignmentProps) -> Html {
         <CheckAuth admin=true>
             <div class="container my-5 mx-auto">
                 <Form title="Edit Assignment" {onsubmit}>
-                    <TextField label="User" state={user}/>
-                    <TextField label="Key" state={key}/>
+                    <h6 class={FORM_SUBTITLE}>
+                        { format!("User: {}", get_display_name(&(*users), (*user).clone())) }
+                    </h6>
+                    <h6 class={FORM_SUBTITLE}>
+                        { format!("Key: {}", (*key).clone()) }
+                    </h6>
                     <DateField label="Date Out" state={date_out}/>
                     <DateField label="Date In" state={date_in}/>
                     <Button
@@ -202,8 +210,8 @@ pub fn assignments() -> Html {
         let all_users = all_users.clone();
         use_effect_with_deps(
             move |_| {
-                onload_all("/api/assignments".into(), assignments);
-                onload_all("/api/users".into(), all_users);
+                onload("/api/assignments".into(), assignments);
+                onload("/api/users".into(), all_users);
                 || ()
             },
             (),
@@ -248,20 +256,16 @@ pub fn assignments() -> Html {
 #[function_component(AssignmentDetails)]
 pub fn assignment_details(props: &AssignmentProps) -> Html {
     let assignment = use_state(|| Assignment::default());
+    let users = use_state(Vec::<User>::new);
 
     {
         let assignment = assignment.clone();
+        let users = users.clone();
         let assignment_url = format!("/api/assignments/{}", &props.id);
         use_effect_with_deps(
             move |_| {
-                wasm_bindgen_futures::spawn_local(async move {
-                    match get::<Assignment>(assignment_url).await {
-                        Ok(a) => {
-                            assignment.set(a);
-                        }
-                        Err(e) => notify_error(&e.to_string()),
-                    };
-                });
+                onload(assignment_url, assignment);
+                onload("/api/users".into(), users);
                 || ()
             },
             (),
@@ -276,8 +280,8 @@ pub fn assignment_details(props: &AssignmentProps) -> Html {
                 edit_route={Route::EditAssignment { id: assignment.id }}
             >
                 <DetailsHeader>
+                    <DetailsHeaderItem content={format!("Assigned to: {}", get_display_name(&(*users), assignment.user))} />
                     <DetailsHeaderItem content={format!("Key: {}", assignment.key)} />
-                    <DetailsHeaderItem content={format!("Assigned to: {}", assignment.user)} />
                     <DetailsHeaderItem content={format!("Date assigned: {}", assignment.date_out)} />
                     <DetailsHeaderItem
                         content={

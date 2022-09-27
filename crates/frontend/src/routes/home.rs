@@ -2,7 +2,7 @@ use crate::components::table::{Cell, Row, Table, TableHeader};
 use crate::services::get_display_name;
 use crate::theme::*;
 use crate::types::{Assignment, User};
-use crate::{routes::auth::CheckAuth, services::form_actions::onload_all};
+use crate::{routes::auth::CheckAuth, services::form_actions::onload};
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
@@ -62,8 +62,8 @@ pub fn home() -> Html {
         let all_users = all_users.clone();
         use_effect_with_deps(
             move |_| {
-                onload_all("/api/assignments".into(), assignments.clone());
-                onload_all("/api/users".into(), all_users);
+                onload("/api/assignments".into(), assignments.clone());
+                onload("/api/users".into(), all_users);
                 || ()
             },
             (),

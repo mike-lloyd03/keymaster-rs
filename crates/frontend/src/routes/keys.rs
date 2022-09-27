@@ -5,11 +5,14 @@ use crate::components::form::*;
 use crate::components::modal::Modal;
 use crate::components::notifier::notify_error;
 use crate::components::table::*;
-use crate::services::form_actions::{ondelete, onload_all, submit_form};
+use crate::services::form_actions::{ondelete, onload, submit_form};
+use crate::services::get_display_name;
 use crate::services::requests::get;
 use crate::services::to_option;
+use crate::theme::FORM_SUBTITLE;
 use crate::types::Assignment;
 use crate::types::Key;
+use crate::types::User;
 
 use yew::prelude::*;
 use yew_router::hooks::use_history;
@@ -40,7 +43,6 @@ pub fn new_key() -> Html {
                         label="Key Name"
                         required=true
                         state={name}
-                        pattern=r#"[\w\d]{3,}"#
                     />
                     <TextField label="Description" state={description} />
                     <Button
@@ -62,7 +64,7 @@ pub struct KeyProps {
 
 #[function_component(EditKey)]
 pub fn edit_key(props: &KeyProps) -> Html {
-    let key_name = props.key_name.clone();
+    let key_name = use_state(String::new);
     let description = use_state(String::new);
     let active = use_state(|| false);
 
@@ -72,12 +74,15 @@ pub fn edit_key(props: &KeyProps) -> Html {
         let key_name = key_name.clone();
         let description = description.clone();
         let active = active.clone();
-        let url = format!("/api/keys/{}", &key_name);
+        let url = format!("/api/keys/{}", props.key_name.clone());
         use_effect_with_deps(
             move |_| {
                 wasm_bindgen_futures::spawn_local(async move {
                     match get::<Key>(url).await {
                         Ok(k) => {
+                            // Setting the key name otherwise it will be url
+                            // encoded
+                            key_name.set(k.name);
                             description.set(k.description.unwrap_or_default());
                             active.set(k.active);
                         }
@@ -92,28 +97,28 @@ pub fn edit_key(props: &KeyProps) -> Html {
 
     let onsubmit = {
         let key = Key {
-            name: key_name.clone(),
+            name: (*key_name).clone(),
             description: to_option((*description).clone()),
             active: *active,
         };
         let history = use_history().unwrap();
-        let path = format!("/api/keys/{}", key_name);
+        let path = format!("/api/keys/{}", props.key_name.clone());
         submit_form(path, key, history, Route::Keys)
     };
 
     let delete_action = {
         let history = use_history().unwrap();
-        let path = format!("/api/keys/{}", key_name);
+        let path = format!("/api/keys/{}", props.key_name.clone());
         ondelete(path, history, Route::Keys)
     };
 
     html! {
         <CheckAuth admin=true>
             <div class="container my-5 mx-auto">
-                <Form title="Edit Key"
-                    subtitle={props.key_name.clone()}
-                    {onsubmit}
-                >
+                <Form title="Edit Key" {onsubmit}>
+                    <h6 class={FORM_SUBTITLE}>
+                        {format!("Key: {}", (*key_name).clone())}
+                    </h6>
                     <TextField label="Description" state={description} />
                     <CheckboxField label="Active" state={active} />
                     <Button
@@ -149,7 +154,7 @@ pub fn key_table() -> Html {
         let keys = keys.clone();
         use_effect_with_deps(
             move |_| {
-                onload_all("/api/keys".into(), keys);
+                onload("/api/keys".into(), keys);
                 || ()
             },
             (),
@@ -200,29 +205,22 @@ pub fn key_table() -> Html {
 #[function_component(KeyDetails)]
 pub fn key_details(props: &KeyProps) -> Html {
     let key = use_state(|| Key::default());
-    let assignments = use_state(Vec::new);
+    let assignments = use_state(Vec::<Assignment>::new);
+    let users = use_state(Vec::<User>::new);
 
     {
         let key = key.clone();
         let assignments = assignments.clone();
+        let users = users.clone();
+
         let key_url = format!("/api/keys/{}", &props.key_name);
         let key_users_url = format!("/api/assignments?key={}", &props.key_name);
+
         use_effect_with_deps(
             move |_| {
-                wasm_bindgen_futures::spawn_local(async move {
-                    match get::<Key>(key_url).await {
-                        Ok(k) => {
-                            key.set(k);
-                        }
-                        Err(e) => notify_error(&e.to_string()),
-                    };
-                    match get::<Vec<Assignment>>(key_users_url).await {
-                        Ok(u) => {
-                            assignments.set(u);
-                        }
-                        Err(e) => notify_error(&e.to_string()),
-                    };
-                });
+                onload(key_url, key);
+                onload(key_users_url, assignments);
+                onload("/api/users".into(), users);
                 || ()
             },
             (),
@@ -240,13 +238,13 @@ pub fn key_details(props: &KeyProps) -> Html {
                     <DetailsHeaderItem content={format!("Description: {}", key.description.unwrap_or("-".into()))} />
                     <DetailsHeaderItem content={format!("Active: {}", key.active)} />
                 </DetailsHeader>
-                <DetailsList label="Keys Assigned">
+                <DetailsList label="Assigned Users">
                     { for (*assignments)
                         .iter()
                             .map(|a|
                                 html_nested!{
                                     <DetailsListItem
-                                        label={a.clone().key}
+                                        label={get_display_name(&(*users).clone(), a.clone().user)}
                                         route={Route::AssignmentDetails { id: a.clone().id } }
                                     />
                                 })

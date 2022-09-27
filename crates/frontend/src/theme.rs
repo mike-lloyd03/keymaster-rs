@@ -25,6 +25,20 @@ pub fn hover(class: &str) -> String {
 }
 
 //////////////////
+// Table Card
+//////////////////
+pub static TABLE_CARD: &'static str = "
+    bg-slate-800
+    text-slate-200
+    rounded-xl
+    relative
+    overflow-x-auto
+    shadow-md
+    text-center
+    py-1
+    ";
+
+//////////////////
 // Details Card
 //////////////////
 pub static DETAIL_CARD: &'static str = "
@@ -111,4 +125,14 @@ pub static DETAIL_FOOTER: &'static str = "
     text-white
     bg-gray-700
     h-2
+    ";
+
+//////////////////
+// Forms
+//////////////////
+pub static FORM_SUBTITLE: &'static str = "
+    text-lg
+    font-medium
+    my-3
+    text-gray-300
     ";

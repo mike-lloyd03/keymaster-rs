@@ -5,9 +5,10 @@ use crate::components::form::*;
 use crate::components::modal::Modal;
 use crate::components::notifier::notify_error;
 use crate::components::table::{Cell, CellLink, Row, TableCard};
-use crate::services::form_actions::{ondelete, onload_all, submit_form};
+use crate::services::form_actions::{ondelete, onload, submit_form};
 use crate::services::requests::get;
 use crate::services::to_option;
+use crate::theme::FORM_SUBTITLE;
 use crate::types::Assignment;
 use crate::types::{SetPasswdPayload, User};
 
@@ -146,7 +147,10 @@ pub fn edit_user(props: &UserProps) -> Html {
     html! {
         <CheckAuth admin=true>
             <div class="container my-5 mx-auto">
-                <Form title="Edit User" subtitle={props.username.clone()} {onsubmit} >
+                <Form title="Edit User" {onsubmit} >
+                    <h6 class={FORM_SUBTITLE}>
+                        { format!("Username: {}", props.username.clone())}
+                    </h6>
                     <TextField
                         label="Email"
                         state={email}
@@ -192,7 +196,7 @@ pub fn user_table() -> Html {
         let users = users.clone();
         use_effect_with_deps(
             move |_| {
-                onload_all("/api/users".into(), users);
+                onload("/api/users".into(), users);
                 || ()
             },
             (),

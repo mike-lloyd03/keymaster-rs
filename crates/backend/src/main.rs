@@ -14,21 +14,15 @@ use log::info;
 mod models;
 mod routes;
 
+static PORT: u16 = 8080;
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init();
 
-    let secret_string = env::var("KEYMASTER_SECRET_KEY");
-    let secret_key = match secret_string {
-        Ok(s) => {
-            info!("Generating secret key from environment variable");
-            Key::from(s.as_bytes())
-        }
-        Err(_) => {
-            info!("Generating random secret key");
-            Key::generate()
-        }
-    };
+    dotenvy::dotenv().ok();
+
+    let secret_key = get_secret_key("KEYMASTER_SECRET_KEY");
 
     let pool = match models::db().await {
         Ok(p) => p,
@@ -39,6 +33,7 @@ async fn main() -> std::io::Result<()> {
     };
 
     models::initialize_admin(&pool).await.unwrap();
+    log::info!("Listening on port {}", PORT);
 
     HttpServer::new(move || {
         App::new()
@@ -76,15 +71,34 @@ async fn main() -> std::io::Result<()> {
                     .service(routes::logout)
                     .service(routes::session_info),
             )
-        // .service(
-        //     spa()
-        //         .index_file("./dist/index.html")
-        //         .static_resources_mount("/")
-        //         .static_resources_location("./dist")
-        //         .finish(),
-        // )
+            .service(
+                spa()
+                    .index_file("./dist/index.html")
+                    .static_resources_mount("/")
+                    .static_resources_location("./dist")
+                    .finish(),
+            )
     })
-    .bind(("0.0.0.0", 8081))?
+    .bind(("0.0.0.0", PORT))?
     .run()
     .await
+}
+
+/// Generates a secret key from a secret string. Secret string is either gathered from the
+/// environment from the given environment variable or randomly generated.
+fn get_secret_key(variable_name: &str) -> Key {
+    match env::var(variable_name) {
+        Ok(s) => {
+            if s.len() < 64 {
+                log::error!("Key length must be at least 64 bytes.");
+                std::process::exit(1);
+            }
+            log::info!("Generating secret key from environment variable");
+            Key::from(s.as_bytes())
+        }
+        Err(_) => {
+            log::info!("Generating random secret key");
+            Key::generate()
+        }
+    }
 }
