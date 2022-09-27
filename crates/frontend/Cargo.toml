@@ -1,7 +1,9 @@
 [package]
 name = "frontend"
-version = "0.1.1"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description.workspace = true
 
 
 [dependencies]
