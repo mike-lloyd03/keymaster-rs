@@ -9,7 +9,6 @@ use actix_web::{
     App, HttpServer,
 };
 use actix_web_lab::web::spa;
-use log::info;
 
 mod models;
 mod routes;

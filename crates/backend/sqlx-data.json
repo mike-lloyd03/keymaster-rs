@@ -16,30 +16,6 @@
     },
     "query": "UPDATE assignments\n            SET\n                \"user\" = $1,\n                key = $2,\n                date_out = $3,\n                date_in = $4\n            WHERE id = $5"
   },
-  "0b059785d089a454562f03aa225c2923d02e310e86ec5f6c0d0a7733674435d8": {
-    "describe": {
-      "columns": [
-        {
-          "name": "index!",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "values!",
-          "ordinal": 1,
-          "type_info": "Text"
-        }
-      ],
-      "nullable": [
-        false,
-        null
-      ],
-      "parameters": {
-        "Left": []
-      }
-    },
-    "query": "\n                SELECT\n                    key as \"index!\",\n                    string_agg(\"user\", ', ') as \"values!\"\n                FROM assignments\n                GROUP BY key\n                ORDER BY key\n                "
-  },
   "1e2c7547f206f0b45ec3f78ba5edb364df5ae84a4df7fc0761e042563a28dce7": {
     "describe": {
       "columns": [],
@@ -244,6 +220,50 @@
     },
     "query": "SELECT count(*) as \"count!\" FROM users WHERE admin = 't'"
   },
+  "6e141a9949522e445ccccb5ae8e9bc72ece7ae09d4ff8499ced301b2605f2bf7": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "user",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "key",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "date_out",
+          "ordinal": 3,
+          "type_info": "Date"
+        },
+        {
+          "name": "date_in",
+          "ordinal": 4,
+          "type_info": "Date"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "SELECT\n                *\n                FROM assignments\n                WHERE key = $1\n                AND date_in is null\n                ORDER BY \"user\""
+  },
   "75de6180d4c29481dd39f72de25e21e50586880c14b4267f3caaf393fa611423": {
     "describe": {
       "columns": [],
@@ -325,48 +345,6 @@
     },
     "query": "SELECT\n                id,\n                username,\n                display_name,\n                email,\n                password_hash,\n                can_login,\n                admin\n                FROM users\n                ORDER BY username"
   },
-  "8b983bb0c1c6a9482d1f24d3a959e774fc0f1613ffb8970b038b56618d1ae608": {
-    "describe": {
-      "columns": [
-        {
-          "name": "id",
-          "ordinal": 0,
-          "type_info": "Int8"
-        },
-        {
-          "name": "user",
-          "ordinal": 1,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "key",
-          "ordinal": 2,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "date_out",
-          "ordinal": 3,
-          "type_info": "Date"
-        },
-        {
-          "name": "date_in?",
-          "ordinal": 4,
-          "type_info": "Date"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        true
-      ],
-      "parameters": {
-        "Left": []
-      }
-    },
-    "query": "SELECT\n                id,\n                \"user\",\n                key,\n                date_out,\n                date_in as \"date_in?\"\n            FROM assignments\n            ORDER BY date_out"
-  },
   "8da7ff878301120b681c652e0a68c91af2ba71f9d6fbce684e786354c38758c2": {
     "describe": {
       "columns": [],
@@ -427,29 +405,49 @@
     },
     "query": "INSERT INTO keys (name, description, active) VALUES ($1, $2, $3)"
   },
-  "c7ee4c00b32f5a1e5e6c1bea7b71993dd40a00bd161f51595c36b0f5fddd20e2": {
+  "af02c1ba8179ca1ea28c560ceb45388a5f1f40908cf31e1912733cc2c8bae0a7": {
     "describe": {
       "columns": [
         {
-          "name": "index!",
+          "name": "id",
           "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "user",
+          "ordinal": 1,
           "type_info": "Varchar"
         },
         {
-          "name": "values!",
-          "ordinal": 1,
-          "type_info": "Text"
+          "name": "key",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "date_out",
+          "ordinal": 3,
+          "type_info": "Date"
+        },
+        {
+          "name": "date_in",
+          "ordinal": 4,
+          "type_info": "Date"
         }
       ],
       "nullable": [
         false,
-        null
+        false,
+        false,
+        false,
+        true
       ],
       "parameters": {
-        "Left": []
+        "Left": [
+          "Text"
+        ]
       }
     },
-    "query": "\n                SELECT\n                    \"user\" as \"index!\",\n                    string_agg(key, ', ') as \"values!\"\n                FROM assignments\n                GROUP BY \"user\"\n                ORDER BY \"user\"\n                "
+    "query": "SELECT\n                *\n                FROM assignments\n                WHERE \"user\" = $1\n                AND date_in is null\n                ORDER BY key"
   },
   "dacdc1095bb9cf0f72e5d661ed0c94fafa0f8256e6e809c3d2d340f9a52f0ef6": {
     "describe": {
