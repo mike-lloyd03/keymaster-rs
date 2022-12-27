@@ -255,7 +255,7 @@ pub fn assignments() -> Html {
 
 #[function_component(AssignmentDetails)]
 pub fn assignment_details(props: &AssignmentProps) -> Html {
-    let assignment = use_state(|| Assignment::default());
+    let assignment = use_state(Assignment::default);
     let users = use_state(Vec::<User>::new);
 
     {

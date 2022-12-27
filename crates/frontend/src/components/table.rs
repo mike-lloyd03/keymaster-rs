@@ -92,7 +92,7 @@ pub fn table(props: &TableProps) -> Html {
                         {
                             match props.headings.clone() {
                                 Some(h) => h.iter().map(|h|
-                                                        html!{<TableHeading label={h.clone()} />
+                                                        html!{<TableHeading label={h.to_string()} />
                                                         }).collect(),
                                 None => html!{},
                             }
@@ -107,7 +107,7 @@ pub fn table(props: &TableProps) -> Html {
     }
 }
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Eq)]
 pub struct CellProps {
     pub value: Option<String>,
 }
@@ -121,7 +121,7 @@ pub fn cell(props: &CellProps) -> Html {
     }
 }
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Eq)]
 pub struct CellLinkProps {
     pub value: String,
     pub route: Route,
@@ -140,7 +140,7 @@ pub fn cell_link(props: &CellLinkProps) -> Html {
     }
 }
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Eq)]
 pub struct CellEditProps {
     pub route: Route,
 }
@@ -189,7 +189,7 @@ pub fn row(props: &RowProps) -> Html {
     }
 }
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Eq)]
 pub struct TableHeadingProps {
     pub label: String,
 }
@@ -202,7 +202,7 @@ pub fn table_heading(props: &TableHeadingProps) -> Html {
     }
 }
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Eq)]
 pub struct ActionButtonProps {
     pub label: String,
     pub route: Route,

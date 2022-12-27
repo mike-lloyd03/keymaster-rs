@@ -4,10 +4,10 @@ use yewdux::prelude::*;
 
 use crate::types::Notification;
 
-static ALERT: &'static str = "p-4 text-sm rounded-lg fade-in";
-static INFO_ALERT: &'static str = "bg-blue-200 text-blue-800";
-static WARN_ALERT: &'static str = "bg-yellow-200 text-yellow-800";
-static ERR_ALERT: &'static str = "bg-red-200 text-red-800";
+static ALERT: &str = "p-4 text-sm rounded-lg fade-in";
+static INFO_ALERT: &str = "bg-blue-200 text-blue-800";
+static WARN_ALERT: &str = "bg-yellow-200 text-yellow-800";
+static ERR_ALERT: &str = "bg-red-200 text-red-800";
 // class="p-4 text-sm rounded-lg fade-in bg-red-200 text-red-800"
 
 #[function_component(Notifier)]

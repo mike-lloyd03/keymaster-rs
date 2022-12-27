@@ -2,7 +2,7 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool};
 
-#[derive(Debug, Default, PartialEq, Clone, FromRow, Serialize, Deserialize)]
+#[derive(Debug, Default, PartialEq, Eq, Clone, FromRow, Serialize, Deserialize)]
 pub struct Key {
     pub name: String,
     pub description: Option<String>,

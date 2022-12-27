@@ -204,7 +204,7 @@ pub fn key_table() -> Html {
 
 #[function_component(KeyDetails)]
 pub fn key_details(props: &KeyProps) -> Html {
-    let key = use_state(|| Key::default());
+    let key = use_state(Key::default);
     let assignments = use_state(Vec::<Assignment>::new);
     let users = use_state(Vec::<User>::new);
 

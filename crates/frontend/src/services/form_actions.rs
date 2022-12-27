@@ -64,9 +64,7 @@ where
     wasm_bindgen_futures::spawn_local(async move {
         match get::<T>(url).await {
             Ok(t) => item.set(t),
-            Err(e) => match e {
-                _ => notify_error(&e.to_string()),
-            },
+            Err(e) => notify_error(&e.to_string()),
         }
     })
 }
@@ -85,5 +83,5 @@ pub fn get_options(users: UseStateHandle<Vec<String>>, keys: UseStateHandle<Vec<
 }
 
 fn make_list<T: PrimaryKey>(types: Vec<T>) -> Vec<String> {
-    types.iter().map(|t| t.primary_key().clone()).collect()
+    types.iter().map(|t| t.primary_key()).collect()
 }

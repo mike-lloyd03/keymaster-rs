@@ -35,7 +35,7 @@ pub fn new_user() -> Html {
             username: (*username).clone(),
             email: to_option((*email).clone()),
             display_name: to_option((*display_name).clone()),
-            can_login: (*can_login).clone(),
+            can_login: (*can_login),
             ..Default::default()
         };
         let history = use_history().unwrap();
@@ -284,7 +284,7 @@ pub fn set_password(props: &UserProps) -> Html {
 
 #[function_component(UserDetails)]
 pub fn user_details(props: &UserProps) -> Html {
-    let user = use_state(|| User::default());
+    let user = use_state(User::default);
     let assignments = use_state(Vec::new);
 
     {
@@ -318,24 +318,29 @@ pub fn user_details(props: &UserProps) -> Html {
     html! {
         <CheckAuth>
             <DetailsCard
-                title={user.display_name.unwrap_or(user.username.clone())}
+                title={user.display_name.unwrap_or_else(|| user.username.clone())}
                 edit_route={Route::EditUser { username: user.username.clone() }}
             >
                 <DetailsHeader>
-                    <DetailsHeaderItem content={format!("Email: {}", user.email.unwrap_or("-".into()))} />
+                    <DetailsHeaderItem content={format!("Email: {}", user.email.unwrap_or_else(|| "-".into()))} />
                     <DetailsHeaderItem content={format!("Can login: {}", user.can_login)} />
                     <DetailsHeaderItem content={format!("Admin: {}", user.admin)} />
                 </DetailsHeader>
                 <DetailsList label="Keys Assigned">
-                    { for (*assignments)
-                        .iter()
-                            .map(|a|
-                                html_nested!{
-                                    <DetailsListItem
-                                        label={a.clone().key}
-                                        route={Route::AssignmentDetails { id: a.clone().id } }
-                                    />
-                                })
+                    {
+                        for (*assignments).iter().map(|a|
+                            html_nested!{
+                                <DetailsListItem
+                                    label={
+                                        if a.date_in.is_some() {
+                                            format!("{} (Returned)", a.clone().key)
+                                        } else {
+                                            a.clone().key
+                                        }
+                                    }
+                                    route={Route::AssignmentDetails { id: a.clone().id } }
+                                />
+                            })
                     }
                 </DetailsList>
                 <DetailsFooter/>

@@ -36,7 +36,7 @@ pub fn details_card(props: &DetailsCardProps) -> Html {
     }
 }
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Eq)]
 pub struct DetailsHeaderItemProps {
     pub content: String,
 }
@@ -88,7 +88,7 @@ pub fn details_list(props: &DetailsListProps) -> Html {
     }
 }
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Eq)]
 pub struct DetailsListItemProps {
     pub label: String,
     pub route: Route,

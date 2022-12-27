@@ -33,7 +33,7 @@ pub fn modal(props: &ModalProps) -> Html {
     html! {
         <div
             class={
-                match (*props.show_modal).clone() {
+                match *props.show_modal {
                     true => cl_base,
                     false => classes!(cl_base, "hidden"),
                 }

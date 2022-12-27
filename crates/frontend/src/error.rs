@@ -1,6 +1,6 @@
 use thiserror::Error as ThisError;
 
-#[derive(ThisError, Debug, PartialEq, Clone)]
+#[derive(ThisError, Debug, PartialEq, Eq, Clone)]
 pub enum Error {
     #[error("Invalid user input")]
     BadRequest(String), // 400

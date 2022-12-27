@@ -15,7 +15,6 @@ pub fn session_provider(props: &SessionProviderProps) -> Html {
     use_effect_with_deps(
         move |_| {
             wasm_bindgen_futures::spawn_local(async move {
-                log::info!("Getting session info: {:?}", &dispatch.get());
                 let ui: SessionInfo = get("/api/session".into()).await.unwrap();
                 dispatch.reduce_mut(|s| {
                     s.username = ui.username;

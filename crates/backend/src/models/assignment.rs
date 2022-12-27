@@ -3,7 +3,7 @@ use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgQueryResult, query, query_as, FromRow, PgPool, Postgres, QueryBuilder};
 
-#[derive(Debug, Clone, PartialEq, FromRow, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, FromRow, Serialize, Deserialize)]
 pub struct Assignment {
     #[serde(skip_deserializing)]
     id: i64,

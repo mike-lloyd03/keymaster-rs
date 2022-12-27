@@ -62,7 +62,7 @@ pub fn form(props: &FormProps) -> Html {
         }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 pub enum ButtonType {
     Primary,
     Secondary,
@@ -94,7 +94,7 @@ pub fn button(props: &ButtonProps) -> Html {
     }
 }
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Eq)]
 pub struct RouteButtonProps {
     pub value: String,
     pub route: Route,
@@ -135,7 +135,7 @@ pub fn delete_button(props: &DeleteButtonProps) -> Html {
     }
 }
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Eq)]
 pub struct SortButtonProps {
     pub value: String,
     pub route: Route,
@@ -154,7 +154,7 @@ pub fn sort_button(props: &SortButtonProps) -> Html {
     }
 }
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Eq)]
 pub struct LabelProps {
     pub value: String,
     pub for_input: String,
@@ -169,7 +169,7 @@ pub fn label(props: &LabelProps) -> Html {
     }
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Eq, Clone)]
 pub enum InputType {
     Text,
     Date,
@@ -234,7 +234,7 @@ pub fn input_field(props: &InputProps) -> Html {
                 class={cl_input}
                 name={ label_snake.clone() }
                 type={ props.input_type.clone().unwrap().to_string() }
-                value={(&*props.state).clone()}
+                value={(*props.state).clone()}
                 required={props.required.unwrap_or_default()}
                 pattern={props.pattern.clone()}
                 {oninput}
@@ -364,7 +364,7 @@ pub fn multi_select_field(props: &MultiSelectFieldProps) -> Html {
                 let collection = input.selected_options();
                 let selected: Vec<String> = (0..input.selected_options().length())
                     .filter_map(|i| collection.item(i))
-                    .filter_map(|e| e.node_value())
+                    .filter_map(|e| e.get_attribute("value"))
                     .collect();
 
                 state.set(selected);
@@ -425,5 +425,5 @@ pub fn multi_select_option(props: &MultiSelectOptionProps) -> Html {
 /// Converts a normal case string to lower snake case
 /// Example: snake_case("Date out".into()) -> "date_out"
 fn snake_case(s: String) -> String {
-    s.to_lowercase().replace(" ", "_")
+    s.to_lowercase().replace(' ', "_")
 }

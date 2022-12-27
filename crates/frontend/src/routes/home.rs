@@ -103,13 +103,13 @@ pub fn home() -> Html {
 
     let on_sort_by_key = {
         let headers = headers.clone();
-        let assignments = assignments.clone();
+        let assignments = assignments;
         let sorted_assignments = sorted_assignments.clone();
-        let all_users = all_users.clone();
+        let all_users = all_users;
         let by_user_btn_class = by_user_btn_class.clone();
         let by_key_btn_class = by_key_btn_class.clone();
-        let cl_button_selected = cl_button_selected.clone();
-        let cl_button_unselected = cl_button_unselected.clone();
+        let cl_button_selected = cl_button_selected;
+        let cl_button_unselected = cl_button_unselected;
         Callback::from(move |_: MouseEvent| {
             sorted_assignments.set(agg_by_key(&*assignments, &*all_users));
             headers.set(("Key", "Users Assigned"));
@@ -170,11 +170,11 @@ struct SortedAssignment {
 }
 
 /// Aggregates the assignment list by user
-fn agg_by_user(assignments: &Vec<Assignment>, users: &Vec<User>) -> Vec<SortedAssignment> {
+fn agg_by_user(assignments: &[Assignment], users: &Vec<User>) -> Vec<SortedAssignment> {
     let mut map = HashMap::new();
-    let assignments = assignments.clone();
+    let assignments = assignments.to_owned();
     for a in assignments {
-        map.entry(get_display_name(&users, a.user))
+        map.entry(get_display_name(users, a.user))
             .and_modify(|v| *v = format!("{}, {}", v, a.key))
             .or_insert(a.key);
     }
@@ -182,13 +182,13 @@ fn agg_by_user(assignments: &Vec<Assignment>, users: &Vec<User>) -> Vec<SortedAs
 }
 
 /// Aggregates the assignment list by key
-fn agg_by_key(assignments: &Vec<Assignment>, users: &Vec<User>) -> Vec<SortedAssignment> {
+fn agg_by_key(assignments: &[Assignment], users: &Vec<User>) -> Vec<SortedAssignment> {
     let mut map = HashMap::new();
-    let assignments = assignments.clone();
+    let assignments = assignments.to_owned();
     for a in assignments {
         map.entry(a.key)
             .and_modify(|v| *v = format!("{}, {}", v, get_display_name(users, a.user.clone())))
-            .or_insert(get_display_name(users, a.user));
+            .or_insert_with(|| get_display_name(users, a.user));
     }
     map_to_sort(map)
 }

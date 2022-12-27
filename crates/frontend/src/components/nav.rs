@@ -168,7 +168,7 @@ pub fn nav_links(props: &NavLinksProps) -> Html {
     }
 }
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Eq)]
 pub struct NavLinkProps {
     label: String,
     route: Route,
@@ -317,7 +317,7 @@ pub fn nav_dropdown_link(props: &NavLinkProps) -> Html {
     }
 }
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Eq)]
 pub struct UserMenuProps {
     pub user: SessionInfo,
 }
@@ -335,11 +335,8 @@ pub fn user_menu(props: &UserMenuProps) -> Html {
                     if let Some(username) = username {
                         let url = format!("/api/users/{}", username);
                         wasm_bindgen_futures::spawn_local(async move {
-                            match get::<User>(url).await {
-                                Ok(u) => {
-                                    display_name.set(u.display_name.unwrap_or(username));
-                                }
-                                Err(_) => (),
+                            if let Ok(u) = get::<User>(url).await {
+                                display_name.set(u.display_name.unwrap_or(username));
                             }
                         });
                     }

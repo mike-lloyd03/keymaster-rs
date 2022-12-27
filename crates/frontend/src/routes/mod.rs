@@ -66,9 +66,9 @@ pub fn switch(routes: &Route) -> Html {
 
         Route::Assignments => html! { <Assignments />},
         Route::AssignKey => html! { <NewAssignment />},
-        Route::EditAssignment { id } => html! { <EditAssignment id={ id.clone() }/>},
+        Route::EditAssignment { id } => html! { <EditAssignment id={ *id }/>},
         Route::AssignmentDetails { id } => {
-            html! {<AssignmentDetails id={ id.clone() }/>}
+            html! {<AssignmentDetails id={ *id }/>}
         }
 
         Route::Users => html! { <UserTable /> },
