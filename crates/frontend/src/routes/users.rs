@@ -177,7 +177,7 @@ pub fn edit_user(props: &UserProps) -> Html {
                     <RouteButton value="Cancel" route={Route::Users} />
                 <Modal
                     title="Delete User"
-                    msg="Are you sure you want to delete this user? All assignments for with this user is assigned will also be deleted."
+                    msg="Are you sure you want to delete this user? All assignments for which this user is assigned will also be deleted."
                     confirm_action={delete_action}
                     {show_modal}
                 />

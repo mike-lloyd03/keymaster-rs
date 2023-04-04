@@ -9,3 +9,6 @@ build:
 push:
 	docker push {{IMG_NAME}}:latest
 	docker push {{IMG_NAME}}:{{PACKAGE_VERSION}}
+
+deploy:
+    docker compose --project-directory {{DOCKER_DIRECTORY}} up --pull always --detach
